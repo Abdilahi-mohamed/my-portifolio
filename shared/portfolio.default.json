@@ -1,0 +1,198 @@
+{
+  "navigation": [
+    { "id": "about", "label": "About" },
+    { "id": "home", "label": "Home" },
+    { "id": "projects", "label": "Projects" },
+    { "id": "languages", "label": "Tech stack" },
+    { "id": "contacts", "label": "Social profiles" }
+  ],
+  "customSections": [],
+  "hero": {
+    "brand": "ABdilahi Portfolio",
+    "badge": "Welcome to my official digital home",
+    "title": "Crafting modern digital experiences &",
+    "titleAccent": "scalable solutions.",
+    "description": "Hi, I’m ABdilahi. I specialize in building high-performance web applications with React, Node.js, and modern UI/UX architecture that scale effortlessly and delight users.",
+    "projectsButton": "Explore projects",
+    "contactButton": "Contact me",
+    "headerButton": "Get in touch",
+    "scrollText": "Scroll to discover",
+    "stats": [
+      { "value": "3+ years", "label": "Full-stack experience", "icon": "MapPin" },
+      { "value": "15+", "label": "Projects delivered", "icon": "Zap" },
+      { "value": "100%", "label": "Tested & optimized", "icon": "Check" },
+      { "value": "24/7", "label": "Open for opportunities", "icon": "MessageCircle" }
+    ]
+  },
+  "about": {
+    "label": "About me",
+    "title": "Architecting digital excellence from code to interface.",
+    "profileName": "ABdilahi",
+    "profileRole": "Full-stack Developer",
+    "location": "Mogadishu / Remote",
+    "photo": "https://lh3.googleusercontent.com/aida-public/AB6AXuBLkOBAH1YKzcFE5MHOhWpDpIkeCGohEYdg6ZdNtgPzZC-ui0SW_JzJmktec08tEHJVwYncHdt-XMQUdxxbsEJJ8b9dD3Tz5pYQwWqnjJd2H4NXy1MFDYWe3HlQghy69r1YU7XrFZEkyy1Ma6Ib6U2K5ncJgYF-khZlPctQ_KpBLC1m8gBnCtayv09Tcth4v4TccOX3EsIAJNcyRVkm50s10XA8OJN6sNG-tvc2sTiqOEOYNl9Xszu3pA",
+    "coverPhoto": "",
+    "profileDescription": "I build thoughtful digital experiences, bringing clean engineering and considered design together.",
+    "bioTitle": "Passionate software engineer",
+    "bio": "I build robust, scalable web applications with delightful user interfaces. I bridge the gap between dependable backend engineering and responsive frontend design. My approach combines careful testing, clean architecture, and user-centered problem solving.",
+    "values": [
+      {
+        "icon": "Code2",
+        "title": "Clean code architecture",
+        "description": "Modular, maintainable code that follows sound engineering practices, clear design patterns, and thoughtful testing."
+      },
+      {
+        "icon": "Palette",
+        "title": "UI/UX obsessed design",
+        "description": "Pixel-perfect layouts, fluid micro-interactions, and accessible details that make products feel effortless."
+      }
+    ]
+  },
+  "projectsSection": {
+    "label": "Selected work",
+    "title": "Projects",
+    "description": "A selection of useful digital products, built with care from the first idea to the final detail.",
+    "projects": [
+      {
+        "id": "saas-analytics-dashboard-copy-1",
+        "category": "Web app",
+        "title": "SaaS Analytics Dashboard (Copy)",
+        "description": "Real-time metrics and interactive charts that turn complex data into clear decisions for growing teams.",
+        "fullDescription": "Real-time metrics and interactive charts that turn complex data into clear decisions for growing teams.",
+        "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuAS6syFWxDdY6y0Z2iszpu5phTIHIF_FGkyIARFS2BTWejM-z_GJil6wVwMo21jGy_tmmG33ODSVsuGv70RuXb0XnQFmFoYSX-FDD20WS0U8UkigiFUb0wLmT3dWzJRfQnXP4SbJIPdm3KGgJVjuIpSuMCisF2XMJD-4Vo-om0fAwh5cbN06rFYMMo4QoMN0gA5IcQIiw9tGscTBwHx3JuNFYdZIeYjC5alCOHrAUN4Co13YQNvVAKi0w",
+        "gallery": [],
+        "tags": ["React", "Tailwind CSS", "Chart.js"],
+        "liveUrl": "",
+        "githubUrl": "",
+        "linkedinUrl": "",
+        "featured": false,
+        "visible": true
+      },
+      {
+        "id": "cv-screaning-implementatton-e7887844",
+        "category": "cv implementation",
+        "title": "cv screaning & implementatton",
+        "description": "high performence clasified cv rankingpeople ,gnerate questions and make the result\\",
+        "fullDescription": "high performence clasified cv rankingpeople ,gnerate questions and make the result\\",
+        "image": "/api/media/bc98a949da425f4e3b68fc41fe2e8814.jpg",
+        "gallery": ["/api/media/bc98a949da425f4e3b68fc41fe2e8814.jpg"],
+        "tags": ["reactjs", "nodejs", "mongodb"],
+        "liveUrl": "",
+        "githubUrl": "https://github.com/Abdilahi-mohamed/cv-screaning-implementation.git",
+        "linkedinUrl": "https://github.com/Abdilahi-mohamed/cv-screaning-implementation.git",
+        "featured": true,
+        "visible": true
+      },
+      {
+        "id": "e-commerce-cloud-platform-2",
+        "category": "Full stack",
+        "title": "E-Commerce Cloud Platform",
+        "description": "A high-performance storefront built to make product discovery and checkout feel effortless.",
+        "fullDescription": "A high-performance storefront built to make product discovery and checkout feel effortless.",
+        "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuDtUJnMnT2ZglteDUxqxSKajgsOklUgdhq5_qsBs3c3sTaRafSBbeok3WgeLXt7ulztS3LzWEjyGMRKm9r9XiwwTMl7U2FL3U_OgLKDsDfdjSm1FL8VMaa5h9PnE6MmgQz-y1GY5MHoK0VD5oeZwEE4zlPEr3j6kbotKMeyG07WyBAUvkobSwrJvcZUIvalFP7LESGb2tSWgCjHZL_GxNInQror5M-RPPnnz_yoDwyFdvD3KFCV8d5r9w",
+        "gallery": [],
+        "tags": ["Next.js", "Node.js", "PostgreSQL"],
+        "liveUrl": "",
+        "githubUrl": "",
+        "linkedinUrl": "",
+        "featured": false,
+        "visible": true
+      },
+      {
+        "id": "ai-prompt-studio-3",
+        "category": "AI / UI",
+        "title": "AI Prompt Studio",
+        "description": "A generative design workspace for quickly transforming creative ideas into polished visual assets.",
+        "fullDescription": "A generative design workspace for quickly transforming creative ideas into polished visual assets.",
+        "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuAyHFlPOv4ps03kHIqYb8q1nL5zK7JdAuNir-Zxa8wM6b9uhRLKJG1PKAYowAFW_lkMQIuVd8cfoabu48HfiBa0o-4pbuqqUZxirzELLmJZsQVSRquLuUWkwsdqwjZizatHOs3K9IeJG3exhnu4NZYY-P4r29HA8zWOIt9JRgjpMmoARmhb5iHPxgFD4YlWy7dIaphjGwRgO2FT_wjyakQRL_HQ2__tSbyS2cF1K3JIMkqt-kTbIPCq7g",
+        "gallery": [],
+        "tags": ["React", "OpenAI API", "Tailwind"],
+        "liveUrl": "",
+        "githubUrl": "",
+        "linkedinUrl": "",
+        "featured": false,
+        "visible": true
+      },
+      {
+        "id": "fintech-mobile-web-portal-4",
+        "category": "Fintech",
+        "title": "Fintech Mobile & Web Portal",
+        "description": "A secure multi-currency experience for instant transfers and easy-to-understand portfolio tracking.",
+        "fullDescription": "A secure multi-currency experience for instant transfers and easy-to-understand portfolio tracking.",
+        "image": "https://lh3.googleusercontent.com/aida-public/AB6AXuD6lAK_KRMRMfAIifnaTYKbTmXMJwVSf8iJmSDLzURFoMupKdZoph07PxrkUbzl2GDLBYrSXfTS31L9XINAuekbD1nCIvK-Uh38t21Z93qndxIjls9B0A4-PDUDKSYubJvaTeZrVE0_aQRofPEPg1YIUHy2t8MPzmZGaI09TyIxV-B83Di06wCE6h0lbIQhWj7r8y7UinJXmTNZ-YoiWfwtCa7g2oPX0Y7zylYaZ62gAeqDgUqcLUQi5A",
+        "gallery": [],
+        "tags": ["TypeScript", "Express", "MongoDB"],
+        "liveUrl": "",
+        "githubUrl": "",
+        "linkedinUrl": "",
+        "featured": false,
+        "visible": true
+      }
+    ]
+  },
+  "skillsSection": {
+    "label": "Expertise",
+    "title": "Tech stack & languages",
+    "description": "The tools and technologies I use to bring useful ideas to life.",
+    "skills": [
+      { "name": "HTML5", "level": "95%", "icon": "Globe2", "color": "#e34f26", "category": "Frontend" },
+      { "name": "CSS3 & Tailwind", "level": "92%", "icon": "Layers3", "color": "#2563eb", "category": "Frontend" },
+      { "name": "JavaScript", "level": "90%", "icon": "Code2", "color": "#d4a900", "category": "Frontend" },
+      { "name": "React.js", "level": "90%", "icon": "Monitor", "color": "#149eca", "category": "Frontend" },
+      { "name": "TypeScript", "level": "88%", "icon": "Code2", "color": "#3178c6", "category": "Frontend" },
+      { "name": "Node.js", "level": "85%", "icon": "Terminal", "color": "#43853d", "category": "Backend" },
+      { "name": "Python", "level": "80%", "icon": "Code2", "color": "#3976a8", "category": "Backend" },
+      { "name": "Git & GitHub", "level": "90%", "icon": "Github", "color": "#26303b", "category": "Tools" }
+    ]
+  },
+  "experience": [
+    {
+      "role": "Full-stack Developer",
+      "company": "Independent / Freelance",
+      "desc": "Delivering responsive web apps, APIs, and polished UI systems for clients and personal products.",
+      "year": "2023 – Present",
+      "location": "Remote"
+    },
+    {
+      "role": "Frontend Developer",
+      "company": "Product Studio",
+      "desc": "Built React interfaces, design systems, and performance-focused landing experiences.",
+      "year": "2022 – 2023",
+      "location": "Mogadishu / Remote"
+    }
+  ],
+  "certificates": [],
+  "contact": {
+    "label": "Contact",
+    "title": "Let’s build something great.",
+    "description": "Find me across the platforms where I share my work, ideas, and updates.",
+    "formTitle": "Send a message",
+    "formDescription": "I usually reply within one business day.",
+    "nameLabel": "Your name",
+    "emailFieldLabel": "Your email",
+    "subjectLabel": "Subject",
+    "messageLabel": "Message",
+    "namePlaceholder": "Jane Doe",
+    "emailPlaceholder": "jane@example.com",
+    "subjectPlaceholder": "Project inquiry",
+    "messagePlaceholder": "Tell me a little about your project...",
+    "sendButton": "Send message",
+    "emailLabel": "Email me",
+    "locationLabel": "Location",
+    "contactInfoTitle": "Contact information",
+    "socialTitle": "Social profiles",
+    "availabilityTitle": "Open to work",
+    "availabilityDescription": "— let’s talk about your next idea.",
+    "email": "abdilahidev@example.com",
+    "location": "Available worldwide / remote",
+    "socials": [
+      { "name": "GitHub", "url": "https://github.com/", "icon": "Github" },
+      { "name": "LinkedIn", "url": "https://www.linkedin.com/", "icon": "Linkedin" },
+      { "name": "Twitter / X", "url": "https://x.com/", "icon": "MessageCircle" },
+      { "name": "Telegram", "url": "https://t.me/", "icon": "Send" }
+    ]
+  },
+  "footer": {
+    "copyright": "All rights reserved."
+  }
+}

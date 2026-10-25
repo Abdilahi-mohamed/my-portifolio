@@ -1,0 +1,9 @@
+{
+  "name": "abdilahi-portfolio",
+  "private": true,
+  "scripts": {
+    "dev": "npm run dev --prefix backend",
+    "web": "node backend/scripts/start-web.mjs",
+    "build": "npm run build --prefix frontend && npm run build --prefix backend"
+  }
+}
