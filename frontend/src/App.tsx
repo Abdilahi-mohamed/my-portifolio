@@ -26,10 +26,9 @@ import {
   X as XIcon,
   Zap,
 } from "lucide-react";
-import SiFacebook from "@icons-pack/react-simple-icons/icons/SiFacebook";
-import SiInstagram from "@icons-pack/react-simple-icons/icons/SiInstagram";
+import { SocialBrandIcon, socialIconOptions } from "./socialIcons";
 import defaultPortfolio from "../../shared/portfolio.default.json";
-import type { PortfolioContent } from "./types";
+import type { IconName, PortfolioContent } from "./types";
 
 type ToastMessage = { title: string; detail?: string };
 
@@ -105,7 +104,7 @@ function ProjectGallery({
   );
 }
 
-const icons = {
+const icons: Partial<Record<IconName, typeof ArrowUpRight>> = {
   ArrowUpRight,
   Check,
   Code2,
@@ -323,7 +322,7 @@ function App() {
                   <h3 className="skill-group-title">{group}</h3>
                   <div className="skills-grid">
                     {groupedSkills.map((skill) => {
-                      const Icon = icons[skill.icon];
+                      const Icon = icons[skill.icon] ?? ExternalLink;
                       return (
                         <article className="skill-card" key={skill.name}>
                           <div className="skill-card-top">
@@ -425,15 +424,14 @@ function App() {
         {socials.length > 0 ? (
           <div className="socials-grid">
             {socials.map((social) => {
-              const Icon = icons[social.icon];
+              const Icon = icons[social.icon] ?? ExternalLink;
+              const isSocialBrand = socialIconOptions.some((option) => option.name === social.icon);
               return (
                 <a className="social-card" href={social.url} key={`${social.name}-${social.url}`} rel="noopener noreferrer" target="_blank">
                   <span className="social-icon">
-                    {social.icon === "Instagram"
-                      ? <SiInstagram aria-hidden="true" size={19} />
-                      : social.icon === "Facebook"
-                        ? <SiFacebook aria-hidden="true" size={19} />
-                        : <Icon size={19} strokeWidth={1.8} />}
+                    {isSocialBrand
+                      ? <SocialBrandIcon name={social.icon} size={19} />
+                      : <Icon size={19} strokeWidth={1.8} />}
                   </span>
                   <span className="social-name">{social.name}</span>
                   <ArrowUpRight className="social-arrow" size={16} />

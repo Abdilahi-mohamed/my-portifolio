@@ -12,9 +12,7 @@ import {
   EyeOff,
   FileJson2,
   FolderKanban,
-  Github,
   LayoutDashboard,
-  Linkedin,
   LockKeyhole,
   LogOut,
   MapPin,
@@ -30,9 +28,8 @@ import {
   UserRound,
   X,
 } from "lucide-react";
-import SiFacebook from "@icons-pack/react-simple-icons/icons/SiFacebook";
-import SiInstagram from "@icons-pack/react-simple-icons/icons/SiInstagram";
 import type { IconName, PortfolioContent } from "../types";
+import { SocialBrandIcon, socialIconOptions } from "../socialIcons";
 import { adminLogout, changeAdminPassword, loadAdminPortfolio, saveAdminPortfolio, uploadImage } from "./adminApi";
 
 type Project = PortfolioContent["projectsSection"]["projects"][number];
@@ -51,12 +48,6 @@ const builtInSections = [
   { id: "languages", label: "Tech stack", title: "Skills" },
   { id: "contacts", label: "Social profiles", title: "Social profiles" },
 ] as const;
-const socialIconOptions: IconName[] = [
-  "ArrowUpRight", "Check", "Code2", "ExternalLink", "Facebook", "Figma",
-  "Github", "Globe2", "Instagram", "Layers3", "Linkedin", "MapPin",
-  "MessageCircle", "Monitor", "Palette", "Send", "Terminal", "X", "Zap",
-];
-
 function socialIconForUrl(value: string): IconName {
   try {
     const candidate = /^https?:\/\//i.test(value) ? value : `https://${value}`;
@@ -70,22 +61,29 @@ function socialIconForUrl(value: string): IconName {
     if (matchesDomain("linkedin.com")) return "Linkedin";
     if (matchesDomain("facebook.com") || matchesDomain("fb.com")) return "Facebook";
     if (matchesDomain("x.com") || matchesDomain("twitter.com")) return "X";
+    const socialDomains: [string, IconName][] = [
+      ["tiktok.com", "Tiktok"], ["youtube.com", "Youtube"], ["youtu.be", "Youtube"],
+      ["threads.net", "Threads"], ["discord.com", "Discord"], ["discord.gg", "Discord"],
+      ["whatsapp.com", "Whatsapp"], ["wa.me", "Whatsapp"], ["telegram.org", "Telegram"],
+      ["t.me", "Telegram"], ["messenger.com", "Messenger"], ["reddit.com", "Reddit"],
+      ["pinterest.com", "Pinterest"], ["snapchat.com", "Snapchat"], ["twitch.tv", "Twitch"],
+      ["mastodon.social", "Mastodon"], ["bsky.app", "Bluesky"], ["wechat.com", "Wechat"],
+      ["line.me", "Line"], ["spotify.com", "Spotify"], ["soundcloud.com", "Soundcloud"],
+      ["medium.com", "Medium"], ["dev.to", "Devto"], ["hashnode.dev", "Hashnode"],
+      ["stackoverflow.com", "Stackoverflow"], ["gitlab.com", "Gitlab"],
+      ["behance.net", "Behance"], ["dribbble.com", "Dribbble"], ["flickr.com", "Flickr"],
+      ["vimeo.com", "Vimeo"], ["tumblr.com", "Tumblr"], ["wordpress.com", "Wordpress"],
+      ["slack.com", "Slack"], ["substack.com", "Substack"], ["patreon.com", "Patreon"],
+      ["linktr.ee", "Linktree"], ["producthunt.com", "Producthunt"], ["quora.com", "Quora"],
+      ["kickstarter.com", "Kickstarter"], ["buymeacoffee.com", "Buymeacoffee"],
+      ["weibo.com", "Weibo"],
+    ];
+    const platform = socialDomains.find(([domain]) => matchesDomain(domain));
+    if (platform) return platform[1];
   } catch {
     return "Globe2";
   }
   return "Globe2";
-}
-
-function SocialIconPreview({ icon }: { icon: IconName }) {
-  if (icon === "Instagram") return <SiInstagram aria-hidden="true" size={15} />;
-  if (icon === "Facebook") return <SiFacebook aria-hidden="true" size={15} />;
-  const iconComponents: Partial<Record<IconName, typeof Github>> = {
-    Github,
-    Linkedin,
-    X,
-  };
-  const Icon = iconComponents[icon] ?? ExternalLink;
-  return <Icon aria-hidden="true" size={15} />;
 }
 
 const portfolioSchema = {
@@ -190,7 +188,8 @@ export function AdminDashboard({
   const [newSectionLabel, setNewSectionLabel] = useState("");
   const [newSectionTitle, setNewSectionTitle] = useState("");
   const [newSectionDescription, setNewSectionDescription] = useState("");
-  const [socialIconSearches, setSocialIconSearches] = useState<Record<number, string>>({});
+  const [iconPickerIndex, setIconPickerIndex] = useState<number | null>(null);
+  const [iconSearch, setIconSearch] = useState("");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -229,6 +228,15 @@ export function AdminDashboard({
     const timeout = window.setTimeout(() => setNotice(""), 3200);
     return () => window.clearTimeout(timeout);
   }, [notice]);
+
+  useEffect(() => {
+    if (iconPickerIndex === null) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setIconPickerIndex(null);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [iconPickerIndex]);
 
   const projects = content?.projectsSection.projects ?? [];
   const skills = content?.skillsSection.skills ?? [];
@@ -1012,12 +1020,9 @@ export function AdminDashboard({
                 <label className="cms-input-label">Social profiles heading<input onChange={(event) => updateContact("socialTitle", event.target.value)} value={content.contact.socialTitle} /></label>
                 <div className="cms-social-editor-heading"><span><strong>Social profiles</strong><small>Name and valid HTTP(S) URL are required.</small></span><button className="cms-add-link" onClick={addSocial} type="button"><Plus size={14} /> Add profile</button></div>
                 {content.contact.socials.map((social, index) => {
-                  const iconQuery = (socialIconSearches[index] ?? "").trim().toLowerCase();
-                  const matchingIcons = socialIconOptions.filter((icon) =>
-                    icon === social.icon || icon.toLowerCase().includes(iconQuery),
-                  );
+                  const selectedIcon = socialIconOptions.find((option) => option.name === social.icon);
                   return <div className="cms-social-editor-row" key={`social-${index}`}>
-                    <label className="cms-input-label">Search and choose icon<input aria-label={`Search icons for ${social.name || "social profile"}`} onChange={(event) => setSocialIconSearches((current) => ({ ...current, [index]: event.target.value }))} placeholder="Search icons..." type="search" value={socialIconSearches[index] ?? ""} /><select aria-label={`Choose icon for ${social.name || "social profile"}`} onChange={(event) => { const icon = socialIconOptions.find((option) => option === event.target.value); if (icon) updateSocial(index, "icon", icon); }} value={social.icon}>{matchingIcons.map((icon) => <option key={icon} value={icon}>{icon}</option>)}</select><small className="cms-social-icon-preview"><SocialIconPreview icon={social.icon} /><span>Detected: {social.icon}</span></small></label>
+                    <div className="cms-social-icon-field"><span>Social platform</span><button aria-label={`Choose icon for ${social.name || "social profile"}`} className="cms-social-icon-trigger" onClick={() => { setIconSearch(""); setIconPickerIndex(index); }} type="button"><SocialBrandIcon name={social.icon} size={17} /><span>{selectedIcon?.label ?? "Choose icon"}</span><Search size={14} /></button><small>Detected from profile URL when available.</small></div>
                     <label className="cms-input-label">Profile name<input onChange={(event) => updateSocial(index, "name", event.target.value)} value={social.name} /></label>
                     <label className="cms-input-label">Profile URL<input onChange={(event) => updateSocial(index, "url", event.target.value)} placeholder="https://instagram.com/your-profile" type="url" value={social.url} /><small>Logo updates automatically when you paste a supported profile URL.</small></label>
                     <button aria-label={`Remove ${social.name || "social profile"}`} className="cms-managed-card-delete" onClick={() => removeSocial(index)} type="button"><Trash2 size={13} /></button>
@@ -1138,6 +1143,7 @@ export function AdminDashboard({
         </>}
         <div className="cms-modal-actions"><button className="cms-quiet-btn" onClick={closeEditor} type="button">Cancel</button><button className="cms-primary-btn" disabled={busy} type="submit">{busy ? "Uploading..." : editor.index === null ? "Add to portfolio" : "Save item"}</button></div>
       </form></section></div>}
+      {iconPickerIndex !== null && <div className="cms-modal-backdrop cms-social-icon-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setIconPickerIndex(null); }}><section aria-labelledby="cms-social-icon-title" aria-modal="true" className="cms-modal cms-social-icon-dialog" role="dialog"><div className="cms-modal-heading"><div><span className="cms-section-index">SOCIAL PROFILE ICON</span><h2 id="cms-social-icon-title">Choose a platform</h2></div><button aria-label="Close icon picker" className="cms-icon-button" onClick={() => setIconPickerIndex(null)} type="button"><X size={18} /></button></div><label className="cms-social-icon-search"><Search aria-hidden="true" size={17} /><input autoFocus onChange={(event) => setIconSearch(event.target.value)} placeholder="Search social media..." type="search" value={iconSearch} /></label><div aria-label="Available social platforms" className="cms-social-icon-grid">{socialIconOptions.filter((option) => option.label.toLowerCase().includes(iconSearch.trim().toLowerCase())).map((option) => <button aria-pressed={content.contact.socials[iconPickerIndex]?.icon === option.name} className={content.contact.socials[iconPickerIndex]?.icon === option.name ? "is-selected" : ""} key={option.name} onClick={() => { updateSocial(iconPickerIndex, "icon", option.name); setIconPickerIndex(null); }} type="button"><SocialBrandIcon name={option.name} size={20} /><span>{option.label}</span></button>)}</div>{socialIconOptions.filter((option) => option.label.toLowerCase().includes(iconSearch.trim().toLowerCase())).length === 0 && <p className="cms-social-icon-empty">No icons match your search.</p>}</section></div>}
     </div>
   );
 }

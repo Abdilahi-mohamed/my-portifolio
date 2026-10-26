@@ -351,6 +351,15 @@
 .cms-social-editor-row .cms-input-label { min-width: 0; }
 .cms-social-editor-row .cms-input-label > small { display: block; margin-top: 4px; color: #897d70; font-size: 9px; }
 .cms-social-editor-row .cms-social-icon-preview { display: flex; align-items: center; gap: 6px; }
+.cms-social-editor-row .cms-input-label { font-size: 12px; }
+.cms-social-editor-row .cms-input-label > input { min-height: 38px; font-size: 13px; }
+.cms-social-editor-row .cms-input-label > small { font-size: 11px; line-height: 1.45; }
+.cms-social-icon-field { min-width: 0; margin-bottom: 11px; color: #52645a; font-size: 10px; font-weight: 700; }
+.cms-social-icon-field > span { font-size: 12px; }
+.cms-social-icon-trigger { display: flex; width: 100%; min-height: 37px; align-items: center; gap: 8px; margin-top: 5px; padding: 0 9px; border: 1px solid #e3e8e4; border-radius: 7px; color: #344057; background: #fff; text-align: left; }
+.cms-social-icon-trigger > span { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cms-social-icon-trigger:hover { border-color: #8bb6a2; color: #2d6d58; }
+.cms-social-icon-field > small { display: block; margin-top: 4px; color: #737d78; font-size: 11px; font-weight: 500; }
 .cms-social-editor-row .cms-managed-card-delete { position: static; margin-top: 17px; }
 .cms-password-form { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: end; gap: 12px; }
 .cms-password-form .cms-input-label > small { display: block; margin-top: 5px; color: #737d78; font-size: 9px; }
@@ -773,6 +782,20 @@
 .cms-gallery-replace { position: relative; display: grid; width: 24px; height: 24px; overflow: hidden; place-items: center; border: 1px solid #e3e8e4; border-radius: 4px; color: #38463f; background: rgb(255 255 255 / 94%); cursor: pointer; }
 .cms-gallery-replace:hover { color: #2d6d58; border-color: #b6c9bf; }
 .cms-gallery-replace input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+.cms-social-icon-backdrop { z-index: 30; }
+.cms-social-icon-dialog { width: min(620px, 100%); max-height: min(82vh, 700px); padding: 22px; }
+.cms-social-icon-dialog .cms-modal-heading { margin-bottom: 15px; }
+.cms-social-icon-dialog .cms-modal-heading h2 { font-size: 21px; }
+.cms-social-icon-search { display: flex; min-height: 43px; align-items: center; gap: 9px; padding: 0 12px; border: 1px solid #dce4ee; border-radius: 8px; color: #7b8981; background: #f7f8f6; }
+.cms-social-icon-search:focus-within { border-color: #8bb6a2; box-shadow: 0 0 0 3px #e8efeb; }
+.cms-social-icon-search input { width: 100%; min-width: 0; border: 0; outline: 0; color: #202b28; background: transparent; font-size: 13px; }
+.cms-social-icon-search input::placeholder { color: #8a968f; }
+.cms-social-icon-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 9px; max-height: 52vh; overflow-y: auto; margin-top: 15px; padding: 2px; }
+.cms-social-icon-grid button { display: flex; min-width: 0; min-height: 72px; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 9px 5px; border: 1px solid #e3e8e4; border-radius: 9px; color: #47564d; background: #fff; transition: border-color 150ms ease, color 150ms ease, background 150ms ease; }
+.cms-social-icon-grid button:hover { border-color: #9cbeaa; color: #2d6d58; background: #f4faf6; }
+.cms-social-icon-grid button.is-selected { border-color: #2d6d58; color: #236047; background: #e8f3ec; box-shadow: inset 0 0 0 1px #2d6d58; }
+.cms-social-icon-grid button span { max-width: 100%; overflow: hidden; font-size: 11px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.cms-social-icon-empty { margin: 20px 0 3px; color: #737d78; font-size: 13px; text-align: center; }
 
 @media (max-width: 520px) {
   .cms-login-page { padding: 16px; }
@@ -783,4 +806,7 @@
   .cms-login-input { min-height: 60px; gap: 12px; padding-inline: 14px; border-radius: 13px; }
   .cms-login-card .cms-login-input input { font-size: 15px; }
   .cms-login-submit { min-height: 59px; border-radius: 13px; font-size: 16px; }
+  .cms-social-icon-dialog { padding: 17px; }
+  .cms-social-icon-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
+  .cms-social-icon-grid button { min-height: 68px; }
 }

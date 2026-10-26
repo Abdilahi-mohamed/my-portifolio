@@ -41,6 +41,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 }
 
 .topbar {
+  position: relative;
   display: flex;
   min-height: 76px;
   align-items: center;
@@ -55,9 +56,12 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 }
 
 .topbar-actions {
+  position: absolute;
+  left: 50%;
   display: flex;
   align-items: center;
   gap: 24px;
+  transform: translateX(-50%);
 }
 
 .topbar-nav-link {
@@ -878,10 +882,15 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 .toast strong { font-size: 13px; }
 .toast span { font-size: 12px; line-height: 1.5; }
 
+@media (max-width: 900px) {
+  .topbar { flex-wrap: wrap; justify-content: center; gap: 8px 16px; padding: 12px 0; }
+  .wordmark { margin-right: auto; }
+  .topbar-actions { position: static; width: 100%; justify-content: center; flex-wrap: wrap; gap: 12px 18px; transform: none; }
+}
+
 @media (max-width: 700px) {
   .portfolio-page { width: min(100% - 36px, 560px); }
   .topbar { min-height: 66px; }
-  .topbar-actions { gap: 15px; }
   .topbar-nav-link { font-size: 12px; }
   .cover-photo { height: clamp(165px, 39vw, 245px); }
   .profile-content { gap: 20px; padding: 0 24px 24px; }
@@ -912,10 +921,10 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 
 @media (max-width: 520px) {
   .portfolio-page { width: calc(100% - 28px); }
-  .topbar { min-height: 62px; }
-  .wordmark { font-size: 14px; }
-  .topbar-actions { gap: 10px; }
-  .topbar-nav-link { font-size: 11px; }
+  .topbar { min-height: 62px; justify-content: center; gap: 8px; }
+  .wordmark { margin-inline: auto; font-size: 14px; }
+  .topbar-actions { justify-content: center; gap: 10px 14px; }
+  .topbar-nav-link { font-size: 12px; }
   .edit-link { min-height: 36px; padding: 0 10px; font-size: 12px; }
   .edit-link svg { display: none; }
   .cover-photo { height: 160px; }

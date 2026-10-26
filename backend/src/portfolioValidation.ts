@@ -1,5 +1,11 @@
 const allowedIcons = new Set([
   "ArrowUpRight", "Check", "Code2", "ExternalLink", "Facebook", "Figma",
+  "Discord", "Tiktok", "Threads", "Youtube", "Whatsapp", "Telegram", "Reddit",
+  "Twitch", "Pinterest", "Snapchat", "Gitlab", "Behance", "Dribbble",
+  "Medium", "Devto", "Messenger", "Spotify", "Soundcloud", "Patreon",
+  "Substack", "Tumblr", "Vimeo", "Wordpress", "Slack", "Wechat",
+  "Mastodon", "Bluesky", "Linktree", "Stackoverflow", "Producthunt",
+  "Quora", "Kickstarter", "Buymeacoffee", "Flickr", "Hashnode", "Line", "Weibo",
   "Github", "Globe2", "Instagram", "Layers3", "Linkedin", "MapPin",
   "MessageCircle", "Monitor", "Palette", "Send", "Terminal", "X", "Zap",
 ]);
