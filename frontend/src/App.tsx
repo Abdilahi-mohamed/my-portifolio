@@ -165,12 +165,23 @@ function App() {
   const socials = portfolio.contact.socials;
 
   useEffect(() => {
-    document.title = `${profile.profileName} — Projects`;
+    const pageTitle = `${profile.profileName} — Portfolio`;
+    const pageDescription = profile.profileDescription ||
+      `Explore ${profile.profileName}'s portfolio, projects, skills, and professional experience.`;
+    const imageUrl = new URL("/abdilahi-portfolio.png", window.location.origin).href;
+    document.title = pageTitle;
     document.querySelector('meta[name="description"]')?.setAttribute(
       "content",
-      `Projects and profile of ${profile.profileName}.`,
+      pageDescription,
     );
-  }, [profile.profileName]);
+    document.querySelector('meta[property="og:title"]')?.setAttribute("content", pageTitle);
+    document.querySelector('meta[property="og:description"]')?.setAttribute("content", pageDescription);
+    document.querySelector('meta[property="og:url"]')?.setAttribute("content", window.location.href);
+    document.querySelector('meta[property="og:image"]')?.setAttribute("content", imageUrl);
+    document.querySelector('meta[name="twitter:title"]')?.setAttribute("content", pageTitle);
+    document.querySelector('meta[name="twitter:description"]')?.setAttribute("content", pageDescription);
+    document.querySelector('meta[name="twitter:image"]')?.setAttribute("content", imageUrl);
+  }, [profile.profileDescription, profile.profileName]);
 
   return (
     <main className="portfolio-page">
