@@ -21,7 +21,7 @@ npm install --prefix backend
 npm install --prefix frontend
 ```
 
-Optional: copy `backend/.env.example` to `backend/.env` to set `PORT` or `FRONTEND_ORIGIN`. Do not commit `.env`.
+Optional: create `backend/.env` to set `PORT`, `FRONTEND_ORIGIN`, `ADMIN_USERNAME`, or an initial `ADMIN_PASSWORD`. The admin page defaults to username `abdillahip` and password `abdillahi17859` when no credentials are configured. After signing in, use **Change password** in the admin dashboard to set a private password; it is saved as a salted hash under `backend/data/` and remains active after restarting the server. Change the default credentials before deploying publicly, keep the `backend/data/` directory on persistent storage, and do not commit `.env`.
 
 ## Start the website
 

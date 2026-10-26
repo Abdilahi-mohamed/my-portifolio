@@ -29,6 +29,23 @@ export async function adminLogin(username: string, password: string): Promise<vo
   }
 }
 
+export async function changeAdminPassword(
+  currentPassword: string,
+  newPassword: string,
+): Promise<string> {
+  const response = await fetch("/api/admin/password", {
+    method: "POST",
+    credentials: "same-origin",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ currentPassword, newPassword }),
+  });
+  const body = await parseJson<MessageResponse>(response);
+  if (!response.ok) {
+    throw new Error(body.message ?? "Could not change the admin password.");
+  }
+  return body.message ?? "Admin password changed successfully.";
+}
+
 export async function adminLogout(): Promise<void> {
   await fetch("/api/admin/logout", {
     method: "POST",

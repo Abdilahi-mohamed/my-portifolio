@@ -12,7 +12,10 @@ import {
   EyeOff,
   FileJson2,
   FolderKanban,
+  Github,
   LayoutDashboard,
+  Linkedin,
+  LockKeyhole,
   LogOut,
   MapPin,
   MoveDown,
@@ -26,8 +29,10 @@ import {
   UserRound,
   X,
 } from "lucide-react";
+import SiFacebook from "@icons-pack/react-simple-icons/icons/SiFacebook";
+import SiInstagram from "@icons-pack/react-simple-icons/icons/SiInstagram";
 import type { IconName, PortfolioContent } from "../types";
-import { adminLogout, loadAdminPortfolio, saveAdminPortfolio, uploadImage } from "./adminApi";
+import { adminLogout, changeAdminPassword, loadAdminPortfolio, saveAdminPortfolio, uploadImage } from "./adminApi";
 
 type Project = PortfolioContent["projectsSection"]["projects"][number];
 type Skill = PortfolioContent["skillsSection"]["skills"][number];
@@ -45,16 +50,42 @@ const builtInSections = [
   { id: "languages", label: "Tech stack", title: "Skills" },
   { id: "contacts", label: "Social profiles", title: "Social profiles" },
 ] as const;
-const socialPlatforms: { id: string; name: string; icon: IconName }[] = [
-  { id: "website", name: "Website", icon: "Globe2" },
-  { id: "github", name: "GitHub", icon: "Github" },
-  { id: "linkedin", name: "LinkedIn", icon: "Linkedin" },
-  { id: "x", name: "X (Twitter)", icon: "MessageCircle" },
-  { id: "telegram", name: "Telegram", icon: "Send" },
-  { id: "figma", name: "Figma", icon: "Figma" },
-  { id: "code", name: "Code profile", icon: "Code2" },
-  { id: "portfolio", name: "Portfolio", icon: "ExternalLink" },
+const socialIconOptions: IconName[] = [
+  "ArrowUpRight", "Check", "Code2", "ExternalLink", "Facebook", "Figma",
+  "Github", "Globe2", "Instagram", "Layers3", "Linkedin", "MapPin",
+  "MessageCircle", "Monitor", "Palette", "Send", "Terminal", "X", "Zap",
 ];
+
+function socialIconForUrl(value: string): IconName {
+  try {
+    const candidate = /^https?:\/\//i.test(value) ? value : `https://${value}`;
+    const url = new URL(candidate);
+    if (url.protocol !== "http:" && url.protocol !== "https:") return "Globe2";
+    const hostname = url.hostname.toLowerCase().replace(/^www\./, "");
+    const matchesDomain = (domain: string) =>
+      hostname === domain || hostname.endsWith(`.${domain}`);
+    if (matchesDomain("instagram.com")) return "Instagram";
+    if (matchesDomain("github.com")) return "Github";
+    if (matchesDomain("linkedin.com")) return "Linkedin";
+    if (matchesDomain("facebook.com") || matchesDomain("fb.com")) return "Facebook";
+    if (matchesDomain("x.com") || matchesDomain("twitter.com")) return "X";
+  } catch {
+    return "Globe2";
+  }
+  return "Globe2";
+}
+
+function SocialIconPreview({ icon }: { icon: IconName }) {
+  if (icon === "Instagram") return <SiInstagram aria-hidden="true" size={15} />;
+  if (icon === "Facebook") return <SiFacebook aria-hidden="true" size={15} />;
+  const iconComponents: Partial<Record<IconName, typeof Github>> = {
+    Github,
+    Linkedin,
+    X,
+  };
+  const Icon = iconComponents[icon] ?? ExternalLink;
+  return <Icon aria-hidden="true" size={15} />;
+}
 
 const portfolioSchema = {
   $schema: "http://json-schema.org/draft-07/schema#",
@@ -158,6 +189,13 @@ export function AdminDashboard({
   const [newSectionLabel, setNewSectionLabel] = useState("");
   const [newSectionTitle, setNewSectionTitle] = useState("");
   const [newSectionDescription, setNewSectionDescription] = useState("");
+  const [socialIconSearches, setSocialIconSearches] = useState<Record<number, string>>({});
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordBusy, setPasswordBusy] = useState(false);
+  const [passwordError, setPasswordError] = useState("");
+  const [passwordNotice, setPasswordNotice] = useState("");
   const [activity, setActivity] = useState<Activity[]>([]);
   const coverDrag = useRef<{
     pointerId: number;
@@ -651,25 +689,10 @@ export function AdminDashboard({
       contact: {
         ...current.contact,
         socials: current.contact.socials.map((social, socialIndex) =>
-          socialIndex === index ? { ...social, [key]: value } : social,
-        ),
-      },
-    }));
-  };
-
-  const getSocialPlatform = (icon: IconName) =>
-    socialPlatforms.find((platform) => platform.icon === icon)?.id ?? "website";
-
-  const updateSocialPlatform = (index: number, value: string) => {
-    const platform = socialPlatforms.find((item) => item.id === value);
-    if (!platform) return;
-    updateContent((current) => ({
-      ...current,
-      contact: {
-        ...current.contact,
-        socials: current.contact.socials.map((social, socialIndex) =>
           socialIndex === index
-            ? { ...social, name: platform.name, icon: platform.icon }
+            ? key === "url" && typeof value === "string"
+              ? { ...social, url: value, icon: socialIconForUrl(value) }
+              : { ...social, [key]: value }
             : social,
         ),
       },
@@ -712,6 +735,32 @@ export function AdminDashboard({
   const signOut = async () => {
     await adminLogout();
     onSignedOut();
+  };
+
+  const submitPasswordChange = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setPasswordError("");
+    setPasswordNotice("");
+    if (newPassword.length < 8) {
+      setPasswordError("Use at least 8 characters for your new password.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordError("The new passwords do not match.");
+      return;
+    }
+    setPasswordBusy(true);
+    try {
+      const message = await changeAdminPassword(currentPassword, newPassword);
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setPasswordNotice(message);
+    } catch (error) {
+      setPasswordError(error instanceof Error ? error.message : "Could not change the admin password.");
+    } finally {
+      setPasswordBusy(false);
+    }
   };
 
   if (!content) {
@@ -757,10 +806,11 @@ export function AdminDashboard({
           <a href="#certificates"><Award size={16} /> Certificates <span>{certificates.length}</span></a>
           <a href="#experience"><BriefcaseBusiness size={16} /> Experience</a>
           <a href="#contact-editor"><ExternalLink size={16} /> Social profiles</a>
+          <a href="#admin-security"><LockKeyhole size={16} /> Change password</a>
           <a href="#sections"><LayoutDashboard size={16} /> Sections</a>
         </nav>
         <div className="cms-global-actions">
-          <a className="cms-top-site-link" href="/" target="_blank" rel="noreferrer"><ExternalLink size={15} /> View portfolio</a>
+          <a className="cms-top-site-link" href="/"><ExternalLink size={15} /> View portfolio</a>
           {!authDisabled && <button aria-label="Sign out" className="cms-icon-button" onClick={signOut} title="Sign out" type="button"><LogOut size={16} /></button>}
         </div>
       </header>
@@ -939,14 +989,29 @@ export function AdminDashboard({
                 <label className="cms-input-label">Social profiles heading<input onChange={(event) => updateContact("socialTitle", event.target.value)} value={content.contact.socialTitle} /></label>
                 <div className="cms-social-editor-heading"><span><strong>Social profiles</strong><small>Name and valid HTTP(S) URL are required.</small></span><button className="cms-add-link" onClick={addSocial} type="button"><Plus size={14} /> Add profile</button></div>
                 {content.contact.socials.map((social, index) => {
-                  const selectedPlatform = socialPlatforms.find((platform) => platform.id === getSocialPlatform(social.icon));
+                  const iconQuery = (socialIconSearches[index] ?? "").trim().toLowerCase();
+                  const matchingIcons = socialIconOptions.filter((icon) =>
+                    icon === social.icon || icon.toLowerCase().includes(iconQuery),
+                  );
                   return <div className="cms-social-editor-row" key={`social-${index}`}>
-                    <label className="cms-input-label">App / platform<select aria-label={`App or platform for ${social.name || "social profile"}`} onChange={(event) => updateSocialPlatform(index, event.target.value)} value={getSocialPlatform(social.icon)}>{socialPlatforms.map((platform) => <option key={platform.id} value={platform.id}>{platform.name}</option>)}</select><small>Icon: {selectedPlatform?.name ?? "Website"}</small></label>
+                    <label className="cms-input-label">Search and choose icon<input aria-label={`Search icons for ${social.name || "social profile"}`} onChange={(event) => setSocialIconSearches((current) => ({ ...current, [index]: event.target.value }))} placeholder="Search icons..." type="search" value={socialIconSearches[index] ?? ""} /><select aria-label={`Choose icon for ${social.name || "social profile"}`} onChange={(event) => { const icon = socialIconOptions.find((option) => option === event.target.value); if (icon) updateSocial(index, "icon", icon); }} value={social.icon}>{matchingIcons.map((icon) => <option key={icon} value={icon}>{icon}</option>)}</select><small className="cms-social-icon-preview"><SocialIconPreview icon={social.icon} /><span>Detected: {social.icon}</span></small></label>
                     <label className="cms-input-label">Profile name<input onChange={(event) => updateSocial(index, "name", event.target.value)} value={social.name} /></label>
-                    <label className="cms-input-label">Profile URL<input onChange={(event) => updateSocial(index, "url", event.target.value)} type="url" value={social.url} /></label>
+                    <label className="cms-input-label">Profile URL<input onChange={(event) => updateSocial(index, "url", event.target.value)} placeholder="https://instagram.com/your-profile" type="url" value={social.url} /><small>Logo updates automatically when you paste a supported profile URL.</small></label>
                     <button aria-label={`Remove ${social.name || "social profile"}`} className="cms-managed-card-delete" onClick={() => removeSocial(index)} type="button"><Trash2 size={13} /></button>
                   </div>;
                 })}
+              </section>
+
+              <section className="cms-panel cms-password-panel" id="admin-security">
+                <div className="cms-panel-heading"><div><span className="cms-section-index">ADMIN ACCOUNT</span><h2>Change password</h2><p>Update the password used to open portfolio management. Your current session will remain active.</p></div></div>
+                <form className="cms-password-form" onSubmit={(event) => { void submitPasswordChange(event); }}>
+                  <label className="cms-input-label">Current password<input autoComplete="current-password" onChange={(event) => setCurrentPassword(event.target.value)} required type="password" value={currentPassword} /></label>
+                  <label className="cms-input-label">New password<input autoComplete="new-password" minLength={8} maxLength={128} onChange={(event) => setNewPassword(event.target.value)} required type="password" value={newPassword} /><small>Use at least 8 characters.</small></label>
+                  <label className="cms-input-label">Confirm new password<input autoComplete="new-password" onChange={(event) => setConfirmPassword(event.target.value)} required type="password" value={confirmPassword} /></label>
+                  {passwordError && <p className="cms-error" role="alert">{passwordError}</p>}
+                  {passwordNotice && <p className="cms-password-notice" role="status">{passwordNotice}</p>}
+                  <button className="cms-primary-btn" disabled={passwordBusy} type="submit">{passwordBusy ? "Changing password..." : "Change password"}</button>
+                </form>
               </section>
 
               <section className="cms-panel cms-section-manager" id="sections">
@@ -1003,7 +1068,7 @@ export function AdminDashboard({
             </section>
           </div>
 
-          <footer className="cms-footer"><span>Portfolio CMS <span>·</span> Private workspace</span><a href="/" rel="noreferrer" target="_blank">View live site <ExternalLink size={13} /></a></footer>
+          <footer className="cms-footer"><span>Portfolio CMS <span>·</span> Private workspace</span><a href="/">View live site <ExternalLink size={13} /></a></footer>
         </div>
       </main>
 

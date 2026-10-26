@@ -1,4 +1,4 @@
-import { randomBytes, createHash, timingSafeEqual } from "node:crypto";
+import { createHash, randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
 import { appendFile, mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { dirname, join } from "node:path";
@@ -10,6 +10,7 @@ const serverDirectory = dirname(fileURLToPath(import.meta.url));
 const backendDirectory = dirname(serverDirectory);
 const projectDirectory = dirname(backendDirectory);
 config({ path: join(backendDirectory, ".env") });
+const adminUsername = process.env.ADMIN_USERNAME ?? "abdillahip";
 const port = Number(process.env.PORT ?? 4000);
 const allowedOrigin = process.env.FRONTEND_ORIGIN ?? "http://localhost:5173";
 const allowedOrigins = new Set([allowedOrigin]);
@@ -18,6 +19,7 @@ if (!process.env.FRONTEND_ORIGIN) {
 }
 const messageFile = join(backendDirectory, "data", "messages.jsonl");
 const portfolioFile = join(backendDirectory, "data", "portfolio.json");
+const adminPasswordFile = join(backendDirectory, "data", "admin-password.json");
 const uploadDirectory = join(backendDirectory, "data", "uploads");
 const defaultPortfolioFile = join(projectDirectory, "shared", "portfolio.default.json");
 const maxBodyBytes = 10_000;
@@ -27,6 +29,14 @@ const sessions = new Map<string, number>();
 const loginAttempts = new Map<string, { count: number; resetAt: number }>();
 const sessionDuration = 8 * 60 * 60 * 1000;
 const cookieName = "portfolio_admin";
+type PasswordRecord = { salt: string; hash: string };
+
+function createPasswordRecord(password: string): PasswordRecord {
+  const salt = randomBytes(16).toString("hex");
+  return { salt, hash: scryptSync(password, salt, 64).toString("hex") };
+}
+
+let adminPasswordRecord = createPasswordRecord(process.env.ADMIN_PASSWORD ?? "abdillahi17859");
 
 type ContactMessage = {
   name: string;
@@ -148,6 +158,35 @@ function hasAdminSession(request: IncomingMessage): boolean {
   return true;
 }
 
+async function loadAdminPassword(): Promise<void> {
+  try {
+    const parsed: unknown = JSON.parse(await readFile(adminPasswordFile, "utf8"));
+    if (
+      !isRecord(parsed) ||
+      typeof parsed.salt !== "string" ||
+      !/^[\da-f]{32}$/i.test(parsed.salt) ||
+      typeof parsed.hash !== "string" ||
+      !/^[\da-f]{128}$/i.test(parsed.hash)
+    ) {
+      throw new Error("The stored admin password data is invalid.");
+    }
+    adminPasswordRecord = { salt: parsed.salt, hash: parsed.hash };
+  } catch (error) {
+    if (isRecord(error) && error.code === "ENOENT") return;
+    throw error;
+  }
+}
+
+async function saveAdminPassword(record: PasswordRecord): Promise<void> {
+  await mkdir(dirname(adminPasswordFile), { recursive: true });
+  const temporaryFile = `${adminPasswordFile}.${randomBytes(6).toString("hex")}.tmp`;
+  await writeFile(temporaryFile, `${JSON.stringify(record)}\n`, {
+    encoding: "utf8",
+    mode: 0o600,
+  });
+  await rename(temporaryFile, adminPasswordFile);
+}
+
 function localAdminBypassEnabled(request: IncomingMessage): boolean {
   const address = request.socket.remoteAddress;
   const isLoopback = address === "127.0.0.1" || address === "::1" || address === "::ffff:127.0.0.1";
@@ -160,17 +199,15 @@ function isAdminAuthenticated(request: IncomingMessage): boolean {
   return localAdminBypassEnabled(request) || hasAdminSession(request);
 }
 
-function credentialsConfigured(): boolean {
-  return Boolean(
-    process.env.ADMIN_USERNAME &&
-    process.env.ADMIN_PASSWORD &&
-    process.env.ADMIN_PASSWORD.length >= 12,
-  );
+function passwordMatches(received: string): boolean {
+  const receivedHash = scryptSync(received, adminPasswordRecord.salt, 64);
+  const configuredHash = Buffer.from(adminPasswordRecord.hash, "hex");
+  return timingSafeEqual(receivedHash, configuredHash);
 }
 
-function passwordMatches(received: string, configured: string): boolean {
+function usernameMatches(received: string): boolean {
   const receivedHash = createHash("sha256").update(received).digest();
-  const configuredHash = createHash("sha256").update(configured).digest();
+  const configuredHash = createHash("sha256").update(adminUsername).digest();
   return timingSafeEqual(receivedHash, configuredHash);
 }
 
@@ -291,11 +328,10 @@ const server = createServer(async (request, response) => {
   }
 
   if (url.pathname.startsWith("/api/admin/")) {
-    const configured = credentialsConfigured();
     if (request.method === "GET" && url.pathname === "/api/admin/session") {
       respond(response, 200, {
         authenticated: isAdminAuthenticated(request) ? "true" : "false",
-        configured: configured ? "true" : "false",
+        configured: "true",
         authDisabled: localAdminBypassEnabled(request) ? "true" : "false",
       });
       return;
@@ -304,12 +340,6 @@ const server = createServer(async (request, response) => {
     if (request.method === "POST" && url.pathname === "/api/admin/login") {
       if (origin && !allowedOrigins.has(origin)) {
         respond(response, 403, { message: "This origin is not allowed." });
-        return;
-      }
-      if (!configured) {
-        respond(response, 503, {
-          message: "Set ADMIN_USERNAME and an ADMIN_PASSWORD of at least 12 characters in backend/.env.",
-        });
         return;
       }
       const now = Date.now();
@@ -321,13 +351,17 @@ const server = createServer(async (request, response) => {
       }
       try {
         const body = await readJson(request);
-        if (!isRecord(body) || typeof body.username !== "string" || typeof body.password !== "string") {
+        if (
+          !isRecord(body) ||
+          typeof body.username !== "string" ||
+          typeof body.password !== "string"
+        ) {
           respond(response, 400, { message: "Enter your username and password." });
           return;
         }
-        const usernameMatches = passwordMatches(body.username, process.env.ADMIN_USERNAME!);
-        const passwordMatchesAdmin = passwordMatches(body.password, process.env.ADMIN_PASSWORD!);
-        if (!usernameMatches || !passwordMatchesAdmin) {
+        const validUsername = usernameMatches(body.username);
+        const validPassword = passwordMatches(body.password);
+        if (!validUsername || !validPassword) {
           const current = attempts && attempts.resetAt > now
             ? { count: attempts.count + 1, resetAt: attempts.resetAt }
             : { count: 1, resetAt: now + 60_000 };
@@ -344,6 +378,51 @@ const server = createServer(async (request, response) => {
         respond(response, error instanceof SyntaxError ? 400 : 413, {
           message: error instanceof SyntaxError ? "The request body must contain valid JSON." : "The request is too large.",
         });
+      }
+      return;
+    }
+
+    if (request.method === "POST" && url.pathname === "/api/admin/password") {
+      if (!isAdminAuthenticated(request)) {
+        respond(response, 401, { message: "Sign in to change the admin password." });
+        return;
+      }
+      try {
+        const body = await readJson(request);
+        if (
+          !isRecord(body) ||
+          typeof body.currentPassword !== "string" ||
+          typeof body.newPassword !== "string"
+        ) {
+          respond(response, 400, { message: "Enter your current and new passwords." });
+          return;
+        }
+        if (!passwordMatches(body.currentPassword)) {
+          respond(response, 401, { message: "The current password is incorrect." });
+          return;
+        }
+        if (body.newPassword.length < 8 || body.newPassword.length > 128) {
+          respond(response, 400, { message: "The new password must be between 8 and 128 characters." });
+          return;
+        }
+
+        const nextPasswordRecord = createPasswordRecord(body.newPassword);
+        await saveAdminPassword(nextPasswordRecord);
+        adminPasswordRecord = nextPasswordRecord;
+        sessions.clear();
+        const token = randomBytes(32).toString("base64url");
+        sessions.set(token, Date.now() + sessionDuration);
+        setSessionCookie(response, token, isSecureRequest(request));
+        respond(response, 200, { message: "Admin password changed successfully." });
+      } catch (error) {
+        if (error instanceof SyntaxError) {
+          respond(response, 400, { message: "The request body must contain valid JSON." });
+        } else if (error instanceof Error && error.message === "Request body is too large.") {
+          respond(response, 413, { message: "The request is too large." });
+        } else {
+          console.error("Unable to change admin password:", error);
+          respond(response, 500, { message: "The admin password could not be changed." });
+        }
       }
       return;
     }
@@ -500,13 +579,9 @@ const server = createServer(async (request, response) => {
 });
 
 async function startServer(): Promise<void> {
+  await loadAdminPassword();
   server.listen(port, () => {
     console.log(`Portfolio API listening on http://localhost:${port}`);
-    if (!credentialsConfigured()) {
-      console.warn(
-        "Admin dashboard is disabled: set ADMIN_USERNAME and ADMIN_PASSWORD (12+ chars) in backend/.env.",
-      );
-    }
   });
 }
 

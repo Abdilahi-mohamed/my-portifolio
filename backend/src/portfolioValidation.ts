@@ -1,7 +1,7 @@
 const allowedIcons = new Set([
-  "ArrowUpRight", "Check", "Code2", "ExternalLink", "Figma", "Github",
-  "Globe2", "Layers3", "Linkedin", "MapPin", "MessageCircle", "Monitor",
-  "Palette", "Send", "Terminal", "Zap",
+  "ArrowUpRight", "Check", "Code2", "ExternalLink", "Facebook", "Figma",
+  "Github", "Globe2", "Instagram", "Layers3", "Linkedin", "MapPin",
+  "MessageCircle", "Monitor", "Palette", "Send", "Terminal", "X", "Zap",
 ]);
 
 function isRecord(value: unknown): value is Record<string, unknown> {

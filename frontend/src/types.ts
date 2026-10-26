@@ -4,6 +4,7 @@ export type IconName =
   | "Code2"
   | "ExternalLink"
   | "Figma"
+  | "Facebook"
   | "Github"
   | "Globe2"
   | "Layers3"
@@ -11,9 +12,11 @@ export type IconName =
   | "MapPin"
   | "MessageCircle"
   | "Monitor"
+  | "Instagram"
   | "Palette"
   | "Send"
   | "Terminal"
+  | "X"
   | "Zap";
 
 export type PortfolioContent = {

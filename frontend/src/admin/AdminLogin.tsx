@@ -38,12 +38,13 @@ export function AdminLogin({ onSuccess, configured }: AdminLoginProps) {
           <LockKeyhole size={22} />
         </span>
         <span className="cms-overline">PORTFOLIO CMS</span>
-        <h1>Admin sign in</h1>
-        <p>Use your private credentials to open the dashboard and manage site content.</p>
+        <h1>Admin Portal Access</h1>
+        <p>Sign in to manage your portfolio.</p>
         {!configured && (
           <p className="cms-config-note" role="alert">
             Admin access is not configured. Set <code>ADMIN_USERNAME</code> and{" "}
-            <code>ADMIN_PASSWORD</code> (12+ characters) in <code>backend/.env</code>.
+            <code>ADMIN_PASSWORD</code> in{" "}
+            <code>backend/.env</code>.
           </p>
         )}
         <form onSubmit={handleSubmit}>
@@ -54,6 +55,7 @@ export function AdminLogin({ onSuccess, configured }: AdminLoginProps) {
               autoFocus
               disabled={!configured || busy}
               onChange={(event) => setUsername(event.target.value)}
+              placeholder="Enter username"
               required
               value={username}
             />
@@ -64,6 +66,7 @@ export function AdminLogin({ onSuccess, configured }: AdminLoginProps) {
               autoComplete="current-password"
               disabled={!configured || busy}
               onChange={(event) => setPassword(event.target.value)}
+              placeholder="Enter password"
               required
               type="password"
               value={password}
@@ -71,7 +74,7 @@ export function AdminLogin({ onSuccess, configured }: AdminLoginProps) {
           </label>
           {error && <p className="cms-error" role="alert">{error}</p>}
           <button className="cms-primary-btn" disabled={!configured || busy} type="submit">
-            {busy ? "Signing in..." : "Open admin dashboard"}
+            {busy ? "Signing in..." : "Login"}
           </button>
         </form>
       </section>

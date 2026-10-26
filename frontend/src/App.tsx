@@ -7,10 +7,12 @@ import {
   Code2,
   ExternalLink,
   Figma,
+  Facebook,
   Github,
   Globe2,
   Layers3,
   Linkedin,
+  Instagram,
   MapPin,
   MessageCircle,
   Monitor,
@@ -19,8 +21,11 @@ import {
   FolderKanban,
   Send,
   Terminal,
+  X as XIcon,
   Zap,
 } from "lucide-react";
+import SiFacebook from "@icons-pack/react-simple-icons/icons/SiFacebook";
+import SiInstagram from "@icons-pack/react-simple-icons/icons/SiInstagram";
 import defaultPortfolio from "../../shared/portfolio.default.json";
 import type { PortfolioContent } from "./types";
 
@@ -32,16 +37,19 @@ const icons = {
   Code2,
   ExternalLink,
   Figma,
+  Facebook,
   Github,
   Globe2,
   Layers3,
   Linkedin,
+  Instagram,
   MapPin,
   MessageCircle,
   Monitor,
   Palette,
   Send,
   Terminal,
+  X: XIcon,
   Zap,
 };
 const skillGroups = ["Frontend", "Backend", "Tools"] as const;
@@ -352,7 +360,13 @@ function App() {
               const Icon = icons[social.icon];
               return (
                 <a className="social-card" href={social.url} key={`${social.name}-${social.url}`} rel="noopener noreferrer" target="_blank">
-                  <span className="social-icon"><Icon size={19} strokeWidth={1.8} /></span>
+                  <span className="social-icon">
+                    {social.icon === "Instagram"
+                      ? <SiInstagram aria-hidden="true" size={19} />
+                      : social.icon === "Facebook"
+                        ? <SiFacebook aria-hidden="true" size={19} />
+                        : <Icon size={19} strokeWidth={1.8} />}
+                  </span>
                   <span className="social-name">{social.name}</span>
                   <ArrowUpRight className="social-arrow" size={16} />
                 </a>
