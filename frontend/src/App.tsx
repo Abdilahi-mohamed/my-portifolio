@@ -27,6 +27,7 @@ import {
   Zap,
 } from "lucide-react";
 import { SocialBrandIcon, socialIconOptions } from "./socialIcons";
+import { isProgrammingLanguageIcon, ProgrammingLanguageIcon } from "./programmingIcons";
 import defaultPortfolio from "../../shared/portfolio.default.json";
 import type { IconName, PortfolioContent } from "./types";
 
@@ -125,7 +126,7 @@ const icons: Partial<Record<IconName, typeof ArrowUpRight>> = {
   X: XIcon,
   Zap,
 };
-const skillGroups = ["Frontend", "Backend", "Tools"] as const;
+const skillGroups = ["Frontend", "Backend", "Databases", "Tools"] as const;
 
 function App() {
   const [portfolio, setPortfolio] = useState<PortfolioContent>(
@@ -237,7 +238,7 @@ function App() {
             <span className="summary-icon"><Code2 size={19} /></span>
             <span className="summary-label">Tech stack & languages</span>
             <strong>{skills.length.toString().padStart(2, "0")}</strong>
-            <small>Frontend, Backend & Tools</small>
+            <small>Frontend, Backend, Databases & Tools</small>
           </article>
           <article className="summary-card">
             <span className="summary-icon"><Award size={19} /></span>
@@ -327,7 +328,9 @@ function App() {
                         <article className="skill-card" key={skill.name}>
                           <div className="skill-card-top">
                             <span className="skill-icon" style={{ color: skill.color, backgroundColor: `${skill.color}12` }}>
-                              <Icon size={19} strokeWidth={1.8} />
+                              {isProgrammingLanguageIcon(skill.icon)
+                                ? <ProgrammingLanguageIcon name={skill.icon} size={19} />
+                                : <Icon size={19} strokeWidth={1.8} />}
                             </span>
                             <span className="skill-level">{skill.level}</span>
                           </div>

@@ -1,5 +1,12 @@
 const allowedIcons = new Set([
-  "ArrowUpRight", "Check", "Code2", "ExternalLink", "Facebook", "Figma",
+  "ArrowUpRight", "Check", "Code2", "Javascript", "Typescript", "React",
+  "Nodejs", "Mongodb", "Mysql", "Postgresql", "Sqlite", "Redis", "Python",
+  "Java", "C", "Cplusplus", "Csharp", "Go", "Rust", "Php", "Ruby",
+  "Kotlin", "Swift", "Dart", "Lua", "R", "Scala", "Haskell", "Elixir",
+  "Clojure", "Erlang", "Fsharp", "Fortran", "Julia", "Perl", "Gnubash",
+  "Zsh", "Solidity", "Html5", "Css3", "Assemblyscript", "Webassembly",
+  "V", "Zig", "Nim", "Crystal", "Ocaml", "Elm", "Coffeescript",
+  "Groovy", "Purescript", "Racket", "D", "ExternalLink", "Facebook", "Figma",
   "Discord", "Tiktok", "Threads", "Youtube", "Whatsapp", "Telegram", "Reddit",
   "Twitch", "Pinterest", "Snapchat", "Gitlab", "Behance", "Dribbble",
   "Medium", "Devto", "Messenger", "Spotify", "Soundcloud", "Patreon",

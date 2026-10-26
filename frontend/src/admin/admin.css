@@ -139,6 +139,9 @@
 .cms-skill-actions, .cms-experience-actions { display: flex; gap: 3px; opacity: 0; }
 .cms-skill-row:hover .cms-skill-actions, .cms-skill-row:focus-within .cms-skill-actions, .cms-experience:hover .cms-experience-actions, .cms-experience:focus-within .cms-experience-actions { opacity: 1; }
 .cms-skill-actions button, .cms-experience-actions button { width: 23px; height: 23px; }
+.cms-skill-icon-field { margin-bottom: 12px; color: #52645a; font-size: 10px; font-weight: 700; }
+.cms-skill-icon-field > span { font-size: 12px; }
+.cms-skill-icon-field > small { display: block; margin-top: 4px; color: #737d78; font-size: 11px; font-weight: 500; }
 .cms-skill-add { display: flex; min-height: 58px; align-items: center; justify-content: center; gap: 7px; border: 1px dashed #ccd5e4; border-radius: 4px; color: #6d7e9d; background: #fbfcfe; font-size: 9px; font-weight: 700; }
 .cms-skill-add:hover { border-color: #8ca9e8; color: #245bd4; }
 .cms-timeline { margin-top: 16px; }

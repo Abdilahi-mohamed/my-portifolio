@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import type { IconName, PortfolioContent } from "../types";
 import { SocialBrandIcon, socialIconOptions } from "../socialIcons";
+import { isProgrammingLanguageIcon, ProgrammingLanguageIcon, programmingIconOptions } from "../programmingIcons";
 import { adminLogout, changeAdminPassword, loadAdminPortfolio, saveAdminPortfolio, uploadImage } from "./adminApi";
 
 type Project = PortfolioContent["projectsSection"]["projects"][number];
@@ -40,7 +41,7 @@ type EditorKind = "project" | "skill" | "experience" | "certificate";
 type EditorState = { kind: EditorKind; index: number | null };
 type Activity = { id: number; label: string; time: string };
 type GalleryItem = { url: string; file?: File };
-const skillGroups = ["Frontend", "Backend", "Tools"] as const;
+const skillGroups = ["Frontend", "Backend", "Databases", "Tools"] as const;
 const builtInSections = [
   { id: "about", label: "About", title: "About me" },
   { id: "home", label: "Home", title: "Welcome" },
@@ -140,6 +141,7 @@ function makeDraft(kind: EditorKind, item?: Project | Skill | Experience | Certi
       level: skill?.level.replace("%", "") ?? "85",
       category: skill?.category ?? "Frontend",
       color: skill?.color ?? "#2563eb",
+      icon: skill?.icon ?? "Code2",
     };
   }
   if (kind === "certificate") {
@@ -190,6 +192,7 @@ export function AdminDashboard({
   const [newSectionDescription, setNewSectionDescription] = useState("");
   const [iconPickerIndex, setIconPickerIndex] = useState<number | null>(null);
   const [iconSearch, setIconSearch] = useState("");
+  const [skillIconPickerOpen, setSkillIconPickerOpen] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -230,13 +233,16 @@ export function AdminDashboard({
   }, [notice]);
 
   useEffect(() => {
-    if (iconPickerIndex === null) return;
+    if (iconPickerIndex === null && !skillIconPickerOpen) return;
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setIconPickerIndex(null);
+      if (event.key === "Escape") {
+        setIconPickerIndex(null);
+        setSkillIconPickerOpen(false);
+      }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [iconPickerIndex]);
+  }, [iconPickerIndex, skillIconPickerOpen]);
 
   const projects = content?.projectsSection.projects ?? [];
   const skills = content?.skillsSection.skills ?? [];
@@ -518,7 +524,7 @@ export function AdminDashboard({
         level: `${Math.min(100, Math.max(0, Number(draft.level) || 0))}%`,
         category: skillGroups.includes(draft.category as typeof skillGroups[number]) ? draft.category : "Frontend",
         color: /^#[\da-fA-F]{6}$/.test(draft.color) ? draft.color : "#2563eb",
-        icon: index === null ? "Code2" : skills[index].icon,
+        icon: programmingIconOptions.find((option) => option.name === draft.icon)?.name ?? "Code2",
       };
       updateContent((current) => {
         const next = [...current.skillsSection.skills];
@@ -885,9 +891,9 @@ export function AdminDashboard({
               </section>
 
               <section className="cms-panel" id="skills">
-                <div className="cms-panel-heading"><div><span className="cms-section-index">02 / STACKS & FLUENCY</span><h2>Technical skills</h2><p>Manage skills across Frontend, Backend, and Tools.</p></div><button className="cms-add-link" onClick={() => openEditor("skill")} type="button"><Plus size={15} /> Add skill</button></div>
+                <div className="cms-panel-heading"><div><span className="cms-section-index">02 / STACKS & FLUENCY</span><h2>Technical skills</h2><p>Manage skills across Frontend, Backend, Databases, and Tools.</p></div><button className="cms-add-link" onClick={() => openEditor("skill")} type="button"><Plus size={15} /> Add skill</button></div>
                 <div className="cms-tabs" role="tablist" aria-label="Skill categories">{skillCategories.map((category) => <button aria-selected={skillFilter === category} className={skillFilter === category ? "is-active" : ""} key={category} onClick={() => setSkillFilter(category)} role="tab" type="button">{category}</button>)}</div>
-                <div className="cms-skills-grid">{visibleSkills.map(({ skill, index }) => <article className="cms-skill-row" key={`${skill.name}-${index}`}><span className="cms-skill-symbol" style={{ color: skill.color }}><Code2 size={17} /></span><div className="cms-skill-main"><div className="cms-skill-label"><strong>{skill.name}</strong><span>{skill.level}</span></div><div className="cms-meter"><i style={{ width: skill.level }} /></div><small>{skill.category ?? "Other"}</small></div><div className="cms-skill-actions"><button aria-label={`Edit ${skill.name}`} onClick={() => openEditor("skill", index)} type="button"><Settings2 size={14} /></button><button aria-label={`Delete ${skill.name}`} onClick={() => removeItem("skill", index)} type="button"><Trash2 size={14} /></button></div></article>)}<button className="cms-skill-add" onClick={() => openEditor("skill")} type="button"><Plus size={18} /><span>Add a skill</span></button></div>
+                <div className="cms-skills-grid">{visibleSkills.map(({ skill, index }) => <article className="cms-skill-row" key={`${skill.name}-${index}`}><span className="cms-skill-symbol" style={{ color: skill.color }}>{isProgrammingLanguageIcon(skill.icon) ? <ProgrammingLanguageIcon name={skill.icon} size={17} /> : <Code2 size={17} />}</span><div className="cms-skill-main"><div className="cms-skill-label"><strong>{skill.name}</strong><span>{skill.level}</span></div><div className="cms-meter"><i style={{ width: skill.level }} /></div><small>{skill.category ?? "Other"}</small></div><div className="cms-skill-actions"><button aria-label={`Edit ${skill.name}`} onClick={() => openEditor("skill", index)} type="button"><Settings2 size={14} /></button><button aria-label={`Delete ${skill.name}`} onClick={() => removeItem("skill", index)} type="button"><Trash2 size={14} /></button></div></article>)}<button className="cms-skill-add" onClick={() => openEditor("skill")} type="button"><Plus size={18} /><span>Add a skill</span></button></div>
               </section>
 
               <section className="cms-panel" id="experience">
@@ -1089,7 +1095,7 @@ export function AdminDashboard({
             </aside>
             <section aria-label="Portfolio summary" className="cms-kpis">
               <article><span className="cms-kpi-icon kpi-blue"><FolderKanban size={17} /></span><span className="cms-kpi-label">PROJECTS</span><strong>{projects.length.toString().padStart(2, "0")}</strong><small>Projects in your portfolio</small></article>
-              <article><span className="cms-kpi-icon kpi-green"><Code2 size={17} /></span><span className="cms-kpi-label">TECH STACK & LANGUAGES</span><strong>{skills.length.toString().padStart(2, "0")}</strong><small>Frontend, Backend & Tools</small></article>
+              <article><span className="cms-kpi-icon kpi-green"><Code2 size={17} /></span><span className="cms-kpi-label">TECH STACK & LANGUAGES</span><strong>{skills.length.toString().padStart(2, "0")}</strong><small>Frontend, Backend, Databases & Tools</small></article>
               <article><span className="cms-kpi-icon kpi-amber"><Award size={17} /></span><span className="cms-kpi-label">CERTIFICATES</span><strong>{certificates.length.toString().padStart(2, "0")}</strong><small>Certificates in your profile</small></article>
               <article><span className="cms-kpi-icon kpi-coral"><BriefcaseBusiness size={17} /></span><span className="cms-kpi-label">EXPERIENCE</span><strong>{experiences.length.toString().padStart(2, "0")}</strong><small>Workplaces in your timeline</small></article>
               <article><span className="cms-kpi-icon kpi-green"><ExternalLink size={17} /></span><span className="cms-kpi-label">SOCIAL PROFILES</span><strong>{content.contact.socials.length.toString().padStart(2, "0")}</strong><small>Profiles in your portfolio</small></article>
@@ -1120,7 +1126,7 @@ export function AdminDashboard({
           <label className="cms-input-label">GitHub repository URL<input onChange={(event) => setDraft({ ...draft, githubUrl: event.target.value })} type="url" value={draft.githubUrl} /></label>
           <label className="cms-input-label">LinkedIn post or project URL<input onChange={(event) => setDraft({ ...draft, linkedinUrl: event.target.value })} type="url" value={draft.linkedinUrl} /></label>
         </>}
-        {editor.kind === "skill" && <><label className="cms-input-label">Skill name<input autoFocus onChange={(event) => setDraft({ ...draft, name: event.target.value })} required value={draft.name} /></label><div className="cms-form-row"><label className="cms-input-label">Proficiency (%)<input max="100" min="0" onChange={(event) => setDraft({ ...draft, level: event.target.value })} required type="number" value={draft.level} /></label><label className="cms-input-label">Category<select onChange={(event) => setDraft({ ...draft, category: event.target.value })} required value={draft.category}><option value="Frontend">Frontend</option><option value="Backend">Backend</option><option value="Tools">Tools</option></select></label></div><label className="cms-input-label">Accent color<input onChange={(event) => setDraft({ ...draft, color: event.target.value })} type="color" value={draft.color} /></label></>}
+        {editor.kind === "skill" && <><label className="cms-input-label">Skill name<input autoFocus onChange={(event) => setDraft({ ...draft, name: event.target.value })} required value={draft.name} /></label><div className="cms-skill-icon-field"><span>Language, framework, or database icon</span><button aria-label="Choose technology icon" className="cms-social-icon-trigger" onClick={() => { setIconSearch(""); setSkillIconPickerOpen(true); }} type="button">{isProgrammingLanguageIcon(draft.icon) ? <ProgrammingLanguageIcon name={draft.icon} size={18} /> : <Code2 size={18} />}<span>{programmingIconOptions.find((option) => option.name === draft.icon)?.label ?? "Choose an icon"}</span><Search size={14} /></button><small>Search and select the matching technology logo.</small></div><div className="cms-form-row"><label className="cms-input-label">Proficiency (%)<input max="100" min="0" onChange={(event) => setDraft({ ...draft, level: event.target.value })} required type="number" value={draft.level} /></label><label className="cms-input-label">Category<select onChange={(event) => setDraft({ ...draft, category: event.target.value })} required value={draft.category}><option value="Frontend">Frontend</option><option value="Backend">Backend</option><option value="Databases">Databases</option><option value="Tools">Tools</option></select></label></div><label className="cms-input-label">Accent color<input onChange={(event) => setDraft({ ...draft, color: event.target.value })} type="color" value={draft.color} /></label></>}
         {editor.kind === "experience" && <>
           <label className="cms-input-label">Role or title<input autoFocus onChange={(event) => setDraft({ ...draft, role: event.target.value })} required value={draft.role} /></label>
           <div className="cms-form-row"><label className="cms-input-label">Company<input onChange={(event) => setDraft({ ...draft, company: event.target.value })} required value={draft.company} /></label><label className="cms-input-label">Date range<input onChange={(event) => setDraft({ ...draft, year: event.target.value })} required value={draft.year} /></label></div>
@@ -1144,6 +1150,7 @@ export function AdminDashboard({
         <div className="cms-modal-actions"><button className="cms-quiet-btn" onClick={closeEditor} type="button">Cancel</button><button className="cms-primary-btn" disabled={busy} type="submit">{busy ? "Uploading..." : editor.index === null ? "Add to portfolio" : "Save item"}</button></div>
       </form></section></div>}
       {iconPickerIndex !== null && <div className="cms-modal-backdrop cms-social-icon-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setIconPickerIndex(null); }}><section aria-labelledby="cms-social-icon-title" aria-modal="true" className="cms-modal cms-social-icon-dialog" role="dialog"><div className="cms-modal-heading"><div><span className="cms-section-index">SOCIAL PROFILE ICON</span><h2 id="cms-social-icon-title">Choose a platform</h2></div><button aria-label="Close icon picker" className="cms-icon-button" onClick={() => setIconPickerIndex(null)} type="button"><X size={18} /></button></div><label className="cms-social-icon-search"><Search aria-hidden="true" size={17} /><input autoFocus onChange={(event) => setIconSearch(event.target.value)} placeholder="Search social media..." type="search" value={iconSearch} /></label><div aria-label="Available social platforms" className="cms-social-icon-grid">{socialIconOptions.filter((option) => option.label.toLowerCase().includes(iconSearch.trim().toLowerCase())).map((option) => <button aria-pressed={content.contact.socials[iconPickerIndex]?.icon === option.name} className={content.contact.socials[iconPickerIndex]?.icon === option.name ? "is-selected" : ""} key={option.name} onClick={() => { updateSocial(iconPickerIndex, "icon", option.name); setIconPickerIndex(null); }} type="button"><SocialBrandIcon name={option.name} size={20} /><span>{option.label}</span></button>)}</div>{socialIconOptions.filter((option) => option.label.toLowerCase().includes(iconSearch.trim().toLowerCase())).length === 0 && <p className="cms-social-icon-empty">No icons match your search.</p>}</section></div>}
+      {skillIconPickerOpen && <div className="cms-modal-backdrop cms-social-icon-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setSkillIconPickerOpen(false); }}><section aria-labelledby="cms-skill-icon-title" aria-modal="true" className="cms-modal cms-social-icon-dialog" role="dialog"><div className="cms-modal-heading"><div><span className="cms-section-index">TECHNICAL SKILL ICON</span><h2 id="cms-skill-icon-title">Choose a technology</h2></div><button aria-label="Close skill icon picker" className="cms-icon-button" onClick={() => setSkillIconPickerOpen(false)} type="button"><X size={18} /></button></div><label className="cms-social-icon-search"><Search aria-hidden="true" size={17} /><input autoFocus onChange={(event) => setIconSearch(event.target.value)} placeholder="Search languages, frameworks, and databases..." type="search" value={iconSearch} /></label><div aria-label="Available technology icons" className="cms-social-icon-grid">{programmingIconOptions.filter((option) => option.label.toLowerCase().includes(iconSearch.trim().toLowerCase())).map((option) => <button aria-pressed={draft.icon === option.name} className={draft.icon === option.name ? "is-selected" : ""} key={option.name} onClick={() => { setDraft((current) => ({ ...current, icon: option.name })); setSkillIconPickerOpen(false); }} type="button">{isProgrammingLanguageIcon(option.name) ? <ProgrammingLanguageIcon name={option.name} size={20} /> : <Code2 size={20} />}<span>{option.label}</span></button>)}</div>{programmingIconOptions.filter((option) => option.label.toLowerCase().includes(iconSearch.trim().toLowerCase())).length === 0 && <p className="cms-social-icon-empty">No icons match your search.</p>}</section></div>}
     </div>
   );
 }

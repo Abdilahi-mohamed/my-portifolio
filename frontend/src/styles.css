@@ -65,13 +65,24 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 }
 
 .topbar-nav-link {
-  color: #59665f;
+  display: inline-flex;
+  min-height: 36px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 13px;
+  border: 1px solid rgb(16 64 45 / 12%);
+  border-radius: 8px;
+  color: #fff;
+  background: rgb(16 64 45 / 70%);
   font-size: 13px;
   font-weight: 600;
-  transition: color 150ms ease;
+  transition: background 150ms ease, transform 150ms ease;
 }
 
-.topbar-nav-link:hover { color: var(--green); }
+.topbar-nav-link:hover {
+  transform: translateY(-1px);
+  background: var(--green);
+}
 
 .edit-link, .empty-action {
   display: inline-flex;
@@ -970,7 +981,6 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
   .skill-category { margin-top: 9px; font-size: 10px; }
   .skill-groups { gap: 25px; }
   .skill-group-title { margin-bottom: 11px; font-size: 16px; }
-  .credentials-grid { grid-template-columns: 1fr; }
   .credential-panel { padding: 17px; }
   .certificate-card { grid-template-columns: 88px minmax(0, 1fr); gap: 12px; }
   .certificate-image-wrap, .experience-image-link { width: 88px; height: 76px; }
