@@ -221,7 +221,11 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
   font-weight: 700;
 }
 
-.profile-copy { padding-top: 18px; }
+.profile-copy {
+  min-width: 0;
+  flex: 1;
+  padding-top: 18px;
+}
 
 .eyebrow {
   margin: 0 0 8px;
@@ -236,6 +240,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
   font-family: "Manrope", sans-serif;
   font-weight: 800;
   letter-spacing: -.045em;
+  overflow-wrap: anywhere;
 }
 
 .profile-copy h1 { font-size: clamp(26px, 3.6vw, 38px); }
@@ -337,11 +342,15 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
+  gap: 16px;
   margin-bottom: 27px;
 }
 
+.section-heading > div { min-width: 0; }
 .section-heading .eyebrow { margin-bottom: 8px; }
 .section-heading h2 { font-size: clamp(30px, 4vw, 42px); }
+
+.project-count { flex: 0 0 auto; }
 
 .section-description {
   max-width: 580px;
@@ -680,10 +689,13 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 .certificate-card {
   display: grid;
   grid-template-columns: 112px minmax(0, 1fr);
+  min-width: 0;
   gap: 15px;
   padding: 15px 0;
   border-top: 1px solid #edf0ed;
 }
+
+.certificate-card:not(.has-image) .certificate-copy { grid-column: 1 / -1; }
 
 .certificate-image-wrap {
   display: block;
@@ -870,6 +882,9 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
   min-height: 66px;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  padding: 12px 0;
   border-top: 1px solid var(--line);
   color: #87918b;
   font-size: 12px;
@@ -908,6 +923,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
   .topbar { flex-wrap: wrap; justify-content: center; gap: 8px 16px; padding: 12px 0; }
   .wordmark { margin-right: auto; }
   .topbar-actions { position: static; width: 100%; justify-content: center; flex-wrap: wrap; gap: 12px 18px; transform: none; }
+  .topbar-actions .edit-link { margin-left: 8px; }
 }
 
 @media (max-width: 700px) {
@@ -946,6 +962,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
   .topbar { min-height: 62px; justify-content: center; gap: 8px; }
   .wordmark { margin-inline: auto; font-size: 14px; }
   .topbar-actions { justify-content: center; gap: 10px 14px; }
+  .topbar-actions .edit-link { margin-left: 0; }
   .topbar-nav-link { font-size: 12px; }
   .edit-link { min-height: 36px; padding: 0 10px; font-size: 12px; }
   .edit-link svg { display: none; }

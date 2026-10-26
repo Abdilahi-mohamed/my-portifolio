@@ -368,7 +368,7 @@ function App() {
             {certificates.length ? (
               <div className="certificate-list">
                 {certificates.map((certificate, index) => (
-                  <article className="certificate-card" key={`${certificate.title}-${index}`}>
+                  <article className={`certificate-card${certificate.image ? " has-image" : ""}`} key={`${certificate.title}-${index}`}>
                     {certificate.image && (
                       <a className="certificate-image-wrap" href={certificate.image} rel="noopener noreferrer" target="_blank">
                         <img alt={`${certificate.title} certificate`} loading="lazy" src={certificate.image} />
