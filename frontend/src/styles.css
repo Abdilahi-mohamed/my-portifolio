@@ -370,6 +370,58 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 
 .project-card:hover .project-image { transform: scale(1.025); }
 
+.project-gallery {
+  position: relative;
+  background: #e9eeeb;
+}
+
+.project-gallery > .project-image {
+  object-fit: contain;
+  transition: opacity 180ms ease;
+}
+
+.project-card:hover .project-gallery > .project-image { transform: none; }
+
+.project-gallery-arrow {
+  position: absolute;
+  top: 50%;
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border: 1px solid rgb(255 255 255 / 55%);
+  border-radius: 50%;
+  color: #25352c;
+  background: rgb(255 255 255 / 90%);
+  box-shadow: 0 3px 12px rgb(15 23 42 / 15%);
+  transform: translateY(-50%);
+  transition: background 150ms ease, color 150ms ease;
+}
+
+.project-gallery-arrow:hover { color: #fff; background: #2d6d58; }
+.project-gallery-arrow.is-previous { left: 12px; }
+.project-gallery-arrow.is-next { right: 12px; }
+
+.project-gallery-pagination {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  min-height: 39px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 7px 13px;
+  color: #fff;
+  background: linear-gradient(transparent, rgb(15 23 42 / 58%));
+}
+
+.project-gallery-pagination > span { font-size: 11px; font-variant-numeric: tabular-nums; }
+.project-gallery-pagination > div { display: flex; max-width: 70%; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
+.project-gallery-pagination button { width: 7px; height: 7px; padding: 0; border: 0; border-radius: 50%; background: rgb(255 255 255 / 58%); }
+.project-gallery-pagination button.is-active { background: #fff; box-shadow: 0 0 0 2px rgb(255 255 255 / 30%); }
+
 .project-image-placeholder {
   display: grid;
   width: 100%;

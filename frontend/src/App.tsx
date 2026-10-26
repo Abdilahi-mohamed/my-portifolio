@@ -4,6 +4,8 @@ import {
   ArrowUpRight,
   BriefcaseBusiness,
   Check,
+  ChevronLeft,
+  ChevronRight,
   Code2,
   ExternalLink,
   Figma,
@@ -30,6 +32,78 @@ import defaultPortfolio from "../../shared/portfolio.default.json";
 import type { PortfolioContent } from "./types";
 
 type ToastMessage = { title: string; detail?: string };
+
+function ProjectGallery({
+  title,
+  image,
+  gallery,
+}: {
+  title: string;
+  image: string;
+  gallery: string[];
+}) {
+  const images = image
+    ? [image, ...gallery.filter((url) => url && url !== image)]
+    : gallery.filter(Boolean);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const currentIndex = Math.min(activeIndex, Math.max(images.length - 1, 0));
+
+  if (images.length === 0) {
+    return (
+      <div className="project-image-wrap">
+        <div aria-label="Project preview not added" className="project-image-placeholder" role="img">
+          <span>Project preview</span>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div aria-label={`${title} screenshots`} className="project-image-wrap project-gallery">
+      <img
+        alt={`${title} screenshot ${currentIndex + 1} of ${images.length}`}
+        className="project-image"
+        loading="lazy"
+        src={images[currentIndex]}
+      />
+      {images.length > 1 && (
+        <>
+          <button
+            aria-label={`Previous ${title} screenshot`}
+            className="project-gallery-arrow is-previous"
+            onClick={() => setActiveIndex((currentIndex - 1 + images.length) % images.length)}
+            type="button"
+          >
+            <ChevronLeft size={21} />
+          </button>
+          <button
+            aria-label={`Next ${title} screenshot`}
+            className="project-gallery-arrow is-next"
+            onClick={() => setActiveIndex((currentIndex + 1) % images.length)}
+            type="button"
+          >
+            <ChevronRight size={21} />
+          </button>
+          <div aria-label="Choose screenshot" className="project-gallery-pagination">
+            <span aria-live="polite">{currentIndex + 1} / {images.length}</span>
+            <div>
+              {images.map((url, index) => (
+                <button
+                  aria-label={`Show ${title} screenshot ${index + 1}`}
+                  aria-pressed={index === currentIndex}
+                  className={index === currentIndex ? "is-active" : ""}
+                  key={`${url}-${index}`}
+                  onClick={() => setActiveIndex(index)}
+                  type="button"
+                />
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
 
 const icons = {
   ArrowUpRight,
@@ -201,13 +275,7 @@ function App() {
           <div className="project-grid">
             {projects.map((project) => (
               <article className="project-card" key={project.id || project.title}>
-                <div className="project-image-wrap">
-                  {project.image
-                    ? <img alt={`${project.title} preview`} className="project-image" loading="lazy" src={project.image} />
-                    : <div aria-label="Project preview not added" className="project-image-placeholder" role="img">
-                      <span>Project preview</span>
-                    </div>}
-                </div>
+                <ProjectGallery gallery={project.gallery ?? []} image={project.image} title={project.title} />
                 <div className="project-content">
                   <h3>{project.title}</h3>
                   {project.description && <p>{project.description}</p>}

@@ -33,7 +33,7 @@ This starts the Node API and React frontend and opens the public site in Chrome 
 
 Stop both local servers with `Ctrl+C`.
 
-Portfolio content is read from `backend/data/portfolio.json` when present, otherwise from `shared/portfolio.default.json`. Accepted contact messages are stored in `backend/data/messages.jsonl`. Project screenshots, profile photos, and cover photos uploaded through the admin panel are saved under `backend/data/uploads/` and served by the API, so image URLs remain stable across page refreshes and server restarts. Uploads accept PNG, JPEG, WebP, and GIF files up to 8 MB each. Keep this data directory on persistent storage when deploying. Runtime data files are ignored by Git. `PORT` changes the API port, and `FRONTEND_ORIGIN` configures the allowed browser origin.
+Portfolio content is read from `backend/data/portfolio.json` when present, otherwise from `shared/portfolio.default.json`. Accepted contact messages are stored in `backend/data/messages.jsonl`. Project screenshots, profile photos, and cover photos uploaded through the admin panel are saved under `backend/data/uploads/` and served by the API, so image URLs remain stable across page refreshes and server restarts. Each project supports up to 30 screenshots, shown in its own responsive portfolio carousel. Image uploads accept PNG, JPEG, WebP, and GIF files up to 8 MB each. Keep this data directory on persistent storage when deploying. Runtime data files are ignored by Git. `PORT` changes the API port, and `FRONTEND_ORIGIN` configures the allowed browser origin.
 
 ## Production builds
 

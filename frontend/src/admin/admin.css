@@ -697,3 +697,90 @@
   .cms-gallery-editor { grid-template-columns: 1fr 1fr; }
   .cms-project-options { flex-direction: column; gap: 9px; }
 }
+
+.cms-login-page {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  padding: 24px;
+  color: #111827;
+  background:
+    radial-gradient(ellipse at 11% 4%, rgb(220 252 231 / 72%), transparent 34%),
+    radial-gradient(ellipse at 89% 93%, rgb(220 252 231 / 63%), transparent 35%),
+    #f5f8fb;
+  font-family: "DM Sans", sans-serif;
+}
+
+.cms-login-card {
+  width: min(604px, 100%);
+  padding: clamp(34px, 6.5vw, 54px);
+  border: 1px solid #edf1f5;
+  border-radius: 32px;
+  background: #fff;
+  box-shadow: 0 24px 60px rgb(27 47 66 / 8%);
+}
+
+.cms-login-icon {
+  display: grid;
+  width: 88px;
+  height: 88px;
+  place-items: center;
+  margin: 0 auto 24px;
+  border: 1px solid #c9f4d7;
+  border-radius: 22px;
+  color: #16a34a;
+  background: #effcf3;
+  box-shadow: 0 2px 5px rgb(22 163 74 / 7%);
+}
+
+.cms-login-card h1 {
+  margin: 0;
+  color: #111827;
+  font-family: "Manrope", sans-serif;
+  font-size: clamp(25px, 5vw, 32px);
+  font-weight: 800;
+  letter-spacing: -.045em;
+  line-height: 1.2;
+  text-align: center;
+}
+
+.cms-login-intro {
+  margin: 12px 0 42px;
+  color: #718096;
+  font-size: clamp(15px, 2.5vw, 20px);
+  line-height: 1.5;
+  text-align: center;
+}
+
+.cms-login-card form { display: grid; gap: 26px; }
+.cms-login-card .cms-field { display: grid; gap: 10px; margin: 0; color: #3c4a5e; font-size: 15px; font-weight: 700; letter-spacing: .035em; }
+.cms-login-input { display: flex; min-height: 67px; align-items: center; gap: 17px; padding: 0 19px; border: 1px solid #dce4ee; border-radius: 16px; color: #94a3b8; background: #f9fafb; box-shadow: 0 2px 4px rgb(15 23 42 / 5%); transition: border-color 150ms ease, box-shadow 150ms ease; }
+.cms-login-input:focus-within { border-color: #22c55e; box-shadow: 0 0 0 4px rgb(34 197 94 / 12%); }
+.cms-login-input > svg { flex: none; }
+.cms-login-card .cms-login-input input { width: 100%; min-width: 0; height: 100%; padding: 0; border: 0; outline: 0; color: #172033; background: transparent; box-shadow: none; font-size: 17px; font-weight: 500; letter-spacing: 0; }
+.cms-login-card .cms-login-input input::placeholder { color: #94a3b8; opacity: 1; }
+.cms-login-password-toggle { display: grid; flex: none; place-items: center; padding: 4px; border: 0; color: #94a3b8; background: transparent; }
+.cms-login-password-toggle:hover { color: #15803d; }
+.cms-login-card .cms-error { margin: -12px 0 0; color: #b42318; font-size: 13px; }
+.cms-login-submit { display: flex; min-height: 66px; align-items: center; justify-content: center; gap: 10px; border: 0; border-radius: 16px; color: #fff; background: #19c45a; box-shadow: 0 5px 10px rgb(22 163 74 / 19%); font-size: 18px; font-weight: 800; letter-spacing: .025em; transition: background 150ms ease, transform 150ms ease; }
+.cms-login-submit:hover:not(:disabled) { background: #16ad4f; transform: translateY(-1px); }
+.cms-login-submit:disabled { opacity: .65; cursor: wait; }
+.cms-login-back { display: block; width: fit-content; margin: 23px auto 0; color: #64748b; font-size: 13px; text-decoration: none; }
+.cms-login-back:hover { color: #15803d; }
+
+.cms-gallery-upload { margin: 7px 0 15px; padding: 13px; border: 1px dashed #b6c9bf; border-radius: 9px; background: #f7faf8; }
+.cms-gallery-upload > span { display: block; margin-bottom: 8px; color: #52645a; font-size: 10px; line-height: 1.5; }
+.cms-gallery-replace { position: relative; display: grid; width: 24px; height: 24px; overflow: hidden; place-items: center; border: 1px solid #e3e8e4; border-radius: 4px; color: #38463f; background: rgb(255 255 255 / 94%); cursor: pointer; }
+.cms-gallery-replace:hover { color: #2d6d58; border-color: #b6c9bf; }
+.cms-gallery-replace input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+
+@media (max-width: 520px) {
+  .cms-login-page { padding: 16px; }
+  .cms-login-card { padding: 35px 24px 28px; border-radius: 24px; }
+  .cms-login-icon { width: 76px; height: 76px; margin-bottom: 20px; border-radius: 19px; }
+  .cms-login-intro { margin: 10px 0 32px; }
+  .cms-login-card form { gap: 21px; }
+  .cms-login-input { min-height: 60px; gap: 12px; padding-inline: 14px; border-radius: 13px; }
+  .cms-login-card .cms-login-input input { font-size: 15px; }
+  .cms-login-submit { min-height: 59px; border-radius: 13px; font-size: 16px; }
+}

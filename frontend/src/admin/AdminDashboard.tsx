@@ -21,6 +21,7 @@ import {
   MoveDown,
   MoveUp,
   Plus,
+  Replace,
   Search,
   Settings2,
   Sparkles,
@@ -600,7 +601,26 @@ export function AdminDashboard({
     }
     const newItems = accepted.map((file) => ({ file, url: URL.createObjectURL(file) }));
     setGalleryItems((items) => [...items, ...newItems]);
-    if (newItems[0]) setDraft((current) => ({ ...current, image: newItems[0].url }));
+    if (newItems[0]) {
+      setDraft((current) => ({ ...current, image: current.image || newItems[0].url }));
+    }
+  };
+
+  const replaceGalleryItem = (index: number, file: File | undefined) => {
+    if (!file) return;
+    if (!["image/jpeg", "image/png", "image/webp", "image/gif"].includes(file.type) || file.size > 8 * 1024 * 1024) {
+      setNotice("Choose a PNG, JPEG, WebP, or GIF image up to 8 MB.");
+      return;
+    }
+    const replacement = { file, url: URL.createObjectURL(file) };
+    const previous = galleryItems[index];
+    if (previous?.file) URL.revokeObjectURL(previous.url);
+    setGalleryItems((items) => items.map((item, itemIndex) =>
+      itemIndex === index ? replacement : item,
+    ));
+    if (draft.image === previous?.url) {
+      setDraft((current) => ({ ...current, image: replacement.url }));
+    }
   };
 
   const addCertificateImage = (file: File | undefined) => {
@@ -630,8 +650,11 @@ export function AdminDashboard({
   const removeGalleryItem = (index: number) => {
     const removed = galleryItems[index];
     if (removed?.file) URL.revokeObjectURL(removed.url);
-    setGalleryItems((items) => items.filter((_, itemIndex) => itemIndex !== index));
-    if (draft.image === removed?.url) setDraft((current) => ({ ...current, image: "" }));
+    const remaining = galleryItems.filter((_, itemIndex) => itemIndex !== index);
+    setGalleryItems(remaining);
+    if (draft.image === removed?.url) {
+      setDraft((current) => ({ ...current, image: remaining[0]?.url ?? "" }));
+    }
   };
 
   const moveGalleryItem = (index: number, direction: -1 | 1) => {
@@ -1078,12 +1101,15 @@ export function AdminDashboard({
         {editor.kind === "project" && <>
           <label className="cms-input-label">Project title<input autoFocus onChange={(event) => setDraft({ ...draft, title: event.target.value })} required value={draft.title} /></label>
           <label className="cms-input-label">Short description<textarea onChange={(event) => setDraft({ ...draft, description: event.target.value })} required rows={2} value={draft.description} /></label>
-          <label className="cms-input-label">Upload project image from your device <small>Required for new projects. PNG, JPEG, WebP, or GIF · max 8 MB</small><input accept="image/png,image/jpeg,image/webp,image/gif" onChange={(event) => { addGalleryFiles(event.currentTarget.files); event.currentTarget.value = ""; }} type="file" /></label>
+          <div className="cms-gallery-upload">
+            <span><strong>System screenshots</strong><br />Add at least one image for a new project. Select several at once, or add and replace images later. PNG, JPEG, WebP, or GIF · up to 8 MB each · 30 images per project.</span>
+            <label className="cms-file-choice">Add project images<input accept="image/png,image/jpeg,image/webp,image/gif" multiple onChange={(event) => { addGalleryFiles(event.currentTarget.files); event.currentTarget.value = ""; }} type="file" /></label>
+          </div>
           {galleryItems.length > 0 && <div className="cms-gallery-editor" aria-label="Project image gallery">
             {galleryItems.map((item, imageIndex) => <div className={`cms-gallery-item${draft.image === item.url ? " is-thumbnail" : ""}`} key={`${item.url}-${imageIndex}`}>
               <img alt={`Project gallery image ${imageIndex + 1}`} src={item.url} />
               <button className="cms-gallery-thumbnail" onClick={() => setDraft((current) => ({ ...current, image: item.url }))} type="button">{draft.image === item.url ? "Thumbnail" : "Set thumbnail"}</button>
-              <div className="cms-gallery-controls"><button aria-label="Move image left" disabled={imageIndex === 0} onClick={() => moveGalleryItem(imageIndex, -1)} type="button"><MoveUp size={13} /></button><button aria-label="Move image right" disabled={imageIndex === galleryItems.length - 1} onClick={() => moveGalleryItem(imageIndex, 1)} type="button"><MoveDown size={13} /></button><button aria-label="Remove image" onClick={() => removeGalleryItem(imageIndex)} type="button"><Trash2 size={13} /></button></div>
+              <div className="cms-gallery-controls"><label aria-label={`Replace image ${imageIndex + 1}`} className="cms-gallery-replace" title="Replace image"><Replace size={13} /><input accept="image/png,image/jpeg,image/webp,image/gif" aria-label={`Choose replacement image ${imageIndex + 1}`} onChange={(event) => { replaceGalleryItem(imageIndex, event.currentTarget.files?.[0]); event.currentTarget.value = ""; }} type="file" /></label><button aria-label="Move image left" disabled={imageIndex === 0} onClick={() => moveGalleryItem(imageIndex, -1)} type="button"><MoveUp size={13} /></button><button aria-label="Move image right" disabled={imageIndex === galleryItems.length - 1} onClick={() => moveGalleryItem(imageIndex, 1)} type="button"><MoveDown size={13} /></button><button aria-label="Remove image" onClick={() => removeGalleryItem(imageIndex)} type="button"><Trash2 size={13} /></button></div>
             </div>)}
           </div>}
           <label className="cms-input-label">GitHub repository URL<input onChange={(event) => setDraft({ ...draft, githubUrl: event.target.value })} type="url" value={draft.githubUrl} /></label>
