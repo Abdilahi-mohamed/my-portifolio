@@ -77,17 +77,37 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 async function getPortfolio(): Promise<unknown> {
   let portfolio: unknown;
+  let loadedFromDisk = true;
   try {
     portfolio = JSON.parse(await readFile(portfolioFile, "utf8")) as unknown;
   } catch (error) {
     if (!isRecord(error) || error.code !== "ENOENT") throw error;
+    loadedFromDisk = false;
     portfolio = JSON.parse(await readFile(defaultPortfolioFile, "utf8")) as unknown;
   }
   if (isRecord(portfolio)) {
     const normalized = { ...portfolio };
+    let migratedDatabaseSkill = false;
     if (!("customSections" in normalized)) normalized.customSections = [];
     if (!("experience" in normalized)) normalized.experience = [];
     if (!("certificates" in normalized)) normalized.certificates = [];
+    if (isRecord(normalized.skillsSection) && Array.isArray(normalized.skillsSection.skills)) {
+      normalized.skillsSection = {
+        ...normalized.skillsSection,
+        skills: normalized.skillsSection.skills.map((skill) => {
+          if (
+            !isRecord(skill) ||
+            skill.category === "Databases" ||
+            !(
+              (typeof skill.name === "string" && skill.name.trim().toLowerCase() === "mongodb") ||
+              skill.icon === "Mongodb"
+            )
+          ) return skill;
+          migratedDatabaseSkill = true;
+          return { ...skill, category: "Databases" };
+        }),
+      };
+    }
     if (Array.isArray(normalized.navigation)) {
       const navigation = [...normalized.navigation];
       const aboutIndex = navigation.findIndex((item) => isRecord(item) && item.id === "about");
@@ -120,6 +140,7 @@ async function getPortfolio(): Promise<unknown> {
         }),
       };
     }
+    if (loadedFromDisk && migratedDatabaseSkill) await savePortfolio(normalized);
     return normalized;
   }
   return portfolio;

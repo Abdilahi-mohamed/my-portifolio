@@ -67,6 +67,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 .topbar-nav-link {
   display: inline-flex;
   min-height: 36px;
+  flex: 0 0 auto;
   align-items: center;
   justify-content: center;
   padding: 0 13px;
@@ -76,6 +77,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
   background: rgb(16 64 45 / 70%);
   font-size: 13px;
   font-weight: 600;
+  white-space: nowrap;
   transition: background 150ms ease, transform 150ms ease;
 }
 
@@ -100,6 +102,12 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
   transition: border-color 160ms ease, transform 160ms ease;
 }
 
+.topbar-actions .edit-link {
+  flex: 0 0 auto;
+  margin-left: 12px;
+  white-space: nowrap;
+}
+
 .edit-link:hover, .empty-action:hover {
   transform: translateY(-1px);
   border-color: #b6c9bf;
@@ -107,6 +115,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 
 .profile {
   overflow: hidden;
+  margin-top: 14px;
   border: 1px solid var(--line);
   border-radius: 16px;
   background: #fff;
