@@ -392,15 +392,15 @@ function App() {
             {experience.length ? (
               <div className="experience-list">
                 {experience.map((item, index) => (
-                  <article className="experience-card" key={`${item.role}-${item.company ?? ""}-${index}`}>
+                  <article className={`experience-card${item.image ? " has-image" : ""}`} key={`${item.role}-${item.company ?? ""}-${index}`}>
                     <span aria-hidden="true" className="experience-marker" />
+                    {item.image && <a className="experience-image-link" href={item.image} rel="noopener noreferrer" target="_blank"><img alt={`${item.company || item.role} workplace`} loading="lazy" src={item.image} /></a>}
                     <div className="experience-copy">
                       <span className="experience-year">{item.year}</span>
                       <h4>{item.role}</h4>
                       {item.company && <p className="experience-company">{item.company}</p>}
                       {item.location && <p className="experience-location">{item.location}</p>}
                       {item.desc && <p className="experience-description">{item.desc}</p>}
-                      {item.image && <a className="experience-image-link" href={item.image} rel="noopener noreferrer" target="_blank"><img alt={`${item.company || item.role} workplace`} loading="lazy" src={item.image} /></a>}
                     </div>
                   </article>
                 ))}

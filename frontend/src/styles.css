@@ -713,7 +713,9 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 
 .experience-card {
   position: relative;
-  display: flex;
+  display: grid;
+  grid-template-columns: 11px 112px minmax(0, 1fr);
+  align-items: start;
   gap: 14px;
   padding: 0 0 22px;
 }
@@ -742,16 +744,16 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 }
 
 .experience-copy { min-width: 0; }
+.experience-card:not(.has-image) .experience-copy { grid-column: 2 / -1; }
 .experience-location { margin: 5px 0 0; color: #829087; font-size: 11px; }
 
 .experience-image-link {
   display: block;
-  width: min(100%, 420px);
-  height: 170px;
-  margin-top: 13px;
+  width: 112px;
+  height: 88px;
   overflow: hidden;
   border: 1px solid var(--line);
-  border-radius: 9px;
+  border-radius: 8px;
   background: #f3f6f3;
 }
 
@@ -971,7 +973,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
   .credentials-grid { grid-template-columns: 1fr; }
   .credential-panel { padding: 17px; }
   .certificate-card { grid-template-columns: 88px minmax(0, 1fr); gap: 12px; }
-  .certificate-image-wrap { height: 76px; }
+  .certificate-image-wrap, .experience-image-link { width: 88px; height: 76px; }
   .socials-grid { grid-template-columns: 1fr; gap: 9px; }
   .social-card { min-height: 60px; }
   .section-description { font-size: 13px; }
