@@ -40,3 +40,9 @@ Portfolio content is read from `backend/data/portfolio.json` when present, other
 ```sh
 npm run build
 ```
+
+## Deploy frontend and backend separately
+
+The production frontend calls `https://my-portifolio-olgy.onrender.com` for API requests. To use a different backend, set `VITE_API_URL` in the Vercel project settings and redeploy. The Render backend allows the deployed Vercel origin by default; `FRONTEND_ORIGIN` can optionally contain a comma-separated list of additional allowed origins.
+
+Because the frontend and backend use different domains, the admin session cookie is configured for cross-site HTTPS requests. Set a private `ADMIN_PASSWORD` in Render before making the site public.

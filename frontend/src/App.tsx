@@ -27,6 +27,7 @@ import {
   Zap,
 } from "lucide-react";
 import { SocialBrandIcon, socialIconOptions } from "./socialIcons";
+import { apiUrl, resolvePortfolioMedia } from "./api";
 import { isProgrammingLanguageIcon, ProgrammingLanguageIcon } from "./programmingIcons";
 import defaultPortfolio from "../../shared/portfolio.default.json";
 import type { IconName, PortfolioContent } from "./types";
@@ -136,10 +137,10 @@ function App() {
 
   useEffect(() => {
     const controller = new AbortController();
-    fetch("/api/portfolio", { signal: controller.signal })
+    fetch(apiUrl("/api/portfolio"), { signal: controller.signal })
       .then(async (response) => {
         if (!response.ok) throw new Error("Portfolio content could not be loaded.");
-        setPortfolio((await response.json()) as PortfolioContent);
+        setPortfolio(resolvePortfolioMedia((await response.json()) as PortfolioContent));
       })
       .catch((error: unknown) => {
         if (error instanceof Error && error.name === "AbortError") return;

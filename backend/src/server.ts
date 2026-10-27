@@ -12,11 +12,12 @@ const projectDirectory = dirname(backendDirectory);
 config({ path: join(backendDirectory, ".env") });
 const adminUsername = process.env.ADMIN_USERNAME ?? "abdillahip";
 const port = Number(process.env.PORT ?? 4000);
-const allowedOrigin = process.env.FRONTEND_ORIGIN ?? "http://localhost:5173";
-const allowedOrigins = new Set([allowedOrigin]);
-if (!process.env.FRONTEND_ORIGIN) {
-  allowedOrigins.add("http://127.0.0.1:5173");
-}
+const allowedOrigins = new Set([
+  "https://my-portifolio-blush-five.vercel.app",
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+  ...(process.env.FRONTEND_ORIGIN?.split(",").map((origin) => origin.trim()).filter(Boolean) ?? []),
+]);
 const messageFile = join(backendDirectory, "data", "messages.jsonl");
 const portfolioFile = join(backendDirectory, "data", "portfolio.json");
 const adminPasswordFile = join(backendDirectory, "data", "admin-password.json");
@@ -235,14 +236,14 @@ function usernameMatches(received: string): boolean {
 function setSessionCookie(response: ServerResponse, token: string, secure: boolean): void {
   response.setHeader(
     "Set-Cookie",
-    `${cookieName}=${encodeURIComponent(token)}; HttpOnly; SameSite=Strict; Path=/api/admin; Max-Age=${sessionDuration / 1000}${secure ? "; Secure" : ""}`,
+    `${cookieName}=${encodeURIComponent(token)}; HttpOnly; SameSite=${secure ? "None" : "Strict"}; Path=/api/admin; Max-Age=${sessionDuration / 1000}${secure ? "; Secure" : ""}`,
   );
 }
 
 function clearSessionCookie(response: ServerResponse, secure: boolean): void {
   response.setHeader(
     "Set-Cookie",
-    `${cookieName}=; HttpOnly; SameSite=Strict; Path=/api/admin; Max-Age=0${secure ? "; Secure" : ""}`,
+    `${cookieName}=; HttpOnly; SameSite=${secure ? "None" : "Strict"}; Path=/api/admin; Max-Age=0${secure ? "; Secure" : ""}`,
   );
 }
 

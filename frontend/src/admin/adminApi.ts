@@ -1,4 +1,5 @@
 import type { PortfolioContent } from "../types";
+import { apiUrl, resolvePortfolioMedia } from "../api";
 
 type SessionResponse = { authenticated: string; configured: string; authDisabled: string };
 type MessageResponse = { message?: string };
@@ -8,7 +9,7 @@ async function parseJson<T>(response: Response): Promise<T> {
 }
 
 export async function checkAdminSession(): Promise<SessionResponse> {
-  const response = await fetch("/api/admin/session", { credentials: "same-origin" });
+  const response = await fetch(apiUrl("/api/admin/session"), { credentials: "include" });
   const body = await parseJson<SessionResponse & MessageResponse>(response);
   if (!response.ok) {
     throw new Error(body.message ?? "Could not verify admin session.");
@@ -17,9 +18,9 @@ export async function checkAdminSession(): Promise<SessionResponse> {
 }
 
 export async function adminLogin(username: string, password: string): Promise<void> {
-  const response = await fetch("/api/admin/login", {
+  const response = await fetch(apiUrl("/api/admin/login"), {
     method: "POST",
-    credentials: "same-origin",
+    credentials: "include",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ username, password }),
   });
@@ -33,9 +34,9 @@ export async function changeAdminPassword(
   currentPassword: string,
   newPassword: string,
 ): Promise<string> {
-  const response = await fetch("/api/admin/password", {
+  const response = await fetch(apiUrl("/api/admin/password"), {
     method: "POST",
-    credentials: "same-origin",
+    credentials: "include",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ currentPassword, newPassword }),
   });
@@ -47,25 +48,25 @@ export async function changeAdminPassword(
 }
 
 export async function adminLogout(): Promise<void> {
-  await fetch("/api/admin/logout", {
+  await fetch(apiUrl("/api/admin/logout"), {
     method: "POST",
-    credentials: "same-origin",
+    credentials: "include",
   });
 }
 
 export async function loadAdminPortfolio(): Promise<PortfolioContent> {
-  const response = await fetch("/api/admin/portfolio", { credentials: "same-origin" });
+  const response = await fetch(apiUrl("/api/admin/portfolio"), { credentials: "include" });
   const body = await parseJson<PortfolioContent & MessageResponse>(response);
   if (!response.ok || !("hero" in body)) {
     throw new Error(body.message ?? "Could not load portfolio content.");
   }
-  return body;
+  return resolvePortfolioMedia(body);
 }
 
 export async function saveAdminPortfolio(content: PortfolioContent): Promise<string> {
-  const response = await fetch("/api/admin/portfolio", {
+  const response = await fetch(apiUrl("/api/admin/portfolio"), {
     method: "PUT",
-    credentials: "same-origin",
+    credentials: "include",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(content),
   });
@@ -77,9 +78,9 @@ export async function saveAdminPortfolio(content: PortfolioContent): Promise<str
 }
 
 export async function uploadImage(file: File): Promise<string> {
-  const response = await fetch("/api/admin/uploads", {
+  const response = await fetch(apiUrl("/api/admin/uploads"), {
     method: "POST",
-    credentials: "same-origin",
+    credentials: "include",
     headers: { "Content-Type": file.type },
     body: file,
   });
@@ -87,5 +88,5 @@ export async function uploadImage(file: File): Promise<string> {
   if (!response.ok || !body.url) {
     throw new Error(body.message ?? "The image could not be uploaded.");
   }
-  return body.url;
+  return apiUrl(body.url);
 }
