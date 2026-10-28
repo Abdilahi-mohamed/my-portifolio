@@ -5,13 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "web": "node scripts/start-web.mjs",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/server.js"
   },
   "dependencies": {
-    "dotenv": "^16.4.7",
-    "mongodb": "^7.7.0"
+    "@aws-sdk/client-s3": "^3.1158.0",
+    "dotenv": "^16.4.7"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",

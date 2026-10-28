@@ -1,48 +1,88 @@
-# ABdilahi Portfolio
+# Abdilahi Portfolio
 
-A responsive React and TypeScript portfolio with a separate Node.js and TypeScript API and persistent local content storage.
+A responsive React and TypeScript portfolio with a Node.js API. Portfolio content and admin/contact data are persisted as JSON files; uploaded media is stored in Backblaze B2 using its S3-compatible API.
 
 ## Project layout
 
-- `frontend/` — React, Vite, TypeScript, and the portfolio UI.
-- `backend/src/` — Node.js HTTP API.
-- `backend/data/` — Locally saved portfolio content, uploaded project images, and contact messages (created at runtime).
-- `backend/scripts/` — Local development startup launcher.
-- `backend/.env.example` — Optional backend environment variables.
-- `backend/package-lock.json` and `frontend/package-lock.json` — Independent app dependency locks.
-- `shared/portfolio.default.json` — Default portfolio content served when no local override exists.
+- `frontend/` — React, Vite, TypeScript, and the public portfolio/admin UI.
+- `backend/src/` — Node.js API, file-backed data storage, admin authentication, and B2 integration.
+- `backend/scripts/migrate-mongodb-to-files.mjs` — Optional, read-only one-time export for installations with existing MongoDB data.
+- `backend/data/` — Persistent JSON data and legacy uploaded images (ignored by Git).
+- `backend/.env.example` — Backend environment variable template.
+- `shared/portfolio.default.json` — Initial content used only if no portfolio JSON exists.
 
 ## First-time setup
 
-Install each application’s dependencies:
+Install dependencies:
 
 ```sh
 npm install --prefix backend
 npm install --prefix frontend
 ```
 
-Optional: create `backend/.env` to set `PORT`, `FRONTEND_ORIGIN`, `ADMIN_USERNAME`, or an initial `ADMIN_PASSWORD`. The admin page defaults to username `abdillahip` and password `abdillahi17859` when no credentials are configured. After signing in, use **Change password** in the admin dashboard to set a private password; it is saved as a salted hash under `backend/data/` and remains active after restarting the server. Change the default credentials before deploying publicly, keep the `backend/data/` directory on persistent storage, and do not commit `.env`.
+Copy `backend/.env.example` to `backend/.env`. Configure `ADMIN_USERNAME`, a private `ADMIN_PASSWORD`, and `FRONTEND_ORIGIN`. Create a Backblaze B2 bucket and a bucket-scoped application key, then set `B2_ENDPOINT`, `B2_REGION`, `B2_BUCKET_NAME`, `B2_ACCESS_KEY_ID`, and `B2_APPLICATION_KEY`. The endpoint and region must match the bucket's Backblaze region. Never put B2 credentials in frontend environment variables or commit `.env`.
 
-## Start the website
+The backend starts without B2 credentials to serve existing local media during setup, but image uploads are disabled until all B2 settings are configured. A partial B2 configuration prevents startup. Once configured, startup copies supported legacy images from `backend/data/uploads/` to the bucket without changing their existing `/api/media/<filename>` URLs. The local copies are retained as a fallback and are not deleted by migration.
+
+### Migrate a previous MongoDB installation
+
+If the current portfolio or admin account has newer data in MongoDB than the local JSON files, first stop the old backend and keep its existing `MONGODB_URI` (and optional `MONGODB_DB`) in `backend/.env`. Temporarily install the migration-only driver, then run the read-only export:
 
 ```sh
-npm run web
+npm install --prefix backend --no-save --package-lock=false mongodb
+node backend/scripts/migrate-mongodb-to-files.mjs
+npm prune --prefix backend
 ```
 
-This starts the Node API and React frontend and opens the public site in Chrome on Windows (or the default browser on macOS/Linux).
+The script exports the portfolio, admin account hash, active sessions, contact messages, and supported GridFS images. It does not alter MongoDB. Existing local files that differ are backed up under `DATA_DIRECTORY/migration-backup/`. Configure B2 before starting the new backend so it can copy the exported image files into the bucket. If the MongoDB host is unreachable, the script fails before changing data files; the existing local JSON and image files remain available.
 
-Stop both local servers with `Ctrl+C`.
+## Run the application
 
-Portfolio content is read from `backend/data/portfolio.json` when present, otherwise from `shared/portfolio.default.json`. Accepted contact messages are stored in `backend/data/messages.jsonl`. Project screenshots, profile photos, and cover photos uploaded through the admin panel are saved under `backend/data/uploads/` and served by the API, so image URLs remain stable across page refreshes and server restarts. Each project supports up to 30 screenshots, shown in its own responsive portfolio carousel. Image uploads accept PNG, JPEG, WebP, and GIF files up to 8 MB each. Keep this data directory on persistent storage when deploying. Runtime data files are ignored by Git. `PORT` changes the API port, and `FRONTEND_ORIGIN` configures the allowed browser origin.
+Start the backend API:
 
-## Production builds
+```sh
+npm run dev
+```
+
+In another terminal, start the frontend:
+
+```sh
+npm run dev --prefix frontend
+```
+
+`npm run web` starts only the React frontend and opens the public site in Chrome on Windows (or the default browser on macOS/Linux). Run it from the repository root.
+
+## Persistence, migration, and deployment
+
+- `backend/data/portfolio.json` is the primary portfolio store. Existing content is reused; `shared/portfolio.default.json` seeds it only when the file is absent.
+- Admin password hashes, admin sessions, and contact submissions are stored in `admin-password.json`, `admin-sessions.json`, and `contact-messages.json` within `DATA_DIRECTORY`. Passwords are stored as salted scrypt hashes.
+- JSON writes use a serialized in-process queue and atomic temporary-file replacement. The backend must run as a single instance against one persistent, writable data directory. This is not a distributed lock, so do not mount the same JSON directory in multiple backend instances.
+- Configure `DATA_DIRECTORY` to a persistent volume on production hosts. Ephemeral filesystems lose JSON data on redeploy/restart. Back up the data directory separately. B2 stores media objects, not structured content.
+- Existing local uploads are copied to B2 on first startup with working credentials and remain on disk as a fallback. Configure B2 before using image uploads in the admin dashboard.
+- The running project no longer uses a database or database driver. The optional exporter is the only migration-time exception; it does not delete or modify the source database. Keep that database until the file export and B2 image migration have been verified.
+- B2 private bucket objects are served through the backend media route, so the frontend never receives storage credentials. Use an application key scoped to the portfolio bucket and grant only the read, write, and delete capabilities needed by this API.
+
+## API reference
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| `GET` | `/api/health` | API readiness and current media storage mode. |
+| `GET` | `/api/health/storage` | Storage-mode health check. |
+| `GET` | `/api/portfolio` | Public portfolio content. |
+| `GET` | `/api/media/:filename` | Retrieve an uploaded image from B2 (or a legacy local image). |
+| `POST` | `/api/contact` | Validate and persist a contact submission in JSON. |
+| `GET` | `/api/admin/session` | Check admin session/configuration status. |
+| `POST` | `/api/admin/login` | Sign in and issue an HttpOnly session cookie. |
+| `POST` | `/api/admin/logout` | Revoke the current admin session. |
+| `POST` | `/api/admin/password` | Change the admin password. |
+| `POST` | `/api/admin/uploads` | Upload an authenticated image to B2 (maximum 8 MB). |
+| `GET` | `/api/admin/portfolio` | Load portfolio content in the CMS. |
+| `PUT` | `/api/admin/portfolio` | Validate and atomically save portfolio content. |
+
+## Build
 
 ```sh
 npm run build
 ```
 
-## Deploy frontend and backend separately
-
-The production frontend calls `https://my-portifolio-olgy.onrender.com` for API requests. To use a different backend, set `VITE_API_URL` in the Vercel project settings and redeploy. The Render backend allows the deployed Vercel origin by default; `FRONTEND_ORIGIN` can optionally contain a comma-separated list of additional allowed origins.
-
-Because the frontend and backend use different domains, the admin session cookie is configured for cross-site HTTPS requests. Set a private `ADMIN_PASSWORD` in Render before making the site public.
+For separate frontend/backend deployments, set `VITE_API_URL` in the frontend deployment to the backend base URL. Set `FRONTEND_ORIGIN` on the backend to the deployed frontend origin; multiple origins can be comma-separated. When the admin UI and API use separate HTTPS domains, the session cookie uses cross-site `SameSite=None; Secure` settings.

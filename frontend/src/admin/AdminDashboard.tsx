@@ -778,8 +778,8 @@ export function AdminDashboard({
     event.preventDefault();
     setPasswordError("");
     setPasswordNotice("");
-    if (newPassword.length < 8) {
-      setPasswordError("Use at least 8 characters for your new password.");
+    if (newPassword.length < 7) {
+      setPasswordError("Use at least 7 characters for your new password.");
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -1040,7 +1040,7 @@ export function AdminDashboard({
                 <div className="cms-panel-heading"><div><span className="cms-section-index">ADMIN ACCOUNT</span><h2>Change password</h2><p>Update the password used to open portfolio management. Your current session will remain active.</p></div></div>
                 <form className="cms-password-form" onSubmit={(event) => { void submitPasswordChange(event); }}>
                   <label className="cms-input-label">Current password<input autoComplete="current-password" onChange={(event) => setCurrentPassword(event.target.value)} required type="password" value={currentPassword} /></label>
-                  <label className="cms-input-label">New password<input autoComplete="new-password" minLength={8} maxLength={128} onChange={(event) => setNewPassword(event.target.value)} required type="password" value={newPassword} /><small>Use at least 8 characters.</small></label>
+                  <label className="cms-input-label">New password<input autoComplete="new-password" minLength={7} maxLength={128} onChange={(event) => setNewPassword(event.target.value)} required type="password" value={newPassword} /><small>Use at least 7 characters.</small></label>
                   <label className="cms-input-label">Confirm new password<input autoComplete="new-password" onChange={(event) => setConfirmPassword(event.target.value)} required type="password" value={confirmPassword} /></label>
                   {passwordError && <p className="cms-error" role="alert">{passwordError}</p>}
                   {passwordNotice && <p className="cms-password-notice" role="status">{passwordNotice}</p>}

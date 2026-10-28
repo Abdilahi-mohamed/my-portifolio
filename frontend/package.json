@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "web": "node ../backend/scripts/start-web.mjs",
+    "web": "node scripts/start-web.mjs",
     "build": "tsc -b && vite build",
     "preview": "vite preview"
   },

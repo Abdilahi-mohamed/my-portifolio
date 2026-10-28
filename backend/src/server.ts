@@ -1,8 +1,15 @@
 import { createHash, randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
-import { appendFile, mkdir, readFile, rename, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, rename, unlink, writeFile } from "node:fs/promises";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
-import { dirname, join } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+  DeleteObjectCommand,
+  GetObjectCommand,
+  HeadObjectCommand,
+  PutObjectCommand,
+  S3Client,
+} from "@aws-sdk/client-s3";
 import { config } from "dotenv";
 import { isPortfolioContent } from "./portfolioValidation.js";
 
@@ -10,41 +17,125 @@ const serverDirectory = dirname(fileURLToPath(import.meta.url));
 const backendDirectory = dirname(serverDirectory);
 const projectDirectory = dirname(backendDirectory);
 config({ path: join(backendDirectory, ".env") });
-const adminUsername = process.env.ADMIN_USERNAME ?? "abdillahip";
+let adminUsername = process.env.ADMIN_USERNAME?.trim() ?? "";
 const port = Number(process.env.PORT ?? 4000);
+const dataDirectory = resolve(backendDirectory, process.env.DATA_DIRECTORY ?? "data");
 const allowedOrigins = new Set([
   "https://my-portifolio-blush-five.vercel.app",
   "http://localhost:5173",
   "http://127.0.0.1:5173",
-  ...(process.env.FRONTEND_ORIGIN?.split(",").map((origin) => origin.trim()).filter(Boolean) ?? []),
+  ...(process.env.FRONTEND_ORIGIN?.split(",")
+    .map((origin) => origin.trim().replace(/\/+$/, ""))
+    .filter(Boolean) ?? []),
 ]);
-const messageFile = join(backendDirectory, "data", "messages.jsonl");
-const portfolioFile = join(backendDirectory, "data", "portfolio.json");
-const adminPasswordFile = join(backendDirectory, "data", "admin-password.json");
+const portfolioFile = join(dataDirectory, "portfolio.json");
+const adminPasswordFile = join(dataDirectory, "admin-password.json");
+const adminSessionsFile = join(dataDirectory, "admin-sessions.json");
+const contactMessagesFile = join(dataDirectory, "contact-messages.json");
 const uploadDirectory = join(backendDirectory, "data", "uploads");
 const defaultPortfolioFile = join(projectDirectory, "shared", "portfolio.default.json");
 const maxBodyBytes = 10_000;
 const maxPortfolioBytes = 1_000_000;
 const maxUploadBytes = 8 * 1024 * 1024;
-const sessions = new Map<string, number>();
+const uploadMimeTypes: Record<string, string> = {
+  jpg: "image/jpeg",
+  png: "image/png",
+  webp: "image/webp",
+  gif: "image/gif",
+};
 const loginAttempts = new Map<string, { count: number; resetAt: number }>();
+const contactAttempts = new Map<string, { count: number; resetAt: number }>();
 const sessionDuration = 8 * 60 * 60 * 1000;
 const cookieName = "portfolio_admin";
 type PasswordRecord = { salt: string; hash: string };
-
-function createPasswordRecord(password: string): PasswordRecord {
-  const salt = randomBytes(16).toString("hex");
-  return { salt, hash: scryptSync(password, salt, 64).toString("hex") };
-}
-
-let adminPasswordRecord = createPasswordRecord(process.env.ADMIN_PASSWORD ?? "abdillahi17859");
-
+type AdminSession = {
+  tokenHash: string;
+  createdAt: string;
+  expiresAt: string;
+};
 type ContactMessage = {
   name: string;
   email: string;
   subject: string;
   message: string;
 };
+
+function createPasswordRecord(password: string): PasswordRecord {
+  const salt = randomBytes(16).toString("hex");
+  return { salt, hash: scryptSync(password, salt, 64).toString("hex") };
+}
+
+let adminPasswordRecord: PasswordRecord | null = null;
+let adminSessions: AdminSession[] = [];
+let fileWriteQueue: Promise<void> = Promise.resolve();
+
+const b2Endpoint = process.env.B2_ENDPOINT?.trim() ?? "";
+const b2Bucket = process.env.B2_BUCKET_NAME?.trim() ?? "";
+const b2AccessKeyId = process.env.B2_ACCESS_KEY_ID?.trim() ?? "";
+const b2ApplicationKey = process.env.B2_APPLICATION_KEY?.trim() ?? "";
+const b2Region = process.env.B2_REGION?.trim() ||
+  (/s3\.([a-z0-9-]+)\.backblazeb2\.com/i.exec(b2Endpoint)?.[1] ?? "");
+const b2Settings = [b2Endpoint, b2Bucket, b2AccessKeyId, b2ApplicationKey, b2Region];
+const b2Configured = b2Settings.every(Boolean);
+const b2Client = (() => {
+  if (!b2Settings.some(Boolean)) return null;
+  if (!b2Configured) {
+    throw new Error(
+      "Configure B2_ENDPOINT, B2_BUCKET_NAME, B2_ACCESS_KEY_ID, B2_APPLICATION_KEY, and B2_REGION together.",
+    );
+  }
+  const endpoint = new URL(
+    /^[a-z][a-z\d+.-]*:\/\//i.test(b2Endpoint) ? b2Endpoint : `https://${b2Endpoint}`,
+  );
+  if (endpoint.protocol !== "https:") {
+    throw new Error("B2_ENDPOINT must use HTTPS.");
+  }
+  return new S3Client({
+    endpoint: endpoint.toString().replace(/\/+$/, ""),
+    region: b2Region,
+    credentials: {
+      accessKeyId: b2AccessKeyId,
+      secretAccessKey: b2ApplicationKey,
+    },
+    forcePathStyle: true,
+  });
+})();
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function serializeFileWrite<T>(operation: () => Promise<T>): Promise<T> {
+  const result = fileWriteQueue.then(operation);
+  fileWriteQueue = result.then(() => undefined, () => undefined);
+  return result;
+}
+
+async function writeJsonFile(file: string, value: unknown): Promise<void> {
+  await mkdir(dirname(file), { recursive: true });
+  const temporaryFile = `${file}.${process.pid}.${randomBytes(8).toString("hex")}.tmp`;
+  try {
+    await writeFile(temporaryFile, `${JSON.stringify(value, null, 2)}\n`, {
+      encoding: "utf8",
+      flag: "wx",
+      mode: 0o600,
+    });
+    await rename(temporaryFile, file);
+  } catch (error) {
+    try {
+      await unlink(temporaryFile);
+    } catch (cleanupError) {
+      if (!isRecord(cleanupError) || cleanupError.code !== "ENOENT") {
+        console.error("Unable to clean up a temporary data file:", cleanupError);
+      }
+    }
+    throw error;
+  }
+}
+
+async function readJsonFile(file: string): Promise<unknown> {
+  return JSON.parse(await readFile(file, "utf8")) as unknown;
+}
 
 function respond(
   response: ServerResponse,
@@ -72,23 +163,16 @@ async function readJson(request: IncomingMessage, maxBytes = maxBodyBytes): Prom
   return JSON.parse(Buffer.concat(chunks).toString("utf8"));
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-async function getPortfolio(): Promise<unknown> {
+async function loadInitialPortfolio(): Promise<unknown> {
   let portfolio: unknown;
-  let loadedFromDisk = true;
   try {
     portfolio = JSON.parse(await readFile(portfolioFile, "utf8")) as unknown;
   } catch (error) {
     if (!isRecord(error) || error.code !== "ENOENT") throw error;
-    loadedFromDisk = false;
     portfolio = JSON.parse(await readFile(defaultPortfolioFile, "utf8")) as unknown;
   }
   if (isRecord(portfolio)) {
     const normalized = { ...portfolio };
-    let migratedDatabaseSkill = false;
     if (!("customSections" in normalized)) normalized.customSections = [];
     if (!("experience" in normalized)) normalized.experience = [];
     if (!("certificates" in normalized)) normalized.certificates = [];
@@ -104,7 +188,6 @@ async function getPortfolio(): Promise<unknown> {
               skill.icon === "Mongodb"
             )
           ) return skill;
-          migratedDatabaseSkill = true;
           return { ...skill, category: "Databases" };
         }),
       };
@@ -141,20 +224,31 @@ async function getPortfolio(): Promise<unknown> {
         }),
       };
     }
-    if (loadedFromDisk && migratedDatabaseSkill) await savePortfolio(normalized);
     return normalized;
   }
   return portfolio;
 }
 
+async function initializePortfolio(): Promise<void> {
+  await mkdir(dataDirectory, { recursive: true });
+  try {
+    await readJsonFile(portfolioFile);
+  } catch (error) {
+    if (!isRecord(error) || error.code !== "ENOENT") throw error;
+    await serializeFileWrite(async () => writeJsonFile(portfolioFile, await loadInitialPortfolio()));
+  }
+}
+
+async function getPortfolio(): Promise<unknown> {
+  return readJsonFile(portfolioFile);
+}
+
 async function savePortfolio(content: unknown): Promise<void> {
-  await mkdir(dirname(portfolioFile), { recursive: true });
-  const temporaryFile = `${portfolioFile}.${randomBytes(6).toString("hex")}.tmp`;
-  await writeFile(temporaryFile, `${JSON.stringify(content, null, 2)}\n`, {
-    encoding: "utf8",
-    mode: 0o600,
+  await serializeFileWrite(async () => {
+    const stored = await readJsonFile(portfolioFile);
+    await writeJsonFile(portfolioFile, content);
+    await removeObsoleteMedia(stored, content);
   });
-  await rename(temporaryFile, portfolioFile);
 }
 
 function getCookie(request: IncomingMessage, name: string): string | undefined {
@@ -169,18 +263,23 @@ function getCookie(request: IncomingMessage, name: string): string | undefined {
   return undefined;
 }
 
-function hasAdminSession(request: IncomingMessage): boolean {
+async function hasAdminSession(request: IncomingMessage): Promise<boolean> {
   const token = getCookie(request, cookieName);
-  const expiresAt = token ? sessions.get(token) : undefined;
-  if (!token || !expiresAt) return false;
-  if (expiresAt <= Date.now()) {
-    sessions.delete(token);
-    return false;
+  if (!token) return false;
+  const tokenHash = createHash("sha256").update(token).digest("hex");
+  const session = adminSessions.find(
+    (item) => item.tokenHash === tokenHash && Date.parse(item.expiresAt) > Date.now(),
+  );
+  if (session) return true;
+  const remaining = adminSessions.filter((item) => item.tokenHash !== tokenHash);
+  if (remaining.length !== adminSessions.length) {
+    adminSessions = remaining;
+    await serializeFileWrite(() => writeJsonFile(adminSessionsFile, adminSessions));
   }
-  return true;
+  return false;
 }
 
-async function loadAdminPassword(): Promise<void> {
+async function loadLegacyAdminPassword(): Promise<void> {
   try {
     const parsed: unknown = JSON.parse(await readFile(adminPasswordFile, "utf8"));
     if (
@@ -192,6 +291,9 @@ async function loadAdminPassword(): Promise<void> {
     ) {
       throw new Error("The stored admin password data is invalid.");
     }
+    if (typeof parsed.username === "string" && parsed.username.trim()) {
+      adminUsername = parsed.username.trim();
+    }
     adminPasswordRecord = { salt: parsed.salt, hash: parsed.hash };
   } catch (error) {
     if (isRecord(error) && error.code === "ENOENT") return;
@@ -199,14 +301,50 @@ async function loadAdminPassword(): Promise<void> {
   }
 }
 
+async function loadAdminAccount(): Promise<void> {
+  await loadLegacyAdminPassword();
+  if (!adminPasswordRecord && process.env.ADMIN_PASSWORD) {
+    adminPasswordRecord = createPasswordRecord(process.env.ADMIN_PASSWORD);
+  }
+
+  let sessions: unknown;
+  try {
+    sessions = await readJsonFile(adminSessionsFile);
+  } catch (error) {
+    if (!isRecord(error) || error.code !== "ENOENT") throw error;
+    sessions = [];
+  }
+  if (!Array.isArray(sessions)) {
+    throw new Error("The stored admin sessions data is invalid.");
+  }
+  adminSessions = sessions.map((session) => {
+    if (
+      !isRecord(session) ||
+      typeof session.tokenHash !== "string" ||
+      !/^[\da-f]{64}$/i.test(session.tokenHash) ||
+      typeof session.createdAt !== "string" ||
+      typeof session.expiresAt !== "string" ||
+      !Number.isFinite(Date.parse(session.expiresAt))
+    ) {
+      throw new Error("The stored admin sessions data is invalid.");
+    }
+    return {
+      tokenHash: session.tokenHash,
+      createdAt: session.createdAt,
+      expiresAt: session.expiresAt,
+    };
+  }).filter((session) => Date.parse(session.expiresAt) > Date.now());
+  await serializeFileWrite(() => writeJsonFile(adminSessionsFile, adminSessions));
+}
+
 async function saveAdminPassword(record: PasswordRecord): Promise<void> {
-  await mkdir(dirname(adminPasswordFile), { recursive: true });
-  const temporaryFile = `${adminPasswordFile}.${randomBytes(6).toString("hex")}.tmp`;
-  await writeFile(temporaryFile, `${JSON.stringify(record)}\n`, {
-    encoding: "utf8",
-    mode: 0o600,
-  });
-  await rename(temporaryFile, adminPasswordFile);
+  if (!adminUsername) {
+    throw new Error("Admin username is not configured.");
+  }
+  await serializeFileWrite(() => writeJsonFile(adminPasswordFile, {
+    username: adminUsername,
+    ...record,
+  }));
 }
 
 function localAdminBypassEnabled(request: IncomingMessage): boolean {
@@ -217,17 +355,19 @@ function localAdminBypassEnabled(request: IncomingMessage): boolean {
     isLoopback;
 }
 
-function isAdminAuthenticated(request: IncomingMessage): boolean {
-  return localAdminBypassEnabled(request) || hasAdminSession(request);
+async function isAdminAuthenticated(request: IncomingMessage): Promise<boolean> {
+  return localAdminBypassEnabled(request) || await hasAdminSession(request);
 }
 
 function passwordMatches(received: string): boolean {
+  if (!adminPasswordRecord) return false;
   const receivedHash = scryptSync(received, adminPasswordRecord.salt, 64);
   const configuredHash = Buffer.from(adminPasswordRecord.hash, "hex");
   return timingSafeEqual(receivedHash, configuredHash);
 }
 
 function usernameMatches(received: string): boolean {
+  if (!adminUsername) return false;
   const receivedHash = createHash("sha256").update(received).digest();
   const configuredHash = createHash("sha256").update(adminUsername).digest();
   return timingSafeEqual(receivedHash, configuredHash);
@@ -249,6 +389,104 @@ function clearSessionCookie(response: ServerResponse, secure: boolean): void {
 
 function isSecureRequest(request: IncomingMessage): boolean {
   return request.headers["x-forwarded-proto"] === "https";
+}
+
+function mediaFilenameSet(value: unknown, filenames = new Set<string>()): Set<string> {
+  if (typeof value === "string") {
+    const match = /\/api\/media\/([a-f0-9]{32}\.(?:png|jpg|webp|gif))(?:[?#]|$)/.exec(value);
+    if (match) filenames.add(match[1]);
+  } else if (Array.isArray(value)) {
+    value.forEach((item) => mediaFilenameSet(item, filenames));
+  } else if (isRecord(value)) {
+    Object.values(value).forEach((item) => mediaFilenameSet(item, filenames));
+  }
+  return filenames;
+}
+
+async function removeMediaFile(filename: string): Promise<void> {
+  if (b2Client) {
+    await b2Client.send(new DeleteObjectCommand({ Bucket: b2Bucket, Key: filename }));
+  }
+  try {
+    await unlink(join(uploadDirectory, filename));
+  } catch (error) {
+    if (!isRecord(error) || error.code !== "ENOENT") throw error;
+  }
+}
+
+async function removeObsoleteMedia(previous: unknown, next: unknown): Promise<void> {
+  const retained = mediaFilenameSet(next);
+  for (const filename of mediaFilenameSet(previous)) {
+    if (!retained.has(filename)) await removeMediaFile(filename);
+  }
+}
+
+function mediaContentType(filename: string): string {
+  const extension = filename.split(".").at(-1);
+  return extension ? uploadMimeTypes[extension] ?? "application/octet-stream" : "application/octet-stream";
+}
+
+function isValidImage(image: Buffer, extension: string): boolean {
+  return (
+    (extension === "jpg" && image.length >= 3 && image[0] === 0xff && image[1] === 0xd8 && image[2] === 0xff) ||
+    (extension === "png" && image.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))) ||
+    (extension === "webp" && image.toString("ascii", 0, 4) === "RIFF" && image.toString("ascii", 8, 12) === "WEBP") ||
+    (extension === "gif" && ["GIF87a", "GIF89a"].includes(image.toString("ascii", 0, 6)))
+  );
+}
+
+function isObjectNotFound(error: unknown): boolean {
+  return isRecord(error) && (
+    error.name === "NotFound" ||
+    error.name === "NoSuchKey" ||
+    (isRecord(error.$metadata) && error.$metadata.httpStatusCode === 404)
+  );
+}
+
+async function importLegacyUploads(): Promise<void> {
+  if (!b2Client) return;
+  let filenames: string[];
+  try {
+    filenames = await readdir(uploadDirectory);
+  } catch (error) {
+    if (isRecord(error) && error.code === "ENOENT") return;
+    throw error;
+  }
+
+  for (const filename of filenames) {
+    if (!/^[a-f0-9]{32}\.(?:png|jpg|webp|gif)$/.test(filename)) continue;
+    try {
+      await b2Client.send(new HeadObjectCommand({ Bucket: b2Bucket, Key: filename }));
+      continue;
+    } catch (error) {
+      if (!isObjectNotFound(error)) throw error;
+    }
+    const image = await readFile(join(uploadDirectory, filename));
+    if (image.length === 0 || image.length > maxUploadBytes || !isValidImage(image, filename.split(".").at(-1) ?? "")) {
+      console.warn(`Skipping invalid or oversized legacy image: ${filename}`);
+      continue;
+    }
+    await b2Client.send(new PutObjectCommand({
+      Bucket: b2Bucket,
+      Key: filename,
+      Body: image,
+      ContentLength: image.length,
+      ContentType: mediaContentType(filename),
+      CacheControl: "public, max-age=31536000, immutable",
+    }));
+  }
+}
+
+async function createAdminSession(response: ServerResponse, secure: boolean): Promise<void> {
+  const token = randomBytes(32).toString("base64url");
+  const now = new Date();
+  adminSessions.push({
+    tokenHash: createHash("sha256").update(token).digest("hex"),
+    createdAt: now.toISOString(),
+    expiresAt: new Date(now.getTime() + sessionDuration).toISOString(),
+  });
+  await serializeFileWrite(() => writeJsonFile(adminSessionsFile, adminSessions));
+  setSessionCookie(response, token, secure);
 }
 
 function validateMessage(value: unknown): ContactMessage | null {
@@ -284,7 +522,28 @@ function validateMessage(value: unknown): ContactMessage | null {
   return message;
 }
 
-const server = createServer(async (request, response) => {
+const server = createServer((request, response) => {
+  void handleRequest(request, response).catch((error: unknown) => {
+    console.error("Unhandled API request error:", error);
+    if (response.headersSent) {
+      response.destroy();
+    } else {
+      respond(response, 500, { message: "The request could not be completed." });
+    }
+  });
+});
+
+async function handleRequest(
+  request: IncomingMessage,
+  response: ServerResponse,
+): Promise<void> {
+  response.setHeader("X-Content-Type-Options", "nosniff");
+  response.setHeader("X-Frame-Options", "DENY");
+  response.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  if (isSecureRequest(request)) {
+    response.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+  }
+
   const origin = request.headers.origin;
   if (origin && !allowedOrigins.has(origin)) {
     respond(response, 403, { message: "This origin is not allowed." });
@@ -305,8 +564,11 @@ const server = createServer(async (request, response) => {
   }
 
   const url = new URL(request.url ?? "/", `http://${request.headers.host ?? "localhost"}`);
-  if (request.method === "GET" && url.pathname === "/api/health") {
-    respond(response, 200, { status: "ok" });
+  if (
+    request.method === "GET" &&
+    (url.pathname === "/api/health" || url.pathname === "/api/health/storage")
+  ) {
+    respond(response, 200, { status: "ok", storage: b2Client ? "backblaze-b2" : "legacy-local" });
     return;
   }
   if (request.method === "GET" && url.pathname === "/api/portfolio") {
@@ -327,15 +589,29 @@ const server = createServer(async (request, response) => {
   const mediaMatch = /^\/api\/media\/([a-f0-9]{32}\.(?:png|jpg|webp|gif))$/.exec(url.pathname);
   if (request.method === "GET" && mediaMatch) {
     try {
-      const filePath = join(uploadDirectory, mediaMatch[1]);
-      const image = await readFile(filePath);
-      const extension = mediaMatch[1].split(".").at(-1);
-      const contentType = extension === "jpg" ? "image/jpeg" : `image/${extension}`;
+      const filename = mediaMatch[1];
+      let image: Buffer;
+      let contentType = mediaContentType(filename);
+      if (b2Client) {
+        try {
+          const storedObject = await b2Client.send(new GetObjectCommand({
+            Bucket: b2Bucket,
+            Key: filename,
+          }));
+          if (!storedObject.Body) throw new Error("The B2 object has no response body.");
+          image = Buffer.from(await storedObject.Body.transformToByteArray());
+          if (storedObject.ContentType) contentType = storedObject.ContentType;
+        } catch (error) {
+          if (!isObjectNotFound(error)) throw error;
+          image = await readFile(join(uploadDirectory, filename));
+        }
+      } else {
+        image = await readFile(join(uploadDirectory, filename));
+      }
       response.writeHead(200, {
         "Content-Type": contentType,
         "Content-Length": image.byteLength,
         "Cache-Control": "public, max-age=31536000, immutable",
-        "X-Content-Type-Options": "nosniff",
       });
       response.end(image);
     } catch (error) {
@@ -352,8 +628,8 @@ const server = createServer(async (request, response) => {
   if (url.pathname.startsWith("/api/admin/")) {
     if (request.method === "GET" && url.pathname === "/api/admin/session") {
       respond(response, 200, {
-        authenticated: isAdminAuthenticated(request) ? "true" : "false",
-        configured: "true",
+        authenticated: await isAdminAuthenticated(request) ? "true" : "false",
+        configured: adminUsername && adminPasswordRecord ? "true" : "false",
         authDisabled: localAdminBypassEnabled(request) ? "true" : "false",
       });
       return;
@@ -376,7 +652,9 @@ const server = createServer(async (request, response) => {
         if (
           !isRecord(body) ||
           typeof body.username !== "string" ||
-          typeof body.password !== "string"
+          typeof body.password !== "string" ||
+          body.username.length > 100 ||
+          body.password.length > 128
         ) {
           respond(response, 400, { message: "Enter your username and password." });
           return;
@@ -392,20 +670,23 @@ const server = createServer(async (request, response) => {
           return;
         }
         loginAttempts.delete(clientAddress);
-        const token = randomBytes(32).toString("base64url");
-        sessions.set(token, now + sessionDuration);
-        setSessionCookie(response, token, isSecureRequest(request));
+        await createAdminSession(response, isSecureRequest(request));
         respond(response, 200, { message: "Signed in successfully." });
       } catch (error) {
-        respond(response, error instanceof SyntaxError ? 400 : 413, {
-          message: error instanceof SyntaxError ? "The request body must contain valid JSON." : "The request is too large.",
-        });
+        if (error instanceof SyntaxError) {
+          respond(response, 400, { message: "The request body must contain valid JSON." });
+        } else if (error instanceof Error && error.message === "Request body is too large.") {
+          respond(response, 413, { message: "The request is too large." });
+        } else {
+          console.error("Unable to sign in to admin:", error);
+          respond(response, 500, { message: "Sign-in could not be completed." });
+        }
       }
       return;
     }
 
     if (request.method === "POST" && url.pathname === "/api/admin/password") {
-      if (!isAdminAuthenticated(request)) {
+      if (!await isAdminAuthenticated(request)) {
         respond(response, 401, { message: "Sign in to change the admin password." });
         return;
       }
@@ -423,18 +704,17 @@ const server = createServer(async (request, response) => {
           respond(response, 401, { message: "The current password is incorrect." });
           return;
         }
-        if (body.newPassword.length < 8 || body.newPassword.length > 128) {
-          respond(response, 400, { message: "The new password must be between 8 and 128 characters." });
+        if (body.newPassword.length < 7 || body.newPassword.length > 128) {
+          respond(response, 400, { message: "The new password must be between 7 and 128 characters." });
           return;
         }
 
         const nextPasswordRecord = createPasswordRecord(body.newPassword);
         await saveAdminPassword(nextPasswordRecord);
         adminPasswordRecord = nextPasswordRecord;
-        sessions.clear();
-        const token = randomBytes(32).toString("base64url");
-        sessions.set(token, Date.now() + sessionDuration);
-        setSessionCookie(response, token, isSecureRequest(request));
+        adminSessions = [];
+        await serializeFileWrite(() => writeJsonFile(adminSessionsFile, adminSessions));
+        await createAdminSession(response, isSecureRequest(request));
         respond(response, 200, { message: "Admin password changed successfully." });
       } catch (error) {
         if (error instanceof SyntaxError) {
@@ -451,15 +731,23 @@ const server = createServer(async (request, response) => {
 
     if (request.method === "POST" && url.pathname === "/api/admin/logout") {
       const token = getCookie(request, cookieName);
-      if (token) sessions.delete(token);
+      if (token) {
+        const tokenHash = createHash("sha256").update(token).digest("hex");
+        adminSessions = adminSessions.filter((session) => session.tokenHash !== tokenHash);
+        await serializeFileWrite(() => writeJsonFile(adminSessionsFile, adminSessions));
+      }
       clearSessionCookie(response, isSecureRequest(request));
       respond(response, 200, { message: "Signed out." });
       return;
     }
 
     if (request.method === "POST" && url.pathname === "/api/admin/uploads") {
-      if (!isAdminAuthenticated(request)) {
+      if (!await isAdminAuthenticated(request)) {
         respond(response, 401, { message: "Sign in to upload project images." });
+        return;
+      }
+      if (!b2Client) {
+        respond(response, 503, { message: "Configure Backblaze B2 storage before uploading images." });
         return;
       }
       const contentType = request.headers["content-type"];
@@ -487,18 +775,19 @@ const server = createServer(async (request, response) => {
           chunks.push(buffer);
         }
         const image = Buffer.concat(chunks);
-        const isValidImage =
-          (extension === "jpg" && image.length >= 3 && image[0] === 0xff && image[1] === 0xd8 && image[2] === 0xff) ||
-          (extension === "png" && image.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))) ||
-          (extension === "webp" && image.toString("ascii", 0, 4) === "RIFF" && image.toString("ascii", 8, 12) === "WEBP") ||
-          (extension === "gif" && ["GIF87a", "GIF89a"].includes(image.toString("ascii", 0, 6)));
-        if (!isValidImage || image.length === 0) {
+        if (!isValidImage(image, extension) || image.length === 0) {
           respond(response, 400, { message: "The selected file is not a valid supported image." });
           return;
         }
-        await mkdir(uploadDirectory, { recursive: true });
         const filename = `${randomBytes(16).toString("hex")}.${extension}`;
-        await writeFile(join(uploadDirectory, filename), image, { mode: 0o600, flag: "wx" });
+        await b2Client.send(new PutObjectCommand({
+          Bucket: b2Bucket,
+          Key: filename,
+          Body: image,
+          ContentLength: image.length,
+          ContentType: contentType?.split(";")[0].trim(),
+          CacheControl: "public, max-age=31536000, immutable",
+        }));
         response.writeHead(201, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });
         response.end(JSON.stringify({ url: `/api/media/${filename}` }));
       } catch (error) {
@@ -514,7 +803,7 @@ const server = createServer(async (request, response) => {
 
     if ((request.method === "GET" || request.method === "PUT") &&
       (url.pathname === "/api/admin/portfolio" || url.pathname === "/api/admin/portfolio/")) {
-      if (!isAdminAuthenticated(request)) {
+      if (!await isAdminAuthenticated(request)) {
         respond(response, 401, { message: "Sign in to manage portfolio content." });
         return;
       }
@@ -572,6 +861,22 @@ const server = createServer(async (request, response) => {
     return;
   }
 
+  const now = Date.now();
+  const clientAddress = request.socket.remoteAddress ?? "unknown";
+  const currentAttempts = contactAttempts.get(clientAddress);
+  if (currentAttempts && currentAttempts.resetAt <= now) {
+    contactAttempts.delete(clientAddress);
+  }
+  const attempts = contactAttempts.get(clientAddress);
+  if (attempts && attempts.count >= 5) {
+    respond(response, 429, { message: "Too many messages were submitted. Try again later." });
+    return;
+  }
+  contactAttempts.set(clientAddress, {
+    count: (attempts?.count ?? 0) + 1,
+    resetAt: attempts?.resetAt ?? now + 15 * 60_000,
+  });
+
   try {
     const input = await readJson(request);
     const message = validateMessage(input);
@@ -581,12 +886,20 @@ const server = createServer(async (request, response) => {
       });
       return;
     }
-    await mkdir(dirname(messageFile), { recursive: true });
-    await appendFile(
-      messageFile,
-      `${JSON.stringify({ ...message, receivedAt: new Date().toISOString() })}\n`,
-      { encoding: "utf8", mode: 0o600 },
-    );
+    await serializeFileWrite(async () => {
+      let messages: unknown;
+      try {
+        messages = await readJsonFile(contactMessagesFile);
+      } catch (error) {
+        if (!isRecord(error) || error.code !== "ENOENT") throw error;
+        messages = [];
+      }
+      if (!Array.isArray(messages)) {
+        throw new Error("The stored contact messages data is invalid.");
+      }
+      messages.push({ ...message, receivedAt: new Date().toISOString() });
+      await writeJsonFile(contactMessagesFile, messages);
+    });
     respond(response, 201, { message: "Your message was received successfully." });
   } catch (error) {
     if (error instanceof SyntaxError) {
@@ -598,16 +911,38 @@ const server = createServer(async (request, response) => {
       respond(response, 500, { message: "The message could not be saved. Please try again." });
     }
   }
-});
+}
 
 async function startServer(): Promise<void> {
-  await loadAdminPassword();
+  await initializePortfolio();
+  await loadAdminAccount();
+  await importLegacyUploads();
   server.listen(port, () => {
     console.log(`Portfolio API listening on http://localhost:${port}`);
+    console.log(`Structured data directory: ${dataDirectory}`);
+    console.log(`Media storage: ${b2Client ? "Backblaze B2" : "local legacy files (uploads disabled)"}`);
   });
 }
 
+let shuttingDown = false;
+function shutdown(signal: string): void {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  console.log(`Received ${signal}; shutting down the portfolio API.`);
+  server.close((error) => {
+    if (error) {
+      console.error("Unable to close the HTTP server cleanly:", error);
+      process.exitCode = 1;
+    }
+    b2Client?.destroy();
+  });
+}
+
+process.once("SIGINT", () => shutdown("SIGINT"));
+process.once("SIGTERM", () => shutdown("SIGTERM"));
+
 void startServer().catch((error: unknown) => {
   console.error("Unable to start the portfolio API:", error);
+  b2Client?.destroy();
   process.exitCode = 1;
 });
