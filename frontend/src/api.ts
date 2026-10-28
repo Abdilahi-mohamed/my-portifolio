@@ -1,9 +1,7 @@
 import type { PortfolioContent } from "./types";
 
 const deployedApiUrl = "https://my-portifolio-3fo7.onrender.com";
-const configuredApiUrl = import.meta.env.VITE_API_URL?.trim();
-const apiBaseUrl = (configuredApiUrl || (import.meta.env.PROD ? deployedApiUrl : ""))
-  .replace(/\/+$/, "");
+const apiBaseUrl = import.meta.env.PROD ? deployedApiUrl : "";
 
 export function apiUrl(path: string): string {
   return `${apiBaseUrl}${path.startsWith("/") ? path : `/${path}`}`;
