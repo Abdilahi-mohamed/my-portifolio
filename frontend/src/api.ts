@@ -1,6 +1,6 @@
 import type { PortfolioContent } from "./types";
 
-const deployedApiUrl = "https://my-portifolio-olgy.onrender.com";
+const deployedApiUrl = "https://my-portifolio-3fo7.onrender.com";
 const configuredApiUrl = import.meta.env.VITE_API_URL?.trim();
 const apiBaseUrl = (configuredApiUrl || (import.meta.env.PROD ? deployedApiUrl : ""))
   .replace(/\/+$/, "");

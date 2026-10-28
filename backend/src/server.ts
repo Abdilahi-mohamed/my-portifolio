@@ -23,6 +23,7 @@ const port = Number(process.env.PORT ?? 4000);
 const dataDirectory = resolve(backendDirectory, process.env.DATA_DIRECTORY ?? "data");
 const allowedOrigins = new Set([
   "https://my-portifolio-blush-five.vercel.app",
+  "https://my-portifolio-8cfytxot8-abdilahi-mohameds-projects.vercel.app",
   "http://localhost:5173",
   "http://127.0.0.1:5173",
   ...(process.env.FRONTEND_ORIGIN?.split(",")

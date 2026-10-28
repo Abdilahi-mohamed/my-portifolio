@@ -105,6 +105,6 @@ The server serves the frontend for `/`, `/admin`, and other client-side routes, 
 
 If deploying the frontend as a separate Render **Static Site**, configure a dashboard rewrite rule with source `/*`, destination `/index.html`, and action **Rewrite** so direct visits and refreshes on `/admin` load the React app. Set `VITE_API_URL` on that static-site service to the backend's public URL. Set `FRONTEND_ORIGIN` on the backend to the static site's exact origin.
 
-For a Vercel frontend, set the project's root directory to `frontend/`. The included `frontend/vercel.json` rewrites direct route requests such as `/admin` to the SPA entry point.
+For a Vercel frontend, set the project's root directory to `frontend/`. The included `frontend/vercel.json` forwards `/api/*` requests to the Render backend before rewriting frontend routes such as `/admin` to the SPA entry point. The frontend's production API URL also defaults to that Render backend. If the Vercel deployment uses a different frontend origin, add its exact origin to `FRONTEND_ORIGIN` in the Render environment settings (comma-separated if there is more than one).
 
 For separate frontend/backend deployments, when the admin UI and API use separate HTTPS domains, the session cookie uses cross-site `SameSite=None; Secure` settings.
