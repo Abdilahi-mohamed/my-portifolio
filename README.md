@@ -85,4 +85,26 @@ npm run dev --prefix frontend
 npm run build
 ```
 
-For separate frontend/backend deployments, set `VITE_API_URL` in the frontend deployment to the backend base URL. Set `FRONTEND_ORIGIN` on the backend to the deployed frontend origin; multiple origins can be comma-separated. When the admin UI and API use separate HTTPS domains, the session cookie uses cross-site `SameSite=None; Secure` settings.
+## Deploy to Render
+
+The backend can serve the built frontend as well as the API. For a single Render **Web Service**, set the repository root directory to the repository root, not `backend/`:
+
+**Build Command**
+
+```sh
+npm ci --prefix backend && npm ci --prefix frontend && npm run build
+```
+
+**Start Command**
+
+```sh
+npm start --prefix backend
+```
+
+The server serves the frontend for `/`, `/admin`, and other client-side routes, while keeping `/api/*` on the API. Configure `ADMIN_USERNAME`, `ADMIN_PASSWORD`, `ADMIN_AUTH_DISABLED=false`, `FRONTEND_ORIGIN`, and all `B2_*` values in Render's environment settings. Set `DATA_DIRECTORY=/var/data` and attach a persistent disk mounted at `/var/data`. Set `VITE_API_URL` to the same Render service's public URL as a build-time environment variable if it differs from the current production API URL.
+
+If deploying the frontend as a separate Render **Static Site**, configure a dashboard rewrite rule with source `/*`, destination `/index.html`, and action **Rewrite** so direct visits and refreshes on `/admin` load the React app. Set `VITE_API_URL` on that static-site service to the backend's public URL. Set `FRONTEND_ORIGIN` on the backend to the static site's exact origin.
+
+For a Vercel frontend, set the project's root directory to `frontend/`. The included `frontend/vercel.json` rewrites direct route requests such as `/admin` to the SPA entry point.
+
+For separate frontend/backend deployments, when the admin UI and API use separate HTTPS domains, the session cookie uses cross-site `SameSite=None; Secure` settings.

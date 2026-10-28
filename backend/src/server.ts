@@ -1,5 +1,5 @@
 import { createHash, randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
-import { mkdir, readdir, readFile, rename, unlink, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, rename, stat, unlink, writeFile } from "node:fs/promises";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -16,6 +16,7 @@ import { isPortfolioContent } from "./portfolioValidation.js";
 const serverDirectory = dirname(fileURLToPath(import.meta.url));
 const backendDirectory = dirname(serverDirectory);
 const projectDirectory = dirname(backendDirectory);
+const frontendBuildDirectory = join(projectDirectory, "frontend", "dist");
 config({ path: join(backendDirectory, ".env") });
 let adminUsername = process.env.ADMIN_USERNAME?.trim() ?? "";
 const port = Number(process.env.PORT ?? 4000);
@@ -147,6 +148,71 @@ function respond(
     "Cache-Control": "no-store",
   });
   response.end(JSON.stringify(body));
+}
+
+async function serveFrontend(pathname: string, request: IncomingMessage, response: ServerResponse): Promise<boolean> {
+  if (request.method !== "GET" && request.method !== "HEAD") return false;
+
+  let filePath = join(frontendBuildDirectory, "index.html");
+  if (pathname !== "/") {
+    let decodedPath: string;
+    try {
+      decodedPath = decodeURIComponent(pathname);
+    } catch {
+      respond(response, 400, { message: "Invalid URL path." });
+      return true;
+    }
+
+    const requestedPath = resolve(frontendBuildDirectory, `.${decodedPath}`);
+    if (!requestedPath.startsWith(`${frontendBuildDirectory}${process.platform === "win32" ? "\\" : "/"}`)) {
+      respond(response, 400, { message: "Invalid URL path." });
+      return true;
+    }
+
+    try {
+      if ((await stat(requestedPath)).isFile()) filePath = requestedPath;
+    } catch (error) {
+      if (!isRecord(error) || error.code !== "ENOENT") throw error;
+      if (/\.[^/]+$/.test(decodedPath)) {
+        respond(response, 404, { message: "File not found." });
+        return true;
+      }
+    }
+  }
+
+  let content: Buffer;
+  try {
+    content = await readFile(filePath);
+  } catch (error) {
+    if (isRecord(error) && error.code === "ENOENT") return false;
+    throw error;
+  }
+
+  const extension = filePath.split(".").at(-1)?.toLowerCase();
+  const contentType: Record<string, string> = {
+    css: "text/css; charset=utf-8",
+    html: "text/html; charset=utf-8",
+    ico: "image/x-icon",
+    jpg: "image/jpeg",
+    js: "text/javascript; charset=utf-8",
+    json: "application/json; charset=utf-8",
+    png: "image/png",
+    svg: "image/svg+xml",
+    txt: "text/plain; charset=utf-8",
+    webp: "image/webp",
+    woff: "font/woff",
+    woff2: "font/woff2",
+  };
+  response.writeHead(200, {
+    "Content-Type": extension ? contentType[extension] ?? "application/octet-stream" : "application/octet-stream",
+    "Content-Length": content.byteLength,
+    "Cache-Control": filePath.endsWith("index.html")
+      ? "no-cache"
+      : "public, max-age=31536000, immutable",
+    "X-Content-Type-Options": "nosniff",
+  });
+  response.end(request.method === "HEAD" ? undefined : content);
+  return true;
 }
 
 async function readJson(request: IncomingMessage, maxBytes = maxBodyBytes): Promise<unknown> {
@@ -849,6 +915,10 @@ async function handleRequest(
     }
 
     respond(response, 404, { message: "Admin route not found." });
+    return;
+  }
+
+  if (!url.pathname.startsWith("/api/") && await serveFrontend(url.pathname, request, response)) {
     return;
   }
 
