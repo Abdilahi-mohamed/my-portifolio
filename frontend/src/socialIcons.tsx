@@ -3,13 +3,13 @@ import {
   ExternalLink,
   Figma,
   Globe2,
-  Github,
   Linkedin,
   MessageCircle,
   Slack,
   Send,
 } from "lucide-react";
 import type { IconName } from "./types";
+import SiGithub from "@icons-pack/react-simple-icons/icons/SiGithub";
 import SiBehance from "@icons-pack/react-simple-icons/icons/SiBehance";
 import SiBluesky from "@icons-pack/react-simple-icons/icons/SiBluesky";
 import SiBuymeacoffee from "@icons-pack/react-simple-icons/icons/SiBuymeacoffee";
@@ -101,6 +101,42 @@ export const socialIconOptions: { name: IconName; label: string }[] = [
   { name: "Weibo", label: "Weibo" },
 ];
 
+export function socialIconForUrl(value: string): IconName | null {
+  try {
+    const candidate = /^https?:\/\//i.test(value) ? value : `https://${value}`;
+    const url = new URL(candidate);
+    if (url.protocol !== "http:" && url.protocol !== "https:") return null;
+    const hostname = url.hostname.toLowerCase().replace(/^www\./, "");
+    const matchesDomain = (domain: string) =>
+      hostname === domain || hostname.endsWith(`.${domain}`);
+    if (matchesDomain("instagram.com")) return "Instagram";
+    if (matchesDomain("github.com")) return "Github";
+    if (matchesDomain("linkedin.com")) return "Linkedin";
+    if (matchesDomain("facebook.com") || matchesDomain("fb.com")) return "Facebook";
+    if (matchesDomain("x.com") || matchesDomain("twitter.com")) return "X";
+    const socialDomains: [string, IconName][] = [
+      ["tiktok.com", "Tiktok"], ["youtube.com", "Youtube"], ["youtu.be", "Youtube"],
+      ["threads.net", "Threads"], ["discord.com", "Discord"], ["discord.gg", "Discord"],
+      ["whatsapp.com", "Whatsapp"], ["wa.me", "Whatsapp"], ["telegram.org", "Telegram"],
+      ["t.me", "Telegram"], ["messenger.com", "Messenger"], ["reddit.com", "Reddit"],
+      ["pinterest.com", "Pinterest"], ["snapchat.com", "Snapchat"], ["twitch.tv", "Twitch"],
+      ["mastodon.social", "Mastodon"], ["bsky.app", "Bluesky"], ["wechat.com", "Wechat"],
+      ["line.me", "Line"], ["spotify.com", "Spotify"], ["soundcloud.com", "Soundcloud"],
+      ["medium.com", "Medium"], ["dev.to", "Devto"], ["hashnode.dev", "Hashnode"],
+      ["stackoverflow.com", "Stackoverflow"], ["gitlab.com", "Gitlab"],
+      ["behance.net", "Behance"], ["dribbble.com", "Dribbble"], ["flickr.com", "Flickr"],
+      ["vimeo.com", "Vimeo"], ["tumblr.com", "Tumblr"], ["wordpress.com", "Wordpress"],
+      ["slack.com", "Slack"], ["substack.com", "Substack"], ["patreon.com", "Patreon"],
+      ["linktr.ee", "Linktree"], ["producthunt.com", "Producthunt"], ["quora.com", "Quora"],
+      ["kickstarter.com", "Kickstarter"], ["buymeacoffee.com", "Buymeacoffee"],
+      ["weibo.com", "Weibo"],
+    ];
+    return socialDomains.find(([domain]) => matchesDomain(domain))?.[1] ?? null;
+  } catch {
+    return null;
+  }
+}
+
 const brandIcons: Partial<Record<IconName, typeof SiInstagram>> = {
   Behance: SiBehance,
   Bluesky: SiBluesky,
@@ -114,7 +150,7 @@ const brandIcons: Partial<Record<IconName, typeof SiInstagram>> = {
   Figma,
   Flickr: SiFlickr,
   Gitlab: SiGitlab,
-  Github,
+  Github: SiGithub,
   Globe2,
   Hashnode: SiHashnode,
   Instagram: SiInstagram,
@@ -152,6 +188,56 @@ const brandIcons: Partial<Record<IconName, typeof SiInstagram>> = {
   Youtube: SiYoutube,
 };
 
+const socialBrandColors: Partial<Record<IconName, string>> = {
+  Behance: "#1769FF",
+  Bluesky: "#0085FF",
+  Buymeacoffee: "#FFDD00",
+  Discord: "#5865F2",
+  Devto: "#0A0A0A",
+  Dribbble: "#EA4C89",
+  Facebook: "#0866FF",
+  Figma: "#F24E1E",
+  Flickr: "#0063DC",
+  Gitlab: "#FC6D26",
+  Github: "#181717",
+  Hashnode: "#2962FF",
+  Instagram: "#FFFFFF",
+  Kickstarter: "#05CE78",
+  Line: "#06C755",
+  Linktree: "#43E55E",
+  Linkedin: "#0A66C2",
+  Mastodon: "#6364FF",
+  Medium: "#000000",
+  Messenger: "#0866FF",
+  Patreon: "#FF424D",
+  Pinterest: "#E60023",
+  Producthunt: "#DA552F",
+  Quora: "#B92B27",
+  Reddit: "#FF4500",
+  Slack: "#611F69",
+  Snapchat: "#111111",
+  Soundcloud: "#FF5500",
+  Spotify: "#1DB954",
+  Stackoverflow: "#F48024",
+  Substack: "#FF6719",
+  Threads: "#101010",
+  Telegram: "#26A5E4",
+  Tiktok: "#FFFFFF",
+  Tumblr: "#35465C",
+  Twitch: "#9146FF",
+  Vimeo: "#1AB7EA",
+  Weibo: "#E6162D",
+  Wechat: "#07C160",
+  Whatsapp: "#25D366",
+  Wordpress: "#21759B",
+  X: "#000000",
+  Youtube: "#FF0033",
+};
+
+export function socialBrandColor(name: IconName): string {
+  return socialBrandColors[name] ?? "#6B716D";
+}
+
 export function SocialBrandIcon({
   name,
   size = 18,
@@ -160,5 +246,5 @@ export function SocialBrandIcon({
   size?: number;
 }) {
   const Icon = brandIcons[name];
-  return Icon ? <Icon aria-hidden="true" size={size} /> : null;
+  return Icon ? <Icon aria-hidden="true" color={socialBrandColor(name)} size={size} /> : null;
 }

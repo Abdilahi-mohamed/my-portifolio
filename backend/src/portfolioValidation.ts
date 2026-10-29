@@ -1,5 +1,6 @@
 const allowedIcons = new Set([
   "ArrowUpRight", "Check", "Code2", "Javascript", "Typescript", "React",
+  "Nextjs", "Express", "Git", "Docker",
   "Nodejs", "Mongodb", "Mysql", "Postgresql", "Sqlite", "Redis", "Python",
   "Java", "C", "Cplusplus", "Csharp", "Go", "Rust", "Php", "Ruby",
   "Kotlin", "Swift", "Dart", "Lua", "R", "Scala", "Haskell", "Elixir",

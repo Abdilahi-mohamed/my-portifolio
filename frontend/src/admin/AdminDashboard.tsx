@@ -27,9 +27,15 @@ import {
   UserRound,
   X,
 } from "lucide-react";
-import type { IconName, PortfolioContent } from "../types";
-import { SocialBrandIcon, socialIconOptions } from "../socialIcons";
-import { isProgrammingLanguageIcon, ProgrammingLanguageIcon, programmingIconOptions } from "../programmingIcons";
+import type { PortfolioContent } from "../types";
+import { SocialBrandIcon, socialIconForUrl, socialIconOptions } from "../socialIcons";
+import {
+  isProgrammingLanguageIcon,
+  ProgrammingLanguageIcon,
+  programmingIconBackground,
+  programmingIconColor,
+  programmingIconOptions,
+} from "../programmingIcons";
 import { adminLogout, loadAdminPortfolio, saveAdminPortfolio, uploadImage } from "./adminApi";
 
 type Project = PortfolioContent["projectsSection"]["projects"][number];
@@ -48,43 +54,6 @@ const builtInSections = [
   { id: "languages", label: "Tech stack", title: "Skills" },
   { id: "contacts", label: "Social profiles", title: "Social profiles" },
 ] as const;
-function socialIconForUrl(value: string): IconName {
-  try {
-    const candidate = /^https?:\/\//i.test(value) ? value : `https://${value}`;
-    const url = new URL(candidate);
-    if (url.protocol !== "http:" && url.protocol !== "https:") return "Globe2";
-    const hostname = url.hostname.toLowerCase().replace(/^www\./, "");
-    const matchesDomain = (domain: string) =>
-      hostname === domain || hostname.endsWith(`.${domain}`);
-    if (matchesDomain("instagram.com")) return "Instagram";
-    if (matchesDomain("github.com")) return "Github";
-    if (matchesDomain("linkedin.com")) return "Linkedin";
-    if (matchesDomain("facebook.com") || matchesDomain("fb.com")) return "Facebook";
-    if (matchesDomain("x.com") || matchesDomain("twitter.com")) return "X";
-    const socialDomains: [string, IconName][] = [
-      ["tiktok.com", "Tiktok"], ["youtube.com", "Youtube"], ["youtu.be", "Youtube"],
-      ["threads.net", "Threads"], ["discord.com", "Discord"], ["discord.gg", "Discord"],
-      ["whatsapp.com", "Whatsapp"], ["wa.me", "Whatsapp"], ["telegram.org", "Telegram"],
-      ["t.me", "Telegram"], ["messenger.com", "Messenger"], ["reddit.com", "Reddit"],
-      ["pinterest.com", "Pinterest"], ["snapchat.com", "Snapchat"], ["twitch.tv", "Twitch"],
-      ["mastodon.social", "Mastodon"], ["bsky.app", "Bluesky"], ["wechat.com", "Wechat"],
-      ["line.me", "Line"], ["spotify.com", "Spotify"], ["soundcloud.com", "Soundcloud"],
-      ["medium.com", "Medium"], ["dev.to", "Devto"], ["hashnode.dev", "Hashnode"],
-      ["stackoverflow.com", "Stackoverflow"], ["gitlab.com", "Gitlab"],
-      ["behance.net", "Behance"], ["dribbble.com", "Dribbble"], ["flickr.com", "Flickr"],
-      ["vimeo.com", "Vimeo"], ["tumblr.com", "Tumblr"], ["wordpress.com", "Wordpress"],
-      ["slack.com", "Slack"], ["substack.com", "Substack"], ["patreon.com", "Patreon"],
-      ["linktr.ee", "Linktree"], ["producthunt.com", "Producthunt"], ["quora.com", "Quora"],
-      ["kickstarter.com", "Kickstarter"], ["buymeacoffee.com", "Buymeacoffee"],
-      ["weibo.com", "Weibo"],
-    ];
-    const platform = socialDomains.find(([domain]) => matchesDomain(domain));
-    if (platform) return platform[1];
-  } catch {
-    return "Globe2";
-  }
-  return "Globe2";
-}
 
 const portfolioSchema = {
   $schema: "http://json-schema.org/draft-07/schema#",
@@ -721,7 +690,7 @@ export function AdminDashboard({
         socials: current.contact.socials.map((social, socialIndex) =>
           socialIndex === index
             ? key === "url" && typeof value === "string"
-              ? { ...social, url: value, icon: socialIconForUrl(value) }
+              ? { ...social, url: value, icon: socialIconForUrl(value) ?? "Globe2" }
               : { ...social, [key]: value }
             : social,
         ),
@@ -859,7 +828,7 @@ export function AdminDashboard({
               <section className="cms-panel" id="skills">
                 <div className="cms-panel-heading"><div><span className="cms-section-index">02 / STACKS & FLUENCY</span><h2>Technical skills</h2><p>Manage skills across Frontend, Backend, Databases, and Tools.</p></div><button className="cms-add-link" onClick={() => openEditor("skill")} type="button"><Plus size={15} /> Add skill</button></div>
                 <div className="cms-tabs" role="tablist" aria-label="Skill categories">{skillCategories.map((category) => <button aria-selected={skillFilter === category} className={skillFilter === category ? "is-active" : ""} key={category} onClick={() => setSkillFilter(category)} role="tab" type="button">{category}</button>)}</div>
-                <div className="cms-skills-grid">{visibleSkills.map(({ skill, index }) => <article className="cms-skill-row" key={`${skill.name}-${index}`}><span className="cms-skill-symbol" style={{ color: skill.color }}>{isProgrammingLanguageIcon(skill.icon) ? <ProgrammingLanguageIcon name={skill.icon} size={17} /> : <Code2 size={17} />}</span><div className="cms-skill-main"><div className="cms-skill-label"><strong>{skill.name}</strong><span>{skill.level}</span></div><div className="cms-meter"><i style={{ width: skill.level }} /></div><small>{skill.category ?? "Other"}</small></div><div className="cms-skill-actions"><button aria-label={`Edit ${skill.name}`} onClick={() => openEditor("skill", index)} type="button"><Settings2 size={14} /></button><button aria-label={`Delete ${skill.name}`} onClick={() => removeItem("skill", index)} type="button"><Trash2 size={14} /></button></div></article>)}<button className="cms-skill-add" onClick={() => openEditor("skill")} type="button"><Plus size={18} /><span>Add a skill</span></button></div>
+                <div className="cms-skills-grid">{visibleSkills.map(({ skill, index }) => <article className="cms-skill-row" key={`${skill.name}-${index}`}><span className="cms-skill-symbol" style={{ color: programmingIconColor(skill.icon, skill.color), backgroundColor: programmingIconBackground(skill.icon) ?? "#F9F8F6" }}>{isProgrammingLanguageIcon(skill.icon) ? <ProgrammingLanguageIcon name={skill.icon} size={19} color={programmingIconColor(skill.icon, skill.color)} /> : <Code2 size={19} />}</span><div className="cms-skill-main"><div className="cms-skill-label"><strong>{skill.name}</strong><span>{skill.level}</span></div><div className="cms-meter"><i style={{ width: skill.level }} /></div><small>{skill.category ?? "Other"}</small></div><div className="cms-skill-actions"><button aria-label={`Edit ${skill.name}`} onClick={() => openEditor("skill", index)} type="button"><Settings2 size={14} /></button><button aria-label={`Delete ${skill.name}`} onClick={() => removeItem("skill", index)} type="button"><Trash2 size={14} /></button></div></article>)}<button className="cms-skill-add" onClick={() => openEditor("skill")} type="button"><Plus size={18} /><span>Add a skill</span></button></div>
               </section>
 
               <section className="cms-panel" id="experience">
@@ -992,9 +961,10 @@ export function AdminDashboard({
                 <label className="cms-input-label">Social profiles heading<input onChange={(event) => updateContact("socialTitle", event.target.value)} value={content.contact.socialTitle} /></label>
                 <div className="cms-social-editor-heading"><span><strong>Social profiles</strong><small>Name and valid HTTP(S) URL are required.</small></span><button className="cms-add-link" onClick={addSocial} type="button"><Plus size={14} /> Add profile</button></div>
                 {content.contact.socials.map((social, index) => {
-                  const selectedIcon = socialIconOptions.find((option) => option.name === social.icon);
+                  const icon = socialIconForUrl(social.url) ?? social.icon;
+                  const selectedIcon = socialIconOptions.find((option) => option.name === icon);
                   return <div className="cms-social-editor-row" key={`social-${index}`}>
-                    <div className="cms-social-icon-field"><span>Social platform</span><button aria-label={`Choose icon for ${social.name || "social profile"}`} className="cms-social-icon-trigger" onClick={() => { setIconSearch(""); setIconPickerIndex(index); }} type="button"><SocialBrandIcon name={social.icon} size={17} /><span>{selectedIcon?.label ?? "Choose icon"}</span><Search size={14} /></button><small>Detected from profile URL when available.</small></div>
+                    <div className="cms-social-icon-field"><span>Social platform</span><button aria-label={`Choose icon for ${social.name || "social profile"}`} className="cms-social-icon-trigger" onClick={() => { setIconSearch(""); setIconPickerIndex(index); }} type="button"><SocialBrandIcon name={icon} size={17} /><span>{selectedIcon?.label ?? "Choose icon"}</span><Search size={14} /></button><small>Detected from profile URL when available.</small></div>
                     <label className="cms-input-label">Profile name<input onChange={(event) => updateSocial(index, "name", event.target.value)} value={social.name} /></label>
                     <label className="cms-input-label">Profile URL<input onChange={(event) => updateSocial(index, "url", event.target.value)} placeholder="https://instagram.com/your-profile" type="url" value={social.url} /><small>Logo updates automatically when you paste a supported profile URL.</small></label>
                     <button aria-label={`Remove ${social.name || "social profile"}`} className="cms-managed-card-delete" onClick={() => removeSocial(index)} type="button"><Trash2 size={13} /></button>

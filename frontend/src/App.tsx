@@ -30,10 +30,15 @@ import {
   X as XIcon,
   Zap,
 } from "lucide-react";
-import { SocialBrandIcon, socialIconOptions } from "./socialIcons";
+import { SocialBrandIcon, socialIconForUrl, socialIconOptions } from "./socialIcons";
 import { adminLogin, changeAdminPassword } from "./admin/adminApi";
 import { apiUrl, resolvePortfolioMedia } from "./api";
-import { isProgrammingLanguageIcon, ProgrammingLanguageIcon } from "./programmingIcons";
+import {
+  isProgrammingLanguageIcon,
+  ProgrammingLanguageIcon,
+  programmingIconBackground,
+  programmingIconColor,
+} from "./programmingIcons";
 import defaultPortfolio from "../../shared/portfolio.default.json";
 import type { IconName, PortfolioContent } from "./types";
 
@@ -453,19 +458,25 @@ function App() {
                   <div className="skills-grid">
                     {groupedSkills.map((skill) => {
                       const Icon = icons[skill.icon] ?? ExternalLink;
+                      const iconColor = programmingIconColor(skill.icon, skill.color);
                       return (
                         <article className="skill-card" key={skill.name}>
-                          <div className="skill-card-top">
-                            <span className="skill-icon" style={{ color: skill.color, backgroundColor: `${skill.color}12` }}>
+                          <div className="skill-icon" style={{
+                            color: iconColor,
+                            backgroundColor: programmingIconBackground(skill.icon) ?? "#EFE9E3",
+                          }}>
                               {isProgrammingLanguageIcon(skill.icon)
-                                ? <ProgrammingLanguageIcon name={skill.icon} size={19} />
-                                : <Icon size={19} strokeWidth={1.8} />}
-                            </span>
-                            <span className="skill-level">{skill.level}</span>
+                                ? <ProgrammingLanguageIcon name={skill.icon} size={21} color={iconColor} />
+                                : <Icon size={21} strokeWidth={1.8} />}
                           </div>
-                          <h3>{skill.name}</h3>
-                          <div aria-label={`${skill.name} ${skill.level}`} className="skill-meter" role="img">
+                          <div className="skill-card-copy">
+                            <div className="skill-card-heading">
+                              <h3>{skill.name}</h3>
+                              <span className="skill-level">{skill.level}</span>
+                            </div>
+                            <div aria-label={`${skill.name} ${skill.level}`} className="skill-meter" role="img">
                             <span style={{ width: skill.level, backgroundColor: skill.color }} />
+                            </div>
                           </div>
                         </article>
                       );
@@ -556,13 +567,14 @@ function App() {
         {socials.length > 0 ? (
           <div className="socials-grid">
             {socials.map((social) => {
-              const Icon = icons[social.icon] ?? ExternalLink;
-              const isSocialBrand = socialIconOptions.some((option) => option.name === social.icon);
+              const icon = socialIconForUrl(social.url) ?? social.icon;
+              const Icon = icons[icon] ?? ExternalLink;
+              const isSocialBrand = socialIconOptions.some((option) => option.name === icon);
               return (
-                <a className="social-card" href={social.url} key={`${social.name}-${social.url}`} rel="noopener noreferrer" target="_blank">
-                  <span className="social-icon">
+                <a aria-label={`Open ${social.name} profile in a new tab`} className="social-card" href={social.url} key={`${social.name}-${social.url}`} rel="noopener noreferrer" target="_blank">
+                  <span className={`social-icon social-icon-${icon.toLowerCase()}`}>
                     {isSocialBrand
-                      ? <SocialBrandIcon name={social.icon} size={19} />
+                      ? <SocialBrandIcon name={icon} size={19} />
                       : <Icon size={19} strokeWidth={1.8} />}
                   </span>
                   <span className="social-name">{social.name}</span>

@@ -7,14 +7,17 @@ import SiCss3 from "@icons-pack/react-simple-icons/icons/SiCss";
 import SiD from "@icons-pack/react-simple-icons/icons/SiD";
 import SiDart from "@icons-pack/react-simple-icons/icons/SiDart";
 import SiDotnet from "@icons-pack/react-simple-icons/icons/SiDotnet";
+import SiDocker from "@icons-pack/react-simple-icons/icons/SiDocker";
 import SiElixir from "@icons-pack/react-simple-icons/icons/SiElixir";
 import SiElm from "@icons-pack/react-simple-icons/icons/SiElm";
 import SiErlang from "@icons-pack/react-simple-icons/icons/SiErlang";
+import SiExpress from "@icons-pack/react-simple-icons/icons/SiExpress";
 import SiFsharp from "@icons-pack/react-simple-icons/icons/SiFsharp";
 import SiFortran from "@icons-pack/react-simple-icons/icons/SiFortran";
 import SiGo from "@icons-pack/react-simple-icons/icons/SiGo";
 import SiGnubash from "@icons-pack/react-simple-icons/icons/SiGnubash";
 import SiGroovy from "@icons-pack/react-simple-icons/icons/SiApachegroovy";
+import SiGit from "@icons-pack/react-simple-icons/icons/SiGit";
 import SiHaskell from "@icons-pack/react-simple-icons/icons/SiHaskell";
 import SiHtml5 from "@icons-pack/react-simple-icons/icons/SiHtml5";
 import SiJavascript from "@icons-pack/react-simple-icons/icons/SiJavascript";
@@ -25,6 +28,7 @@ import SiMongodb from "@icons-pack/react-simple-icons/icons/SiMongodb";
 import SiMysql from "@icons-pack/react-simple-icons/icons/SiMysql";
 import SiNim from "@icons-pack/react-simple-icons/icons/SiNim";
 import SiNodedotjs from "@icons-pack/react-simple-icons/icons/SiNodedotjs";
+import SiNextdotjs from "@icons-pack/react-simple-icons/icons/SiNextdotjs";
 import SiOcaml from "@icons-pack/react-simple-icons/icons/SiOcaml";
 import SiOpenjdk from "@icons-pack/react-simple-icons/icons/SiOpenjdk";
 import SiPerl from "@icons-pack/react-simple-icons/icons/SiPerl";
@@ -54,12 +58,16 @@ export const programmingIconOptions: { name: IconName; label: string }[] = [
   { name: "Javascript", label: "JavaScript" },
   { name: "Typescript", label: "TypeScript" },
   { name: "React", label: "React" },
+  { name: "Nextjs", label: "Next.js" },
   { name: "Nodejs", label: "Node.js" },
+  { name: "Express", label: "Express.js" },
   { name: "Mongodb", label: "MongoDB" },
   { name: "Mysql", label: "MySQL" },
   { name: "Postgresql", label: "PostgreSQL" },
   { name: "Sqlite", label: "SQLite" },
   { name: "Redis", label: "Redis" },
+  { name: "Git", label: "Git" },
+  { name: "Docker", label: "Docker" },
   { name: "Python", label: "Python" },
   { name: "Java", label: "Java" },
   { name: "C", label: "C" },
@@ -113,12 +121,15 @@ const programmingIcons: Partial<Record<IconName, typeof SiJavascript>> = {
   D: SiD,
   Dart: SiDart,
   Csharp: SiDotnet,
+  Docker: SiDocker,
   Elixir: SiElixir,
   Elm: SiElm,
   Erlang: SiErlang,
+  Express: SiExpress,
   Fsharp: SiFsharp,
   Fortran: SiFortran,
   Go: SiGo,
+  Git: SiGit,
   Gnubash: SiGnubash,
   Groovy: SiGroovy,
   Haskell: SiHaskell,
@@ -131,6 +142,7 @@ const programmingIcons: Partial<Record<IconName, typeof SiJavascript>> = {
   Mysql: SiMysql,
   Nim: SiNim,
   Nodejs: SiNodedotjs,
+  Nextjs: SiNextdotjs,
   Ocaml: SiOcaml,
   Java: SiOpenjdk,
   Perl: SiPerl,
@@ -155,15 +167,84 @@ const programmingIcons: Partial<Record<IconName, typeof SiJavascript>> = {
   Zsh: SiZsh,
 };
 
+const programmingBrandColors: Partial<Record<IconName, string>> = {
+  Assemblyscript: "#007AAC",
+  C: "#A8B9CC",
+  Clojure: "#5881D8",
+  Coffeescript: "#2F2625",
+  Crystal: "#000000",
+  Css3: "#1572B6",
+  Dart: "#0175C2",
+  Csharp: "#512BD4",
+  Docker: "#2496ED",
+  Elixir: "#4B275F",
+  Elm: "#1293D8",
+  Erlang: "#A90533",
+  Express: "#000000",
+  Fsharp: "#378BBA",
+  Fortran: "#734F96",
+  Go: "#00ADD8",
+  Git: "#F05032",
+  Gnubash: "#4EAA25",
+  Groovy: "#4298B8",
+  Haskell: "#5D4F85",
+  Html5: "#E34F26",
+  Javascript: "#323330",
+  Julia: "#9558B2",
+  Kotlin: "#7F52FF",
+  Lua: "#2C2D72",
+  Mongodb: "#47A248",
+  Mysql: "#4479A1",
+  Nim: "#FFE953",
+  Nodejs: "#5FA04E",
+  Nextjs: "#111111",
+  Ocaml: "#EF7A08",
+  Java: "#ED8B00",
+  Perl: "#39457E",
+  Php: "#777BB4",
+  Postgresql: "#4169E1",
+  Purescript: "#14161A",
+  Python: "#3776AB",
+  R: "#276DC3",
+  Racket: "#9F1D20",
+  React: "#149ECA",
+  Redis: "#FF4438",
+  Ruby: "#CC342D",
+  Rust: "#000000",
+  Scala: "#DC322F",
+  Solidity: "#363636",
+  Sqlite: "#003B57",
+  Swift: "#F05138",
+  Typescript: "#3178C6",
+  V: "#5D87BF",
+  Webassembly: "#654FF0",
+  Zig: "#F7A41D",
+  Zsh: "#F15A24",
+};
+
+const programmingBrandBackgrounds: Partial<Record<IconName, string>> = {
+  Javascript: "#F7DF1E",
+};
+
+export function programmingIconColor(name: IconName, fallback: string): string {
+  return programmingBrandColors[name] ?? fallback;
+}
+
+export function programmingIconBackground(name: IconName): string | undefined {
+  return programmingBrandBackgrounds[name];
+}
+
 export function ProgrammingLanguageIcon({
   name,
   size = 18,
+  color,
 }: {
   name: IconName;
   size?: number;
+  color?: string;
 }) {
   const Icon = programmingIcons[name];
-  return Icon ? <Icon aria-hidden="true" size={size} /> : null;
+  return Icon ? <Icon aria-hidden="true" color={color ?? programmingBrandColors[name]} size={size} /> : null;
 }
 
 export function isProgrammingLanguageIcon(name: string): name is IconName {
