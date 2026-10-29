@@ -3,9 +3,31 @@ import { apiUrl, resolvePortfolioMedia } from "../api";
 
 type SessionResponse = { authenticated: string; configured: string; authDisabled: string };
 type MessageResponse = { message?: string };
+type StorageHealthResponse = MessageResponse & {
+  database?: string;
+  storage?: string;
+};
 
 async function parseJson<T>(response: Response): Promise<T> {
   return (await response.json()) as T;
+}
+
+async function requirePersistentStorage(): Promise<void> {
+  const response = await fetch(apiUrl("/api/health"), { cache: "no-store" });
+  const body = await parseJson<StorageHealthResponse>(response);
+  if (!response.ok) {
+    throw new Error(body.message ?? "The portfolio storage service is unavailable.");
+  }
+  if (body.database !== "mongodb") {
+    throw new Error(
+      "The connected API does not confirm MongoDB persistence. Admin editing is blocked to protect your data. Redeploy the latest backend commit to Render, then reopen the dashboard.",
+    );
+  }
+  if (import.meta.env.PROD && body.storage !== "backblaze-b2") {
+    throw new Error(
+      "The connected API does not confirm persistent image storage. Admin editing is blocked to protect your uploads. Configure Backblaze B2 on Render and redeploy the backend.",
+    );
+  }
 }
 
 export async function checkAdminSession(): Promise<SessionResponse> {
@@ -55,6 +77,7 @@ export async function adminLogout(): Promise<void> {
 }
 
 export async function loadAdminPortfolio(): Promise<PortfolioContent> {
+  await requirePersistentStorage();
   const response = await fetch(apiUrl("/api/admin/portfolio"), { credentials: "include" });
   const body = await parseJson<PortfolioContent & MessageResponse>(response);
   if (!response.ok || !("hero" in body)) {
@@ -64,6 +87,7 @@ export async function loadAdminPortfolio(): Promise<PortfolioContent> {
 }
 
 export async function saveAdminPortfolio(content: PortfolioContent): Promise<string> {
+  await requirePersistentStorage();
   const response = await fetch(apiUrl("/api/admin/portfolio"), {
     method: "PUT",
     credentials: "include",
@@ -78,6 +102,7 @@ export async function saveAdminPortfolio(content: PortfolioContent): Promise<str
 }
 
 export async function uploadImage(file: File): Promise<string> {
+  await requirePersistentStorage();
   const response = await fetch(apiUrl("/api/admin/uploads"), {
     method: "POST",
     credentials: "include",

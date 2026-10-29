@@ -63,7 +63,7 @@ npm run dev --prefix frontend
 
 | Method | Path | Purpose |
 | --- | --- | --- |
-| `GET` | `/api/health` | API readiness and current database/media storage modes. |
+| `GET` | `/api/health` | MongoDB readiness and current database/media storage modes. Admin editing is blocked unless this endpoint reports `database: "mongodb"`; production uploads also require `storage: "backblaze-b2"`. |
 | `GET` | `/api/health/storage` | Storage-mode health check. |
 | `GET` | `/api/portfolio` | Public portfolio content. |
 | `GET` | `/api/media/:filename` | Retrieve an uploaded image from B2 (or a legacy local image). |
