@@ -1,6 +1,9 @@
 {
   "name": "abdilahi-portfolio",
   "private": true,
+  "engines": {
+    "node": ">=20.19.0"
+  },
   "scripts": {
     "dev": "npm run dev --prefix backend",
     "web": "npm run web --prefix frontend",

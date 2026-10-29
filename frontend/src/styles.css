@@ -40,6 +40,19 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
   margin: 0 auto;
 }
 
+.portfolio-load-state {
+  display: grid;
+  min-height: 70vh;
+  align-content: center;
+  justify-items: start;
+  gap: 12px;
+  color: #59665f;
+}
+
+.portfolio-load-state h1,
+.portfolio-load-state p { margin: 0; }
+.portfolio-load-state button { padding: 10px 15px; }
+
 .topbar {
   position: relative;
   z-index: 5;

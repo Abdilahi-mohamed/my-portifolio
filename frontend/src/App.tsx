@@ -138,6 +138,9 @@ function App() {
   const [portfolio, setPortfolio] = useState<PortfolioContent>(
     defaultPortfolio as PortfolioContent,
   );
+  const [portfolioLoaded, setPortfolioLoaded] = useState(false);
+  const [portfolioLoadError, setPortfolioLoadError] = useState("");
+  const [portfolioRetry, setPortfolioRetry] = useState(0);
   const [toast, setToast] = useState<ToastMessage | null>(null);
   const [darkMode, setDarkMode] = useState(() => {
     try {
@@ -172,20 +175,24 @@ function App() {
 
   useEffect(() => {
     const controller = new AbortController();
+    setPortfolioLoadError("");
     fetch(apiUrl("/api/portfolio"), { signal: controller.signal })
       .then(async (response) => {
         if (!response.ok) throw new Error("Portfolio content could not be loaded.");
         setPortfolio(resolvePortfolioMedia((await response.json()) as PortfolioContent));
+        setPortfolioLoaded(true);
       })
       .catch((error: unknown) => {
         if (error instanceof Error && error.name === "AbortError") return;
+        const detail = error instanceof Error ? error.message : "The saved portfolio could not be loaded.";
+        setPortfolioLoadError(detail);
         setToast({
-          title: "Preview content is shown",
-          detail: "The latest saved portfolio could not be loaded.",
+          title: "Portfolio unavailable",
+          detail,
         });
       });
     return () => controller.abort();
-  }, []);
+  }, [portfolioRetry]);
 
   useEffect(() => {
     if (!toast) return;
@@ -254,6 +261,24 @@ function App() {
     document.querySelector('meta[name="twitter:description"]')?.setAttribute("content", pageDescription);
     document.querySelector('meta[name="twitter:image"]')?.setAttribute("content", imageUrl);
   }, [profile.profileDescription, profile.profileName]);
+
+  if (!portfolioLoaded) {
+    return (
+      <main className="portfolio-page">
+        <section aria-live="polite" className="portfolio-load-state" role={portfolioLoadError ? "alert" : "status"}>
+          <h1>{portfolioLoadError ? "Portfolio unavailable" : "Loading portfolio..."}</h1>
+          {portfolioLoadError && (
+            <>
+              <p>{portfolioLoadError}</p>
+              <button onClick={() => setPortfolioRetry((attempt) => attempt + 1)} type="button">
+                Try again
+              </button>
+            </>
+          )}
+        </section>
+      </main>
+    );
+  }
 
   return (
     <main className="portfolio-page">

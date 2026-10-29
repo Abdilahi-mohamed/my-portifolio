@@ -1,5 +1,5 @@
 import { createHash, randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
-import { mkdir, readdir, readFile, rename, stat, unlink, writeFile } from "node:fs/promises";
+import { readdir, readFile, stat, unlink } from "node:fs/promises";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -11,6 +11,7 @@ import {
   S3Client,
 } from "@aws-sdk/client-s3";
 import { config } from "dotenv";
+import { MongoClient, type Db, type Document } from "mongodb";
 import { isPortfolioContent } from "./portfolioValidation.js";
 
 const serverDirectory = dirname(fileURLToPath(import.meta.url));
@@ -37,6 +38,8 @@ const adminSessionsFile = join(dataDirectory, "admin-sessions.json");
 const contactMessagesFile = join(dataDirectory, "contact-messages.json");
 const uploadDirectory = join(backendDirectory, "data", "uploads");
 const defaultPortfolioFile = join(projectDirectory, "shared", "portfolio.default.json");
+const mongoUri = process.env.MONGODB_URI?.trim() ?? "";
+const mongoDatabaseName = process.env.MONGODB_DB?.trim();
 const maxBodyBytes = 10_000;
 const maxPortfolioBytes = 1_000_000;
 const maxUploadBytes = 8 * 1024 * 1024;
@@ -62,6 +65,16 @@ type ContactMessage = {
   subject: string;
   message: string;
 };
+type MongoRecord = Document & {
+  _id?: string;
+  content?: unknown;
+  username?: unknown;
+  salt?: unknown;
+  hash?: unknown;
+  tokenHash?: unknown;
+  createdAt?: Date | string;
+  expiresAt?: Date | string;
+};
 
 function createPasswordRecord(password: string): PasswordRecord {
   const salt = randomBytes(16).toString("hex");
@@ -69,8 +82,8 @@ function createPasswordRecord(password: string): PasswordRecord {
 }
 
 let adminPasswordRecord: PasswordRecord | null = null;
-let adminSessions: AdminSession[] = [];
-let fileWriteQueue: Promise<void> = Promise.resolve();
+let mongoClient: MongoClient | null = null;
+let mongoDatabase: Db | null = null;
 
 const b2Endpoint = process.env.B2_ENDPOINT?.trim() ?? "";
 const b2Bucket = process.env.B2_BUCKET_NAME?.trim() ?? "";
@@ -108,36 +121,24 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function serializeFileWrite<T>(operation: () => Promise<T>): Promise<T> {
-  const result = fileWriteQueue.then(operation);
-  fileWriteQueue = result.then(() => undefined, () => undefined);
-  return result;
-}
-
-async function writeJsonFile(file: string, value: unknown): Promise<void> {
-  await mkdir(dirname(file), { recursive: true });
-  const temporaryFile = `${file}.${process.pid}.${randomBytes(8).toString("hex")}.tmp`;
-  try {
-    await writeFile(temporaryFile, `${JSON.stringify(value, null, 2)}\n`, {
-      encoding: "utf8",
-      flag: "wx",
-      mode: 0o600,
-    });
-    await rename(temporaryFile, file);
-  } catch (error) {
-    try {
-      await unlink(temporaryFile);
-    } catch (cleanupError) {
-      if (!isRecord(cleanupError) || cleanupError.code !== "ENOENT") {
-        console.error("Unable to clean up a temporary data file:", cleanupError);
-      }
-    }
-    throw error;
-  }
-}
-
 async function readJsonFile(file: string): Promise<unknown> {
   return JSON.parse(await readFile(file, "utf8")) as unknown;
+}
+
+async function connectToDatabase(): Promise<void> {
+  if (!mongoUri) {
+    throw new Error("MONGODB_URI is required; refusing to use file-backed portfolio storage.");
+  }
+
+  mongoClient = new MongoClient(mongoUri, { serverSelectionTimeoutMS: 10_000 });
+  await mongoClient.connect();
+  mongoDatabase = mongoClient.db(mongoDatabaseName);
+  await mongoDatabase.command({ ping: 1 });
+}
+
+function getMongoCollection(name: string) {
+  if (!mongoDatabase) throw new Error("The MongoDB connection is not initialized.");
+  return mongoDatabase.collection<MongoRecord>(name);
 }
 
 function respond(
@@ -237,6 +238,11 @@ async function loadInitialPortfolio(): Promise<unknown> {
     portfolio = JSON.parse(await readFile(portfolioFile, "utf8")) as unknown;
   } catch (error) {
     if (!isRecord(error) || error.code !== "ENOENT") throw error;
+    if (process.env.PORTFOLIO_INIT_DEFAULTS !== "true") {
+      throw new Error(
+        "No saved portfolio exists. Restore its data or set PORTFOLIO_INIT_DEFAULTS=true for the initial seed.",
+      );
+    }
     portfolio = JSON.parse(await readFile(defaultPortfolioFile, "utf8")) as unknown;
   }
   if (isRecord(portfolio)) {
@@ -244,32 +250,6 @@ async function loadInitialPortfolio(): Promise<unknown> {
     if (!("customSections" in normalized)) normalized.customSections = [];
     if (!("experience" in normalized)) normalized.experience = [];
     if (!("certificates" in normalized)) normalized.certificates = [];
-    if (isRecord(normalized.skillsSection) && Array.isArray(normalized.skillsSection.skills)) {
-      normalized.skillsSection = {
-        ...normalized.skillsSection,
-        skills: normalized.skillsSection.skills.map((skill) => {
-          if (
-            !isRecord(skill) ||
-            skill.category === "Databases" ||
-            !(
-              (typeof skill.name === "string" && skill.name.trim().toLowerCase() === "mongodb") ||
-              skill.icon === "Mongodb"
-            )
-          ) return skill;
-          return { ...skill, category: "Databases" };
-        }),
-      };
-    }
-    if (Array.isArray(normalized.navigation)) {
-      const navigation = [...normalized.navigation];
-      const aboutIndex = navigation.findIndex((item) => isRecord(item) && item.id === "about");
-      const homeIndex = navigation.findIndex((item) => isRecord(item) && item.id === "home");
-      if (aboutIndex >= 0 && homeIndex >= 0 && aboutIndex > homeIndex) {
-        const [about] = navigation.splice(aboutIndex, 1);
-        navigation.splice(homeIndex, 0, about);
-      }
-      normalized.navigation = navigation;
-    }
     if (isRecord(normalized.projectsSection) && Array.isArray(normalized.projectsSection.projects)) {
       normalized.projectsSection = {
         ...normalized.projectsSection,
@@ -298,25 +278,54 @@ async function loadInitialPortfolio(): Promise<unknown> {
 }
 
 async function initializePortfolio(): Promise<void> {
-  await mkdir(dataDirectory, { recursive: true });
+  const portfolioCollection = getMongoCollection("portfolio");
+  const existing = await portfolioCollection.findOne({ _id: "primary" });
+  if (existing) {
+    if (!isPortfolioContent(existing.content)) {
+      throw new Error("The MongoDB portfolio record is invalid; refusing to replace it.");
+    }
+    return;
+  }
+
+  const content = await loadInitialPortfolio();
+  if (!isPortfolioContent(content)) {
+    throw new Error("Initial portfolio content is invalid; refusing to save it.");
+  }
   try {
-    await readJsonFile(portfolioFile);
+    await portfolioCollection.insertOne({
+      _id: "primary",
+      content,
+      updatedAt: new Date(),
+    });
   } catch (error) {
-    if (!isRecord(error) || error.code !== "ENOENT") throw error;
-    await serializeFileWrite(async () => writeJsonFile(portfolioFile, await loadInitialPortfolio()));
+    if (!isRecord(error) || error.code !== 11000) throw error;
+    const concurrentInsert = await portfolioCollection.findOne({ _id: "primary" });
+    if (!concurrentInsert || !isPortfolioContent(concurrentInsert.content)) throw error;
   }
 }
 
 async function getPortfolio(): Promise<unknown> {
-  return readJsonFile(portfolioFile);
+  const portfolio = await getMongoCollection("portfolio").findOne({ _id: "primary" });
+  if (!portfolio || !isPortfolioContent(portfolio.content)) {
+    throw new Error("The MongoDB portfolio record is missing or invalid.");
+  }
+  return portfolio.content;
 }
 
 async function savePortfolio(content: unknown): Promise<void> {
-  await serializeFileWrite(async () => {
-    const stored = await readJsonFile(portfolioFile);
-    await writeJsonFile(portfolioFile, content);
-    await removeObsoleteMedia(stored, content);
-  });
+  const portfolioCollection = getMongoCollection("portfolio");
+  const previous = await portfolioCollection.findOne({ _id: "primary" });
+  if (!previous || !isPortfolioContent(previous.content)) {
+    throw new Error("The saved MongoDB portfolio is missing or invalid; refusing to replace it.");
+  }
+  const result = await portfolioCollection.updateOne(
+    { _id: "primary" },
+    { $set: { content, updatedAt: new Date() } },
+  );
+  if (result.matchedCount !== 1) {
+    throw new Error("The saved MongoDB portfolio changed while it was being updated.");
+  }
+  await removeObsoleteMedia(previous.content, content);
 }
 
 function getCookie(request: IncomingMessage, name: string): string | undefined {
@@ -335,16 +344,84 @@ async function hasAdminSession(request: IncomingMessage): Promise<boolean> {
   const token = getCookie(request, cookieName);
   if (!token) return false;
   const tokenHash = createHash("sha256").update(token).digest("hex");
-  const session = adminSessions.find(
-    (item) => item.tokenHash === tokenHash && Date.parse(item.expiresAt) > Date.now(),
-  );
+  const session = await getMongoCollection("adminSessions").findOne({
+    tokenHash,
+    expiresAt: { $gt: new Date() },
+  });
   if (session) return true;
-  const remaining = adminSessions.filter((item) => item.tokenHash !== tokenHash);
-  if (remaining.length !== adminSessions.length) {
-    adminSessions = remaining;
-    await serializeFileWrite(() => writeJsonFile(adminSessionsFile, adminSessions));
-  }
+  await getMongoCollection("adminSessions").deleteOne({ tokenHash });
   return false;
+}
+
+async function importLegacyAuxiliaryData(): Promise<void> {
+  const migrationMetadata = getMongoCollection("migrationMetadata");
+  const migrationId = "local-json-import-v1";
+  if (await migrationMetadata.findOne({ _id: migrationId })) return;
+
+  const sessionsCollection = getMongoCollection("adminSessions");
+  if (await sessionsCollection.countDocuments() === 0) {
+    try {
+      const sessions = await readJsonFile(adminSessionsFile);
+      if (!Array.isArray(sessions)) {
+        throw new Error("The stored admin sessions data is invalid.");
+      }
+      for (const session of sessions) {
+        if (
+          !isRecord(session) ||
+          typeof session.tokenHash !== "string" ||
+          !/^[\da-f]{64}$/i.test(session.tokenHash) ||
+          typeof session.createdAt !== "string" ||
+          typeof session.expiresAt !== "string" ||
+          !Number.isFinite(Date.parse(session.createdAt)) ||
+          !Number.isFinite(Date.parse(session.expiresAt)) ||
+          Date.parse(session.expiresAt) <= Date.now()
+        ) continue;
+        await sessionsCollection.updateOne(
+          { tokenHash: session.tokenHash },
+          {
+            $setOnInsert: {
+              tokenHash: session.tokenHash,
+              createdAt: new Date(session.createdAt),
+              expiresAt: new Date(session.expiresAt),
+            },
+          },
+          { upsert: true },
+        );
+      }
+    } catch (error) {
+      if (!isRecord(error) || error.code !== "ENOENT") throw error;
+    }
+  }
+
+  const contactsCollection = getMongoCollection("contactMessages");
+  if (await contactsCollection.countDocuments() === 0) {
+    try {
+      const messages = await readJsonFile(contactMessagesFile);
+      if (!Array.isArray(messages)) {
+        throw new Error("The stored contact messages data is invalid.");
+      }
+      const importedMessages = messages.flatMap((message) => {
+        const validMessage = validateMessage(message);
+        if (!validMessage) return [];
+        const receivedAt = isRecord(message) && typeof message.receivedAt === "string" &&
+          Number.isFinite(Date.parse(message.receivedAt))
+          ? new Date(message.receivedAt)
+          : new Date();
+        return [{ ...validMessage, receivedAt }];
+      });
+      if (importedMessages.length > 0) {
+        await contactsCollection.insertMany(importedMessages);
+      }
+    } catch (error) {
+      if (!isRecord(error) || error.code !== "ENOENT") throw error;
+    }
+  }
+
+  await migrationMetadata.updateOne(
+    { _id: migrationId },
+    { $setOnInsert: { importedAt: new Date() } },
+    { upsert: true },
+  );
 }
 
 async function loadLegacyAdminPassword(): Promise<void> {
@@ -370,49 +447,75 @@ async function loadLegacyAdminPassword(): Promise<void> {
 }
 
 async function loadAdminAccount(): Promise<void> {
-  await loadLegacyAdminPassword();
-  if (!adminPasswordRecord && process.env.ADMIN_PASSWORD) {
-    adminPasswordRecord = createPasswordRecord(process.env.ADMIN_PASSWORD);
-  }
-
-  let sessions: unknown;
-  try {
-    sessions = await readJsonFile(adminSessionsFile);
-  } catch (error) {
-    if (!isRecord(error) || error.code !== "ENOENT") throw error;
-    sessions = [];
-  }
-  if (!Array.isArray(sessions)) {
-    throw new Error("The stored admin sessions data is invalid.");
-  }
-  adminSessions = sessions.map((session) => {
+  const accounts = getMongoCollection("adminAccounts");
+  let account = await accounts.findOne({ _id: "primary" });
+  if (account) {
     if (
-      !isRecord(session) ||
-      typeof session.tokenHash !== "string" ||
-      !/^[\da-f]{64}$/i.test(session.tokenHash) ||
-      typeof session.createdAt !== "string" ||
-      typeof session.expiresAt !== "string" ||
-      !Number.isFinite(Date.parse(session.expiresAt))
+      typeof account.username !== "string" ||
+      !account.username.trim() ||
+      typeof account.salt !== "string" ||
+      !/^[\da-f]{32}$/i.test(account.salt) ||
+      typeof account.hash !== "string" ||
+      !/^[\da-f]{128}$/i.test(account.hash)
     ) {
-      throw new Error("The stored admin sessions data is invalid.");
+      throw new Error("The stored MongoDB admin account is invalid.");
     }
-    return {
-      tokenHash: session.tokenHash,
-      createdAt: session.createdAt,
-      expiresAt: session.expiresAt,
-    };
-  }).filter((session) => Date.parse(session.expiresAt) > Date.now());
-  await serializeFileWrite(() => writeJsonFile(adminSessionsFile, adminSessions));
+    adminUsername = account.username.trim();
+    adminPasswordRecord = { salt: account.salt, hash: account.hash };
+  } else {
+    await loadLegacyAdminPassword();
+    if (!adminPasswordRecord && process.env.ADMIN_PASSWORD) {
+      adminPasswordRecord = createPasswordRecord(process.env.ADMIN_PASSWORD);
+    }
+    if (adminUsername && adminPasswordRecord) {
+      await accounts.updateOne(
+        { _id: "primary" },
+        {
+          $setOnInsert: {
+            username: adminUsername,
+            ...adminPasswordRecord,
+          },
+        },
+        { upsert: true },
+      );
+      account = await accounts.findOne({ _id: "primary" });
+      if (!account || typeof account.username !== "string" ||
+        typeof account.salt !== "string" || typeof account.hash !== "string") {
+        throw new Error("The MongoDB admin account could not be initialized.");
+      }
+      adminUsername = account.username;
+      adminPasswordRecord = { salt: account.salt, hash: account.hash };
+    }
+  }
 }
 
 async function saveAdminPassword(record: PasswordRecord): Promise<void> {
   if (!adminUsername) {
     throw new Error("Admin username is not configured.");
   }
-  await serializeFileWrite(() => writeJsonFile(adminPasswordFile, {
-    username: adminUsername,
-    ...record,
-  }));
+  await getMongoCollection("adminAccounts").updateOne(
+    { _id: "primary" },
+    { $set: { username: adminUsername, ...record, updatedAt: new Date() } },
+    { upsert: true },
+  );
+}
+
+async function persistAdminSession(session: AdminSession): Promise<void> {
+  await getMongoCollection("adminSessions").updateOne(
+    { tokenHash: session.tokenHash },
+    {
+      $set: {
+        tokenHash: session.tokenHash,
+        createdAt: new Date(session.createdAt),
+        expiresAt: new Date(session.expiresAt),
+      },
+    },
+    { upsert: true },
+  );
+}
+
+async function clearAdminSessions(): Promise<void> {
+  await getMongoCollection("adminSessions").deleteMany({});
 }
 
 function localAdminBypassEnabled(request: IncomingMessage): boolean {
@@ -548,12 +651,12 @@ async function importLegacyUploads(): Promise<void> {
 async function createAdminSession(response: ServerResponse, secure: boolean): Promise<void> {
   const token = randomBytes(32).toString("base64url");
   const now = new Date();
-  adminSessions.push({
+  const session: AdminSession = {
     tokenHash: createHash("sha256").update(token).digest("hex"),
     createdAt: now.toISOString(),
     expiresAt: new Date(now.getTime() + sessionDuration).toISOString(),
-  });
-  await serializeFileWrite(() => writeJsonFile(adminSessionsFile, adminSessions));
+  };
+  await persistAdminSession(session);
   setSessionCookie(response, token, secure);
 }
 
@@ -636,7 +739,18 @@ async function handleRequest(
     request.method === "GET" &&
     (url.pathname === "/api/health" || url.pathname === "/api/health/storage")
   ) {
-    respond(response, 200, { status: "ok", storage: b2Client ? "backblaze-b2" : "legacy-local" });
+    try {
+      await mongoDatabase?.command({ ping: 1 });
+    } catch (error) {
+      console.error("MongoDB health check failed:", error);
+      respond(response, 503, { message: "The portfolio database is unavailable." });
+      return;
+    }
+    respond(response, 200, {
+      status: "ok",
+      database: "mongodb",
+      storage: b2Client ? "backblaze-b2" : "legacy-local",
+    });
     return;
   }
   if (request.method === "GET" && url.pathname === "/api/portfolio") {
@@ -661,18 +775,13 @@ async function handleRequest(
       let image: Buffer;
       let contentType = mediaContentType(filename);
       if (b2Client) {
-        try {
-          const storedObject = await b2Client.send(new GetObjectCommand({
-            Bucket: b2Bucket,
-            Key: filename,
-          }));
-          if (!storedObject.Body) throw new Error("The B2 object has no response body.");
-          image = Buffer.from(await storedObject.Body.transformToByteArray());
-          if (storedObject.ContentType) contentType = storedObject.ContentType;
-        } catch (error) {
-          if (!isObjectNotFound(error)) throw error;
-          image = await readFile(join(uploadDirectory, filename));
-        }
+        const storedObject = await b2Client.send(new GetObjectCommand({
+          Bucket: b2Bucket,
+          Key: filename,
+        }));
+        if (!storedObject.Body) throw new Error("The B2 object has no response body.");
+        image = Buffer.from(await storedObject.Body.transformToByteArray());
+        if (storedObject.ContentType) contentType = storedObject.ContentType;
       } else {
         image = await readFile(join(uploadDirectory, filename));
       }
@@ -683,7 +792,7 @@ async function handleRequest(
       });
       response.end(image);
     } catch (error) {
-      if (isRecord(error) && error.code === "ENOENT") {
+      if ((isRecord(error) && error.code === "ENOENT") || isObjectNotFound(error)) {
         respond(response, 404, { message: "Image not found." });
       } else {
         console.error("Unable to load uploaded image:", error);
@@ -780,8 +889,7 @@ async function handleRequest(
         const nextPasswordRecord = createPasswordRecord(body.newPassword);
         await saveAdminPassword(nextPasswordRecord);
         adminPasswordRecord = nextPasswordRecord;
-        adminSessions = [];
-        await serializeFileWrite(() => writeJsonFile(adminSessionsFile, adminSessions));
+        await clearAdminSessions();
         await createAdminSession(response, isSecureRequest(request));
         respond(response, 200, { message: "Admin password changed successfully." });
       } catch (error) {
@@ -801,8 +909,7 @@ async function handleRequest(
       const token = getCookie(request, cookieName);
       if (token) {
         const tokenHash = createHash("sha256").update(token).digest("hex");
-        adminSessions = adminSessions.filter((session) => session.tokenHash !== tokenHash);
-        await serializeFileWrite(() => writeJsonFile(adminSessionsFile, adminSessions));
+        await getMongoCollection("adminSessions").deleteOne({ tokenHash });
       }
       clearSessionCookie(response, isSecureRequest(request));
       respond(response, 200, { message: "Signed out." });
@@ -958,19 +1065,9 @@ async function handleRequest(
       });
       return;
     }
-    await serializeFileWrite(async () => {
-      let messages: unknown;
-      try {
-        messages = await readJsonFile(contactMessagesFile);
-      } catch (error) {
-        if (!isRecord(error) || error.code !== "ENOENT") throw error;
-        messages = [];
-      }
-      if (!Array.isArray(messages)) {
-        throw new Error("The stored contact messages data is invalid.");
-      }
-      messages.push({ ...message, receivedAt: new Date().toISOString() });
-      await writeJsonFile(contactMessagesFile, messages);
+    await getMongoCollection("contactMessages").insertOne({
+      ...message,
+      receivedAt: new Date(),
     });
     respond(response, 201, { message: "Your message was received successfully." });
   } catch (error) {
@@ -986,7 +1083,12 @@ async function handleRequest(
 }
 
 async function startServer(): Promise<void> {
+  await connectToDatabase();
+  if (process.env.NODE_ENV === "production" && !b2Client) {
+    throw new Error("Configure Backblaze B2 storage in production to keep uploaded media persistent.");
+  }
   await initializePortfolio();
+  await importLegacyAuxiliaryData();
   await loadAdminAccount();
   await importLegacyUploads();
   server.listen(port, () => {
@@ -1007,6 +1109,7 @@ function shutdown(signal: string): void {
       process.exitCode = 1;
     }
     b2Client?.destroy();
+    void mongoClient?.close();
   });
 }
 
@@ -1016,5 +1119,6 @@ process.once("SIGTERM", () => shutdown("SIGTERM"));
 void startServer().catch((error: unknown) => {
   console.error("Unable to start the portfolio API:", error);
   b2Client?.destroy();
+  void mongoClient?.close();
   process.exitCode = 1;
 });
