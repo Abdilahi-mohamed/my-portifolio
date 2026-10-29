@@ -74,7 +74,7 @@ npm run dev --prefix frontend
 | `GET` | `/api/admin/session` | Check admin session/configuration status. |
 | `POST` | `/api/admin/login` | Sign in and issue an HttpOnly session cookie. |
 | `POST` | `/api/admin/logout` | Revoke the current admin session. |
-| `POST` | `/api/admin/password` | Change the admin password. |
+| `POST` | `/api/admin/password` | Change the admin password from the portfolio settings menu after verifying admin credentials. |
 | `POST` | `/api/admin/uploads` | Upload an authenticated image to B2 (maximum 8 MB). |
 | `GET` | `/api/admin/portfolio` | Load portfolio content in the CMS. |
 | `PUT` | `/api/admin/portfolio` | Validate and atomically save portfolio content. |

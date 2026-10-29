@@ -42,6 +42,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 
 .topbar {
   position: relative;
+  z-index: 5;
   display: flex;
   min-height: 76px;
   align-items: center;
@@ -959,8 +960,291 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 
 @media (max-width: 520px) {
   .portfolio-page { width: calc(100% - 28px); }
-  .topbar { min-height: 62px; justify-content: center; gap: 8px; }
-  .wordmark { margin-inline: auto; font-size: 14px; }
+}
+
+.portfolio-menu {
+  position: relative;
+  z-index: 6;
+  flex: 0 0 auto;
+}
+
+.portfolio-menu > summary {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  color: var(--ink);
+  background: #fff;
+  cursor: pointer;
+  list-style: none;
+}
+
+.portfolio-menu > summary::-webkit-details-marker { display: none; }
+.portfolio-menu > summary:hover { border-color: #b6c9bf; }
+
+.portfolio-menu-items {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 10;
+  display: grid;
+  width: 225px;
+  gap: 3px;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: #fff;
+  box-shadow: 0 12px 30px rgb(25 44 35 / 14%);
+}
+
+.portfolio-menu-items a,
+.portfolio-menu-items button {
+  display: flex;
+  min-height: 40px;
+  align-items: center;
+  gap: 10px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 7px;
+  color: var(--ink);
+  background: transparent;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.portfolio-menu-items a:hover,
+.portfolio-menu-items button:hover { background: #f0f4f1; }
+
+.password-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  place-items: center;
+  overflow-y: auto;
+  padding: 20px;
+  background: rgb(12 22 17 / 62%);
+}
+
+.password-dialog {
+  position: relative;
+  width: min(100%, 440px);
+  padding: 30px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  color: var(--ink);
+  background: #fff;
+  box-shadow: 0 24px 70px rgb(0 0 0 / 28%);
+}
+
+.password-dialog-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+  background: transparent;
+  cursor: pointer;
+}
+
+.password-dialog-kicker {
+  color: var(--green);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .13em;
+}
+
+.password-dialog h2 {
+  margin: 8px 0 0;
+  font-family: "Manrope", sans-serif;
+  font-size: 25px;
+  letter-spacing: -.04em;
+}
+
+.password-dialog > p {
+  margin: 8px 0 20px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.password-dialog form { display: grid; gap: 13px; }
+
+.password-dialog form > label {
+  display: grid;
+  gap: 6px;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.password-dialog input {
+  width: 100%;
+  min-height: 42px;
+  padding: 0 11px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--ink);
+  background: transparent;
+  font-size: 13px;
+}
+
+.password-dialog form small {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 400;
+}
+
+.password-dialog-submit {
+  min-height: 43px;
+  margin-top: 4px;
+  border: 0;
+  border-radius: 8px;
+  color: #fff;
+  background: var(--green);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.password-dialog-submit:disabled,
+.password-dialog-close:disabled { cursor: wait; opacity: .7; }
+
+.password-dialog-error,
+.password-dialog-notice {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.password-dialog-error { color: #b34332; }
+.password-dialog-notice { color: var(--green); }
+
+html[data-portfolio-theme="dark"] {
+  color-scheme: dark;
+  background: #101713;
+}
+
+html[data-portfolio-theme="dark"] body { background: #101713; }
+
+html[data-portfolio-theme="dark"] .portfolio-page {
+  --ink: #e4ece7;
+  --muted: #a4b2aa;
+  --line: #34443a;
+  --green: #84c6a2;
+  color: var(--ink);
+}
+
+html[data-portfolio-theme="dark"] .profile,
+html[data-portfolio-theme="dark"] .summary-card,
+html[data-portfolio-theme="dark"] .project-card,
+html[data-portfolio-theme="dark"] .skill-card,
+html[data-portfolio-theme="dark"] .credential-panel,
+html[data-portfolio-theme="dark"] .social-card,
+html[data-portfolio-theme="dark"] .edit-link,
+html[data-portfolio-theme="dark"] .empty-action,
+html[data-portfolio-theme="dark"] .credentials-edit-link,
+html[data-portfolio-theme="dark"] .portfolio-menu > summary,
+html[data-portfolio-theme="dark"] .portfolio-menu-items,
+html[data-portfolio-theme="dark"] .password-dialog {
+  color: var(--ink);
+  background-color: #19231d;
+}
+
+html[data-portfolio-theme="dark"] .profile-avatar-frame { background: #19231d; }
+
+html[data-portfolio-theme="dark"] .profile-bio,
+html[data-portfolio-theme="dark"] .summary-label,
+html[data-portfolio-theme="dark"] .summary-card small,
+html[data-portfolio-theme="dark"] .project-count,
+html[data-portfolio-theme="dark"] .skill-group-title,
+html[data-portfolio-theme="dark"] .skill-level,
+html[data-portfolio-theme="dark"] .skill-category,
+html[data-portfolio-theme="dark"] .certificate-year,
+html[data-portfolio-theme="dark"] .experience-year,
+html[data-portfolio-theme="dark"] .experience-location,
+html[data-portfolio-theme="dark"] .social-arrow,
+html[data-portfolio-theme="dark"] .page-footer,
+html[data-portfolio-theme="dark"] .page-footer a {
+  color: #a4b2aa;
+}
+
+html[data-portfolio-theme="dark"] .summary-icon,
+html[data-portfolio-theme="dark"] .empty-mark,
+html[data-portfolio-theme="dark"] .social-icon {
+  color: #a7d9bb;
+  background: #263a2e;
+}
+
+html[data-portfolio-theme="dark"] .summary-card strong,
+html[data-portfolio-theme="dark"] .social-name { color: var(--ink); }
+
+html[data-portfolio-theme="dark"] .project-image-wrap,
+html[data-portfolio-theme="dark"] .project-gallery,
+html[data-portfolio-theme="dark"] .certificate-image-wrap,
+html[data-portfolio-theme="dark"] .experience-image-link {
+  background-color: #26332b;
+}
+
+html[data-portfolio-theme="dark"] .project-image-placeholder {
+  color: #a4b2aa;
+  background: linear-gradient(145deg, #26332b, #1d2922);
+}
+
+html[data-portfolio-theme="dark"] .project-gallery-arrow {
+  border-color: #52665a;
+  color: #e4ece7;
+  background: rgb(25 35 29 / 92%);
+}
+
+html[data-portfolio-theme="dark"] .empty-projects,
+html[data-portfolio-theme="dark"] .section-empty {
+  border-color: #45584b;
+  background: rgb(25 35 29 / 70%);
+}
+
+html[data-portfolio-theme="dark"] .skill-meter,
+html[data-portfolio-theme="dark"] .certificate-card { background-color: #29372f; }
+
+html[data-portfolio-theme="dark"] .experience-card:not(:last-child)::before { background: #34443a; }
+
+html[data-portfolio-theme="dark"] .credential-empty { border-color: #34443a; }
+
+html[data-portfolio-theme="dark"] .experience-marker {
+  border-color: #19231d;
+  box-shadow: 0 0 0 1px #526c5a;
+}
+
+html[data-portfolio-theme="dark"] .credentials-edit-link:hover,
+html[data-portfolio-theme="dark"] .portfolio-menu-items a:hover,
+html[data-portfolio-theme="dark"] .portfolio-menu-items button:hover {
+  background: #26372d;
+}
+
+html[data-portfolio-theme="dark"] .password-dialog input {
+  border-color: #46574c;
+  color: var(--ink);
+  background: #121b16;
+}
+
+@media (max-width: 520px) {
+  .topbar { justify-content: space-between; }
+  .wordmark { margin-inline: 0 auto; }
+  .password-dialog { padding: 26px 21px; }
+}
+
+@media (max-width: 520px) {
+  .topbar { min-height: 62px; justify-content: space-between; gap: 8px; }
+  .wordmark { margin-inline: 0 auto; font-size: 14px; }
   .topbar-actions { justify-content: center; gap: 10px 14px; }
   .topbar-actions .edit-link { margin-left: 0; }
   .topbar-nav-link { font-size: 12px; }

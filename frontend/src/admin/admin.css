@@ -364,12 +364,6 @@
 .cms-social-icon-trigger:hover { border-color: #8bb6a2; color: #2d6d58; }
 .cms-social-icon-field > small { display: block; margin-top: 4px; color: #737d78; font-size: 11px; font-weight: 500; }
 .cms-social-editor-row .cms-managed-card-delete { position: static; margin-top: 17px; }
-.cms-password-form { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: end; gap: 12px; }
-.cms-password-form .cms-input-label > small { display: block; margin-top: 5px; color: #737d78; font-size: 9px; }
-.cms-password-form .cms-error,
-.cms-password-notice { grid-column: 1 / -1; margin: 0; font-size: 11px; }
-.cms-password-notice { color: #2d6d58; }
-.cms-password-form .cms-primary-btn { justify-self: start; }
 .cms-file-choice { position: relative; display: inline-flex; min-height: 34px; align-items: center; margin-top: 6px; padding: 0 12px; overflow: hidden; border: 1px solid #d8e1da; border-radius: 5px; color: #315d48; background: #f3f7f3; font-size: 10px; font-weight: 700; cursor: pointer; transition: border-color 150ms ease, background 150ms ease; }
 .cms-file-choice:hover { border-color: #a9c2b1; background: #edf4ee; }
 .cms-file-choice:focus-within { outline: 3px solid #9fc9b8; outline-offset: 2px; }
@@ -701,9 +695,6 @@
 @media (max-width: 760px) {
   .cms-gallery-editor { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .cms-card-actions { opacity: 1; }
-  .cms-password-form { grid-template-columns: 1fr; }
-  .cms-password-form .cms-error,
-  .cms-password-notice { grid-column: auto; }
 }
 @media (max-width: 440px) {
   .cms-gallery-editor { grid-template-columns: 1fr 1fr; }

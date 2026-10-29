@@ -13,7 +13,6 @@ import {
   FileJson2,
   FolderKanban,
   LayoutDashboard,
-  LockKeyhole,
   LogOut,
   MapPin,
   MoveDown,
@@ -31,7 +30,7 @@ import {
 import type { IconName, PortfolioContent } from "../types";
 import { SocialBrandIcon, socialIconOptions } from "../socialIcons";
 import { isProgrammingLanguageIcon, ProgrammingLanguageIcon, programmingIconOptions } from "../programmingIcons";
-import { adminLogout, changeAdminPassword, loadAdminPortfolio, saveAdminPortfolio, uploadImage } from "./adminApi";
+import { adminLogout, loadAdminPortfolio, saveAdminPortfolio, uploadImage } from "./adminApi";
 
 type Project = PortfolioContent["projectsSection"]["projects"][number];
 type Skill = PortfolioContent["skillsSection"]["skills"][number];
@@ -193,12 +192,6 @@ export function AdminDashboard({
   const [iconPickerIndex, setIconPickerIndex] = useState<number | null>(null);
   const [iconSearch, setIconSearch] = useState("");
   const [skillIconPickerOpen, setSkillIconPickerOpen] = useState(false);
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [passwordBusy, setPasswordBusy] = useState(false);
-  const [passwordError, setPasswordError] = useState("");
-  const [passwordNotice, setPasswordNotice] = useState("");
   const [activity, setActivity] = useState<Activity[]>([]);
   const coverDrag = useRef<{
     pointerId: number;
@@ -774,32 +767,6 @@ export function AdminDashboard({
     onSignedOut();
   };
 
-  const submitPasswordChange = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setPasswordError("");
-    setPasswordNotice("");
-    if (newPassword.length < 7) {
-      setPasswordError("Use at least 7 characters for your new password.");
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      setPasswordError("The new passwords do not match.");
-      return;
-    }
-    setPasswordBusy(true);
-    try {
-      const message = await changeAdminPassword(currentPassword, newPassword);
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
-      setPasswordNotice(message);
-    } catch (error) {
-      setPasswordError(error instanceof Error ? error.message : "Could not change the admin password.");
-    } finally {
-      setPasswordBusy(false);
-    }
-  };
-
   if (!content) {
     return <main className="cms-loading">{loadingError || "Loading admin workspace..."}</main>;
   }
@@ -843,7 +810,6 @@ export function AdminDashboard({
           <a href="#certificates"><Award size={16} /> Certificates <span>{certificates.length}</span></a>
           <a href="#experience"><BriefcaseBusiness size={16} /> Experience</a>
           <a href="#contact-editor"><ExternalLink size={16} /> Social profiles</a>
-          <a href="#admin-security"><LockKeyhole size={16} /> Change password</a>
           <a href="#sections"><LayoutDashboard size={16} /> Sections</a>
         </nav>
         <div className="cms-global-actions">
@@ -1034,18 +1000,6 @@ export function AdminDashboard({
                     <button aria-label={`Remove ${social.name || "social profile"}`} className="cms-managed-card-delete" onClick={() => removeSocial(index)} type="button"><Trash2 size={13} /></button>
                   </div>;
                 })}
-              </section>
-
-              <section className="cms-panel cms-password-panel" id="admin-security">
-                <div className="cms-panel-heading"><div><span className="cms-section-index">ADMIN ACCOUNT</span><h2>Change password</h2><p>Update the password used to open portfolio management. Your current session will remain active.</p></div></div>
-                <form className="cms-password-form" onSubmit={(event) => { void submitPasswordChange(event); }}>
-                  <label className="cms-input-label">Current password<input autoComplete="current-password" onChange={(event) => setCurrentPassword(event.target.value)} required type="password" value={currentPassword} /></label>
-                  <label className="cms-input-label">New password<input autoComplete="new-password" minLength={7} maxLength={128} onChange={(event) => setNewPassword(event.target.value)} required type="password" value={newPassword} /><small>Use at least 7 characters.</small></label>
-                  <label className="cms-input-label">Confirm new password<input autoComplete="new-password" onChange={(event) => setConfirmPassword(event.target.value)} required type="password" value={confirmPassword} /></label>
-                  {passwordError && <p className="cms-error" role="alert">{passwordError}</p>}
-                  {passwordNotice && <p className="cms-password-notice" role="status">{passwordNotice}</p>}
-                  <button className="cms-primary-btn" disabled={passwordBusy} type="submit">{passwordBusy ? "Changing password..." : "Change password"}</button>
-                </form>
               </section>
 
               <section className="cms-panel cms-section-manager" id="sections">

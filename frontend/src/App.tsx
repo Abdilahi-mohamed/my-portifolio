@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import {
   Award,
   ArrowUpRight,
@@ -13,20 +13,25 @@ import {
   Github,
   Globe2,
   Layers3,
+  KeyRound,
   Linkedin,
   Instagram,
   MapPin,
   MessageCircle,
   Monitor,
+  MoreVertical,
+  Moon,
   Palette,
   Pencil,
   FolderKanban,
   Send,
+  Sun,
   Terminal,
   X as XIcon,
   Zap,
 } from "lucide-react";
 import { SocialBrandIcon, socialIconOptions } from "./socialIcons";
+import { adminLogin, changeAdminPassword } from "./admin/adminApi";
 import { apiUrl, resolvePortfolioMedia } from "./api";
 import { isProgrammingLanguageIcon, ProgrammingLanguageIcon } from "./programmingIcons";
 import defaultPortfolio from "../../shared/portfolio.default.json";
@@ -134,6 +139,36 @@ function App() {
     defaultPortfolio as PortfolioContent,
   );
   const [toast, setToast] = useState<ToastMessage | null>(null);
+  const [darkMode, setDarkMode] = useState(() => {
+    try {
+      return window.localStorage.getItem("portfolio-theme") === "dark";
+    } catch {
+      return false;
+    }
+  });
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+  const [passwordBusy, setPasswordBusy] = useState(false);
+  const [passwordError, setPasswordError] = useState("");
+  const [passwordNotice, setPasswordNotice] = useState("");
+  const [adminUsername, setAdminUsername] = useState("");
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
+  useEffect(() => {
+    document.documentElement.dataset.portfolioTheme = darkMode ? "dark" : "light";
+    try {
+      window.localStorage.setItem("portfolio-theme", darkMode ? "dark" : "light");
+    } catch {
+      setToast({
+        title: "Theme preference could not be saved",
+        detail: "Your selected theme will be reset when you leave this page.",
+      });
+    }
+    return () => {
+      delete document.documentElement.dataset.portfolioTheme;
+    };
+  }, [darkMode]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -157,6 +192,42 @@ function App() {
     const timeout = window.setTimeout(() => setToast(null), 4200);
     return () => window.clearTimeout(timeout);
   }, [toast]);
+
+  useEffect(() => {
+    if (!passwordDialogOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && !passwordBusy) setPasswordDialogOpen(false);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [passwordBusy, passwordDialogOpen]);
+
+  const submitPasswordChange = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setPasswordError("");
+    setPasswordNotice("");
+    if (newPassword.length < 7) {
+      setPasswordError("Use at least 7 characters for your new password.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordError("The new passwords do not match.");
+      return;
+    }
+    setPasswordBusy(true);
+    try {
+      await adminLogin(adminUsername, currentPassword);
+      const message = await changeAdminPassword(currentPassword, newPassword);
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setPasswordNotice(message);
+    } catch (error) {
+      setPasswordError(error instanceof Error ? error.message : "Could not change the admin password.");
+    } finally {
+      setPasswordBusy(false);
+    }
+  };
 
   const profile = portfolio.about;
   const projects = portfolio.projectsSection.projects.filter((project) => project.visible);
@@ -188,12 +259,33 @@ function App() {
     <main className="portfolio-page">
       <header className="topbar">
         <a className="wordmark" href="#profile">{profile.profileName}</a>
+        <details className="portfolio-menu">
+          <summary aria-label="More portfolio options" title="More options">
+            <MoreVertical size={19} />
+          </summary>
+          <div className="portfolio-menu-items">
+            <a href="/admin"><Pencil size={16} /> Edit portfolio settings</a>
+            <button onClick={() => setDarkMode((enabled) => !enabled)} type="button">
+              {darkMode ? <Sun size={16} /> : <Moon size={16} />}
+              {darkMode ? "Light mode" : "Dark mode"}
+            </button>
+            <button
+              onClick={() => {
+                setPasswordError("");
+                setPasswordNotice("");
+                setPasswordDialogOpen(true);
+              }}
+              type="button"
+            >
+              <KeyRound size={16} /> Change password
+            </button>
+          </div>
+        </details>
         <nav aria-label="Portfolio sections" className="topbar-actions">
           <a className="topbar-nav-link" href="#projects">Projects</a>
           <a className="topbar-nav-link" href="#skills">Skills</a>
           <a className="topbar-nav-link" href="#credentials">Certificates & experience</a>
           <a className="topbar-nav-link" href="#socials">Social profiles</a>
-          <a className="edit-link" href="/admin"><Pencil size={15} /> Edit portfolio</a>
         </nav>
       </header>
 
@@ -468,6 +560,55 @@ function App() {
         <div aria-live="polite" className="toast" role="status">
           <strong>{toast.title}</strong>
           {toast.detail && <span>{toast.detail}</span>}
+        </div>
+      )}
+      {passwordDialogOpen && (
+        <div
+          className="password-dialog-backdrop"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget && !passwordBusy) {
+              setPasswordDialogOpen(false);
+            }
+          }}
+        >
+          <section aria-labelledby="password-dialog-title" aria-modal="true" className="password-dialog" role="dialog">
+            <button
+              aria-label="Close change password dialog"
+              className="password-dialog-close"
+              disabled={passwordBusy}
+              onClick={() => setPasswordDialogOpen(false)}
+              type="button"
+            >
+              <XIcon size={18} />
+            </button>
+            <span className="password-dialog-kicker">ADMIN ACCOUNT</span>
+            <h2 id="password-dialog-title">Change password</h2>
+            <p>Verify your admin credentials before choosing a new password.</p>
+            <form onSubmit={(event) => { void submitPasswordChange(event); }}>
+              <label>
+                Username
+                <input autoComplete="username" autoFocus onChange={(event) => setAdminUsername(event.target.value)} required value={adminUsername} />
+              </label>
+              <label>
+                Current password
+                <input autoComplete="current-password" onChange={(event) => setCurrentPassword(event.target.value)} required type="password" value={currentPassword} />
+              </label>
+              <label>
+                New password
+                <input autoComplete="new-password" maxLength={128} minLength={7} onChange={(event) => setNewPassword(event.target.value)} required type="password" value={newPassword} />
+                <small>Use at least 7 characters.</small>
+              </label>
+              <label>
+                Confirm new password
+                <input autoComplete="new-password" onChange={(event) => setConfirmPassword(event.target.value)} required type="password" value={confirmPassword} />
+              </label>
+              {passwordError && <p className="password-dialog-error" role="alert">{passwordError}</p>}
+              {passwordNotice && <p className="password-dialog-notice" role="status">{passwordNotice}</p>}
+              <button className="password-dialog-submit" disabled={passwordBusy} type="submit">
+                {passwordBusy ? "Changing password..." : "Change password"}
+              </button>
+            </form>
+          </section>
         </div>
       )}
     </main>
