@@ -25,7 +25,10 @@ const mongoDnsServers = process.env.MONGODB_DNS_SERVERS?.split(",")
   .filter(Boolean) ?? [];
 if (mongoDnsServers.length > 0) setServers(mongoDnsServers);
 let adminUsername = process.env.ADMIN_USERNAME?.trim() ?? "";
-const port = Number(process.env.PORT ?? 4000);
+const port = Number(process.env.PORT?.trim() || 4000);
+if (!Number.isInteger(port) || port < 1 || port > 65_535) {
+  throw new Error("PORT must be an integer between 1 and 65535.");
+}
 const dataDirectory = resolve(backendDirectory, process.env.DATA_DIRECTORY ?? "data");
 const allowedOrigins = new Set([
   "https://my-portifolio-blush-five.vercel.app",
@@ -134,6 +137,11 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+function mongoErrorMessage(error: unknown): string {
+  const message = error instanceof Error ? error.message : String(error);
+  return message.replace(/mongodb(?:\+srv)?:\/\/[^\s"'<>]+/gi, "[redacted MongoDB URI]");
+}
+
 async function readJsonFile(file: string): Promise<unknown> {
   return JSON.parse(await readFile(file, "utf8")) as unknown;
 }
@@ -143,10 +151,62 @@ async function connectToDatabase(): Promise<void> {
     throw new Error("MONGODB_URI is required; refusing to use file-backed portfolio storage.");
   }
 
-  mongoClient = new MongoClient(mongoUri, { serverSelectionTimeoutMS: 10_000 });
-  await mongoClient.connect();
-  mongoDatabase = mongoClient.db(mongoDatabaseName);
-  await mongoDatabase.command({ ping: 1 });
+  let parsedUri: URL;
+  try {
+    parsedUri = new URL(mongoUri);
+  } catch {
+    throw new Error("MONGODB_URI is invalid; verify the Atlas connection string and URL-encode special characters in credentials.");
+  }
+  if (
+    !["mongodb:", "mongodb+srv:"].includes(parsedUri.protocol) ||
+    !parsedUri.hostname ||
+    (parsedUri.protocol === "mongodb+srv:" && parsedUri.port)
+  ) {
+    throw new Error("MONGODB_URI must be a valid mongodb:// or mongodb+srv:// connection string.");
+  }
+
+  let lastError: unknown;
+  let lastHeartbeatWarningAt = 0;
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    const client = new MongoClient(mongoUri, {
+      appName: "abdilahi-portfolio-api",
+      connectTimeoutMS: 10_000,
+      serverSelectionTimeoutMS: 10_000,
+      socketTimeoutMS: 45_000,
+      retryReads: true,
+      retryWrites: true,
+    });
+    client.on("serverHeartbeatFailed", (event) => {
+      const now = Date.now();
+      if (now - lastHeartbeatWarningAt < 30_000) return;
+      lastHeartbeatWarningAt = now;
+      console.error(
+        `MongoDB heartbeat failed for ${event.connectionId}: ${mongoErrorMessage(event.failure)}`,
+      );
+    });
+
+    try {
+      await client.connect();
+      const database = client.db(mongoDatabaseName);
+      await database.command({ ping: 1 });
+      mongoClient = client;
+      mongoDatabase = database;
+      return;
+    } catch (error) {
+      lastError = error;
+      console.error(`MongoDB connection attempt ${attempt}/3 failed: ${mongoErrorMessage(error)}`);
+      await client.close().catch((closeError: unknown) => {
+        console.error("Unable to close a failed MongoDB connection attempt:", closeError);
+      });
+      if (attempt < 3) {
+        await new Promise((resolveDelay) => setTimeout(resolveDelay, attempt * 1_000));
+      }
+    }
+  }
+
+  throw new Error(
+    `MongoDB is unavailable after 3 connection attempts. Confirm Atlas Network Access allows this Render service's outbound IP addresses, that SRV DNS resolves, and that MONGODB_URI credentials are valid. Details: ${mongoErrorMessage(lastError)}`,
+  );
 }
 
 function getMongoCollection(name: string) {
@@ -1159,8 +1219,8 @@ async function startServer(): Promise<void> {
   await importLegacyAuxiliaryData();
   await loadAdminAccount();
   await importLegacyUploads();
-  server.listen(port, "127.0.0.1", () => {
-    console.log(`Portfolio API listening on http://127.0.0.1:${port}`);
+  server.listen(port, "0.0.0.0", () => {
+    console.log(`Portfolio API listening on port ${port} (0.0.0.0)`);
     console.log(`Structured data directory: ${dataDirectory}`);
     console.log(`Media storage: ${b2Client ? "Backblaze B2" : "local legacy files (uploads disabled)"}`);
   });
