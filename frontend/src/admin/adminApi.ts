@@ -1,5 +1,5 @@
 import type { PortfolioContent } from "../types";
-import { apiUrl, resolvePortfolioMedia } from "../api";
+import { apiUrl, notifyPortfolioUpdated, resolvePortfolioMedia } from "../api";
 
 type SessionResponse = { authenticated: string; configured: string; authDisabled: string };
 type MessageResponse = { message?: string };
@@ -7,6 +7,20 @@ type StorageHealthResponse = MessageResponse & {
   database?: string;
   storage?: string;
 };
+export type AdminPortfolioSnapshot = {
+  content: PortfolioContent;
+  revision: string;
+};
+
+function portfolioRevision(response: Response): string {
+  const match = /^"([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})"$/i.exec(
+    response.headers.get("ETag") ?? "",
+  );
+  if (!match) {
+    throw new Error("The API did not return a portfolio revision. Reload the latest backend before editing.");
+  }
+  return match[1];
+}
 
 async function parseJson<T>(response: Response): Promise<T> {
   return (await response.json()) as T;
@@ -76,29 +90,34 @@ export async function adminLogout(): Promise<void> {
   });
 }
 
-export async function loadAdminPortfolio(): Promise<PortfolioContent> {
+export async function loadAdminPortfolio(): Promise<AdminPortfolioSnapshot> {
   await requirePersistentStorage();
   const response = await fetch(apiUrl("/api/admin/portfolio"), { credentials: "include" });
   const body = await parseJson<PortfolioContent & MessageResponse>(response);
   if (!response.ok || !("hero" in body)) {
     throw new Error(body.message ?? "Could not load portfolio content.");
   }
-  return resolvePortfolioMedia(body);
+  return { content: resolvePortfolioMedia(body), revision: portfolioRevision(response) };
 }
 
-export async function saveAdminPortfolio(content: PortfolioContent): Promise<string> {
+export async function saveAdminPortfolio(
+  content: PortfolioContent,
+  revision: string,
+): Promise<{ message: string; revision: string }> {
   await requirePersistentStorage();
   const response = await fetch(apiUrl("/api/admin/portfolio"), {
     method: "PUT",
     credentials: "include",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", "If-Match": `"${revision}"` },
     body: JSON.stringify(content),
   });
   const body = await parseJson<MessageResponse>(response);
   if (!response.ok) {
     throw new Error(body.message ?? "Could not save portfolio changes.");
   }
-  return body.message ?? "Portfolio changes saved.";
+  const nextRevision = portfolioRevision(response);
+  notifyPortfolioUpdated();
+  return { message: body.message ?? "Portfolio changes saved.", revision: nextRevision };
 }
 
 export async function uploadImage(file: File): Promise<string> {

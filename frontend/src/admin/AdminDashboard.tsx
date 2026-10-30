@@ -36,7 +36,14 @@ import {
   programmingIconColor,
   programmingIconOptions,
 } from "../programmingIcons";
-import { adminLogout, loadAdminPortfolio, saveAdminPortfolio, uploadImage } from "./adminApi";
+import {
+  adminLogout,
+  loadAdminPortfolio,
+  saveAdminPortfolio,
+  uploadImage,
+  type AdminPortfolioSnapshot,
+} from "./adminApi";
+import { subscribeToPortfolioUpdates } from "../api";
 
 type Project = PortfolioContent["projectsSection"]["projects"][number];
 type Skill = PortfolioContent["skillsSection"]["skills"][number];
@@ -46,6 +53,16 @@ type EditorKind = "project" | "skill" | "experience" | "certificate";
 type EditorState = { kind: EditorKind; index: number | null };
 type Activity = { id: number; label: string; time: string };
 type GalleryItem = { url: string; file?: File };
+
+function dashboardPortfolio(snapshot: AdminPortfolioSnapshot): PortfolioContent {
+  return {
+    ...snapshot.content,
+    navigation: snapshot.content.navigation.map((item) =>
+      item.id === "contacts" ? { ...item, label: "Social profiles" } : item,
+    ),
+  };
+}
+
 const skillGroups = ["Frontend", "Backend", "Databases", "Tools"] as const;
 const builtInSections = [
   { id: "about", label: "About", title: "About me" },
@@ -143,6 +160,8 @@ export function AdminDashboard({
   onUnauthorized: () => void;
 }) {
   const [content, setContent] = useState<PortfolioContent | null>(null);
+  const contentRef = useRef<PortfolioContent | null>(null);
+  const [revision, setRevision] = useState("");
   const [loadingError, setLoadingError] = useState("");
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState(true);
@@ -175,18 +194,44 @@ export function AdminDashboard({
 
   useEffect(() => {
     loadAdminPortfolio()
-      .then((portfolio) => setContent({
-        ...portfolio,
-        navigation: portfolio.navigation.map((item) =>
-          item.id === "contacts" ? { ...item, label: "Social profiles" } : item,
-        ),
-      }))
+      .then((snapshot) => {
+        const portfolio = dashboardPortfolio(snapshot);
+        contentRef.current = portfolio;
+        setRevision(snapshot.revision);
+        setContent(portfolio);
+      })
       .catch((error: unknown) => {
         const message = error instanceof Error ? error.message : "Could not load portfolio.";
         setLoadingError(message);
         if (message.toLowerCase().includes("sign in")) onUnauthorized();
       });
   }, [onUnauthorized]);
+
+  useEffect(() => subscribeToPortfolioUpdates(() => {
+    const currentContent = contentRef.current;
+    if (!currentContent) return;
+    if (!saved) {
+      setNotice("Another admin session saved newer content. Your unsaved edits were kept; reload only after copying anything you want to keep.");
+      return;
+    }
+    loadAdminPortfolio()
+      .then((snapshot) => {
+        if (contentRef.current !== currentContent) {
+          setNotice("Another admin session saved newer content. Your unsaved edits were kept; reload only after copying anything you want to keep.");
+          return;
+        }
+        const portfolio = dashboardPortfolio(snapshot);
+        contentRef.current = portfolio;
+        setRevision(snapshot.revision);
+        setContent(portfolio);
+        setNotice("Portfolio refreshed from the database.");
+      })
+      .catch((error: unknown) => {
+        const message = error instanceof Error ? error.message : "Could not refresh portfolio content.";
+        setNotice(message);
+        if (message.toLowerCase().includes("sign in")) onUnauthorized();
+      });
+  }), [onUnauthorized, saved]);
 
   useEffect(() => {
     if (!notice) return;
@@ -232,7 +277,11 @@ export function AdminDashboard({
     );
 
   const updateContent = (updater: (current: PortfolioContent) => PortfolioContent) => {
-    setContent((current) => current ? updater(current) : current);
+    const current = contentRef.current;
+    if (!current) return;
+    const next = updater(current);
+    contentRef.current = next;
+    setContent(next);
     setSaved(false);
   };
 
@@ -369,8 +418,9 @@ export function AdminDashboard({
   };
 
   const save = async () => {
-    if (!content || busy) return;
-    const incompleteSocial = content.contact.socials.find((social) => {
+    const contentToSave = contentRef.current;
+    if (!contentToSave || !revision || busy) return;
+    const incompleteSocial = contentToSave.contact.socials.find((social) => {
       if (!social.name.trim()) return true;
       try {
         const url = new URL(social.url);
@@ -385,13 +435,19 @@ export function AdminDashboard({
     }
     setBusy(true);
     try {
-      const message = await saveAdminPortfolio(content);
-      setSaved(true);
-      setNotice(message);
+      const result = await saveAdminPortfolio(contentToSave, revision);
+      setRevision(result.revision);
+      const allChangesSaved = contentRef.current === contentToSave;
+      setSaved(allChangesSaved);
+      setNotice(allChangesSaved
+        ? result.message
+        : "The submitted changes were saved. Newer edits made during the save are still unsaved.");
       setActivity((items) => [{ id: Date.now(), label: "Portfolio changes published", time: "Just now" }, ...items].slice(0, 5));
     } catch (error) {
       const message = error instanceof Error ? error.message : "Could not save changes.";
-      setNotice(message);
+      setNotice(message.includes("changed after it was loaded")
+        ? `${message} Your local edits are still intact; reload only after copying any edits you want to keep.`
+        : message);
       if (message.toLowerCase().includes("sign in")) onUnauthorized();
     } finally {
       setBusy(false);

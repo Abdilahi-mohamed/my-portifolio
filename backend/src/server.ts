@@ -1,4 +1,4 @@
-import { createHash, randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
+import { createHash, randomBytes, randomUUID, scryptSync, timingSafeEqual } from "node:crypto";
 import { setServers } from "node:dns";
 import { readdir, readFile, stat, unlink } from "node:fs/promises";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
@@ -72,6 +72,7 @@ type ContactMessage = {
 };
 type MongoRecord = Document & {
   _id?: string;
+  _revision?: string;
   content?: unknown;
   username?: unknown;
   salt?: unknown;
@@ -89,6 +90,13 @@ function createPasswordRecord(password: string): PasswordRecord {
 let adminPasswordRecord: PasswordRecord | null = null;
 let mongoClient: MongoClient | null = null;
 let mongoDatabase: Db | null = null;
+
+class PortfolioConflictError extends Error {
+  constructor() {
+    super("The portfolio changed after it was loaded. Reload the latest content before saving.");
+    this.name = "PortfolioConflictError";
+  }
+}
 
 const b2Endpoint = process.env.B2_ENDPOINT?.trim() ?? "";
 const b2Bucket = process.env.B2_BUCKET_NAME?.trim() ?? "";
@@ -289,6 +297,12 @@ async function initializePortfolio(): Promise<void> {
     if (!isPortfolioContent(existing.content)) {
       throw new Error("The MongoDB portfolio record is invalid; refusing to replace it.");
     }
+    if (typeof existing._revision !== "string") {
+      await portfolioCollection.updateOne(
+        { _id: "primary", _revision: { $exists: false } },
+        { $set: { _revision: randomUUID() } },
+      );
+    }
     return;
   }
 
@@ -300,6 +314,7 @@ async function initializePortfolio(): Promise<void> {
     await portfolioCollection.insertOne({
       _id: "primary",
       content,
+      _revision: randomUUID(),
       updatedAt: new Date(),
     });
   } catch (error) {
@@ -309,28 +324,46 @@ async function initializePortfolio(): Promise<void> {
   }
 }
 
-async function getPortfolio(): Promise<unknown> {
+async function getPortfolioRecord(): Promise<{ content: unknown; revision: string }> {
   const portfolio = await getMongoCollection("portfolio").findOne({ _id: "primary" });
   if (!portfolio || !isPortfolioContent(portfolio.content)) {
     throw new Error("The MongoDB portfolio record is missing or invalid.");
   }
-  return portfolio.content;
+  if (typeof portfolio._revision !== "string") {
+    throw new Error("The MongoDB portfolio revision is missing.");
+  }
+  return { content: portfolio.content, revision: portfolio._revision };
 }
 
-async function savePortfolio(content: unknown): Promise<void> {
+async function savePortfolio(
+  content: unknown,
+  expectedRevision: string,
+): Promise<{ revision: string; mediaCleanupFailed: boolean }> {
   const portfolioCollection = getMongoCollection("portfolio");
   const previous = await portfolioCollection.findOne({ _id: "primary" });
-  if (!previous || !isPortfolioContent(previous.content)) {
+  if (
+    !previous ||
+    !isPortfolioContent(previous.content) ||
+    typeof previous._revision !== "string"
+  ) {
     throw new Error("The saved MongoDB portfolio is missing or invalid; refusing to replace it.");
   }
+  const revision = randomUUID();
   const result = await portfolioCollection.updateOne(
-    { _id: "primary" },
-    { $set: { content, updatedAt: new Date() } },
+    { _id: "primary", _revision: expectedRevision },
+    { $set: { content, _revision: revision, updatedAt: new Date() } },
   );
   if (result.matchedCount !== 1) {
-    throw new Error("The saved MongoDB portfolio changed while it was being updated.");
+    throw new PortfolioConflictError();
   }
-  await removeObsoleteMedia(previous.content, content);
+  let mediaCleanupFailed = false;
+  try {
+    await removeObsoleteMedia(previous.content, content);
+  } catch (error) {
+    mediaCleanupFailed = true;
+    console.error("Portfolio was saved, but obsolete media cleanup failed:", error);
+  }
+  return { revision, mediaCleanupFailed };
 }
 
 function getCookie(request: IncomingMessage, name: string): string | undefined {
@@ -730,7 +763,8 @@ async function handleRequest(
     response.setHeader("Vary", "Origin");
   }
   response.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, OPTIONS");
-  response.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  response.setHeader("Access-Control-Allow-Headers", "Content-Type, If-Match");
+  response.setHeader("Access-Control-Expose-Headers", "ETag");
   response.setHeader("Access-Control-Allow-Credentials", "true");
 
   if (request.method === "OPTIONS") {
@@ -772,7 +806,7 @@ async function handleRequest(
   }
   if (request.method === "GET" && url.pathname === "/api/portfolio") {
     try {
-      const content = await getPortfolio();
+      const { content } = await getPortfolioRecord();
       response.writeHead(200, {
         "Content-Type": "application/json; charset=utf-8",
         "Cache-Control": "no-store",
@@ -1001,7 +1035,8 @@ async function handleRequest(
       }
       if (request.method === "GET") {
         try {
-          const content = await getPortfolio();
+          const { content, revision } = await getPortfolioRecord();
+          response.setHeader("ETag", `"${revision}"`);
           response.writeHead(200, {
             "Content-Type": "application/json; charset=utf-8",
             "Cache-Control": "no-store",
@@ -1017,6 +1052,15 @@ async function handleRequest(
         respond(response, 403, { message: "This origin is not allowed." });
         return;
       }
+      const revisionMatch = /^"([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})"$/i.exec(
+        request.headers["if-match"] ?? "",
+      );
+      if (!revisionMatch) {
+        respond(response, 428, {
+          message: "Reload the portfolio before saving so newer changes are not overwritten.",
+        });
+        return;
+      }
       try {
         const content = await readJson(request, maxPortfolioBytes);
         if (Buffer.byteLength(JSON.stringify(content), "utf8") > maxPortfolioBytes) {
@@ -1024,11 +1068,18 @@ async function handleRequest(
         } else if (!isPortfolioContent(content)) {
           respond(response, 400, { message: "Portfolio content is incomplete or invalid." });
         } else {
-          await savePortfolio(content);
-          respond(response, 200, { message: "Portfolio changes saved." });
+          const result = await savePortfolio(content, revisionMatch[1]);
+          response.setHeader("ETag", `"${result.revision}"`);
+          respond(response, 200, {
+            message: result.mediaCleanupFailed
+              ? "Portfolio changes were saved, but some replaced or deleted images could not be removed from storage."
+              : "Portfolio changes saved.",
+          });
         }
       } catch (error) {
-        if (error instanceof SyntaxError) {
+        if (error instanceof PortfolioConflictError) {
+          respond(response, 409, { message: error.message });
+        } else if (error instanceof SyntaxError) {
           respond(response, 400, { message: "The request body must contain valid JSON." });
         } else if (error instanceof Error && error.message === "Request body is too large.") {
           respond(response, 413, { message: "Portfolio content is too large." });

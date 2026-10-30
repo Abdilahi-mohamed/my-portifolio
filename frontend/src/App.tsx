@@ -32,7 +32,11 @@ import {
 } from "lucide-react";
 import { SocialBrandIcon, socialIconForUrl, socialIconOptions } from "./socialIcons";
 import { adminLogin, changeAdminPassword } from "./admin/adminApi";
-import { apiUrl, resolvePortfolioMedia } from "./api";
+import {
+  apiUrl,
+  resolvePortfolioMedia,
+  subscribeToPortfolioUpdates,
+} from "./api";
 import {
   isProgrammingLanguageIcon,
   ProgrammingLanguageIcon,
@@ -179,24 +183,37 @@ function App() {
   }, [darkMode]);
 
   useEffect(() => {
-    const controller = new AbortController();
-    setPortfolioLoadError("");
-    fetch(apiUrl("/api/portfolio"), { signal: controller.signal })
-      .then(async (response) => {
-        if (!response.ok) throw new Error("Portfolio content could not be loaded.");
-        setPortfolio(resolvePortfolioMedia((await response.json()) as PortfolioContent));
-        setPortfolioLoaded(true);
-      })
-      .catch((error: unknown) => {
-        if (error instanceof Error && error.name === "AbortError") return;
-        const detail = error instanceof Error ? error.message : "The saved portfolio could not be loaded.";
-        setPortfolioLoadError(detail);
-        setToast({
-          title: "Portfolio unavailable",
-          detail,
+    let active = true;
+    let controller: AbortController | null = null;
+    const loadPortfolio = () => {
+      controller?.abort();
+      controller = new AbortController();
+      setPortfolioLoadError("");
+      fetch(apiUrl("/api/portfolio"), { signal: controller.signal, cache: "no-store" })
+        .then(async (response) => {
+          if (!response.ok) throw new Error("Portfolio content could not be loaded.");
+          const nextPortfolio = resolvePortfolioMedia((await response.json()) as PortfolioContent);
+          if (!active) return;
+          setPortfolio(nextPortfolio);
+          setPortfolioLoaded(true);
+        })
+        .catch((error: unknown) => {
+          if (!active || (error instanceof Error && error.name === "AbortError")) return;
+          const detail = error instanceof Error ? error.message : "The saved portfolio could not be loaded.";
+          setPortfolioLoadError(detail);
+          setToast({
+            title: "Portfolio unavailable",
+            detail,
+          });
         });
-      });
-    return () => controller.abort();
+    };
+    loadPortfolio();
+    const unsubscribe = subscribeToPortfolioUpdates(loadPortfolio);
+    return () => {
+      active = false;
+      controller?.abort();
+      unsubscribe();
+    };
   }, [portfolioRetry]);
 
   useEffect(() => {

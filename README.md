@@ -54,7 +54,9 @@ npm run dev --prefix frontend
 
 ## Persistence, migration, and deployment
 
-- Portfolio content is stored in MongoDB as one validated `portfolio` document, and saves update only that document's `content` field. The dashboard loads the current record before editing; a failed database read or write is reported as an error and does not initialize defaults.
+- Portfolio content is stored in MongoDB as one validated `portfolio` document; saves update its content and revision metadata atomically. The dashboard loads the current record before editing; a failed database read or write is reported as an error and does not initialize defaults.
+- Admin reads include a MongoDB-backed revision, and saves use `If-Match` so stale dashboards receive `409 Conflict` instead of overwriting newer edits. Successful saves notify other open portfolio and admin tabs to reload the committed database content; unsaved admin edits are preserved.
+- Deploy the backend before the frontend when rolling out revision-checked saves. The updated dashboard intentionally blocks edits if the API does not provide revision ETags.
 - Admin password hashes, sessions, and contact submissions use `adminAccounts`, `adminSessions`, and `contactMessages`. Passwords remain salted scrypt hashes. MongoDB data is independent of source code, builds, and deployments.
 - `DATA_DIRECTORY` identifies legacy JSON for one-time imports. Keep the old directory until MongoDB content is verified; do not delete the MongoDB database or its collections.
 - B2 object keys back profile photos, cover photos, project screenshots, certificate images, and experience images. The database stores stable `/api/media/<key>` references, and the backend serves those objects without exposing B2 credentials to the browser.
@@ -75,8 +77,8 @@ npm run dev --prefix frontend
 | `POST` | `/api/admin/logout` | Revoke the current admin session. |
 | `POST` | `/api/admin/password` | Change the admin password from the portfolio settings menu after verifying admin credentials. |
 | `POST` | `/api/admin/uploads` | Upload an authenticated image to persistent B2 storage (maximum 8 MB). |
-| `GET` | `/api/admin/portfolio` | Load portfolio content in the CMS. |
-| `PUT` | `/api/admin/portfolio` | Validate and update the MongoDB portfolio document. |
+| `GET` | `/api/admin/portfolio` | Load portfolio content and its revision (ETag) in the CMS. |
+| `PUT` | `/api/admin/portfolio` | Validate and update the MongoDB portfolio document using its required `If-Match` revision. |
 
 ## Build
 
