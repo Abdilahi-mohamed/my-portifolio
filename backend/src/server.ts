@@ -1,4 +1,5 @@
 import { createHash, randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
+import { setServers } from "node:dns";
 import { readdir, readFile, stat, unlink } from "node:fs/promises";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { dirname, join, resolve } from "node:path";
@@ -19,6 +20,10 @@ const backendDirectory = dirname(serverDirectory);
 const projectDirectory = dirname(backendDirectory);
 const frontendBuildDirectory = join(projectDirectory, "frontend", "dist");
 config({ path: join(backendDirectory, ".env") });
+const mongoDnsServers = process.env.MONGODB_DNS_SERVERS?.split(",")
+  .map((server) => server.trim())
+  .filter(Boolean) ?? [];
+if (mongoDnsServers.length > 0) setServers(mongoDnsServers);
 let adminUsername = process.env.ADMIN_USERNAME?.trim() ?? "";
 const port = Number(process.env.PORT ?? 4000);
 const dataDirectory = resolve(backendDirectory, process.env.DATA_DIRECTORY ?? "data");
@@ -739,11 +744,23 @@ async function handleRequest(
     request.method === "GET" &&
     (url.pathname === "/api/health" || url.pathname === "/api/health/storage")
   ) {
+    if (!mongoDatabase) {
+      respond(response, 503, {
+        status: "error",
+        database: "unavailable",
+        message: "The portfolio database is unavailable.",
+      });
+      return;
+    }
     try {
-      await mongoDatabase?.command({ ping: 1 });
+      await mongoDatabase.command({ ping: 1 });
     } catch (error) {
       console.error("MongoDB health check failed:", error);
-      respond(response, 503, { message: "The portfolio database is unavailable." });
+      respond(response, 503, {
+        status: "error",
+        database: "unavailable",
+        message: "The portfolio database is unavailable.",
+      });
       return;
     }
     respond(response, 200, {
@@ -1091,8 +1108,8 @@ async function startServer(): Promise<void> {
   await importLegacyAuxiliaryData();
   await loadAdminAccount();
   await importLegacyUploads();
-  server.listen(port, () => {
-    console.log(`Portfolio API listening on http://localhost:${port}`);
+  server.listen(port, "127.0.0.1", () => {
+    console.log(`Portfolio API listening on http://127.0.0.1:${port}`);
     console.log(`Structured data directory: ${dataDirectory}`);
     console.log(`Media storage: ${b2Client ? "Backblaze B2" : "local legacy files (uploads disabled)"}`);
   });

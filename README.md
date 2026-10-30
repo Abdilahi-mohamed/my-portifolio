@@ -24,6 +24,8 @@ Copy `backend/.env.example` to `backend/.env`. Configure `MONGODB_URI` (and opti
 
 `MONGODB_URI` is required in development and production; the backend never serves an editable file-backed portfolio. Production also requires a fully configured B2 bucket. If the MongoDB portfolio collection is empty, the backend imports an existing `portfolio.json` instead of overwriting records. Starter content is seeded only when explicitly enabled with `PORTFOLIO_INIT_DEFAULTS=true`. Existing admin account, active sessions, and contact messages are imported only when their corresponding MongoDB collections are empty. Once configured, startup copies supported legacy images from `backend/data/uploads/` to B2 without changing their `/api/media/<filename>` URLs; production media reads come from B2, not the server filesystem.
 
+If backend startup reports `querySrv ECONNREFUSED` for a `mongodb+srv://` URI, the configured system DNS resolver is refusing the MongoDB SRV lookup. Configure `MONGODB_DNS_SERVERS` with one or more comma-separated, trusted DNS resolver IP addresses in `backend/.env`; this optional setting applies to DNS lookups made by the backend process.
+
 ### Existing MongoDB or JSON data
 
 The backend uses the MongoDB collections `portfolio` (`_id: "primary"`), `adminAccounts` (`_id: "primary"`), `adminSessions`, `contactMessages`, and `migrationMetadata` for one-time import tracking. Existing MongoDB records take precedence and are never replaced with local or default data. When the portfolio record is absent, an existing local portfolio is imported once. The older `migrate-mongodb-to-files.mjs` utility is for read-only inspection/export only; it is not part of normal startup:
