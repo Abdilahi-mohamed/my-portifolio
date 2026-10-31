@@ -387,7 +387,7 @@ function App() {
           </article>
           <article className="summary-card">
             <span className="summary-icon"><Code2 size={19} /></span>
-            <span className="summary-label">Tech stack & languages</span>
+            <span className="summary-label">Programming Languages</span>
             <strong>{skills.length.toString().padStart(2, "0")}</strong>
             <small>Frontend, Backend, Databases & Tools</small>
           </article>
