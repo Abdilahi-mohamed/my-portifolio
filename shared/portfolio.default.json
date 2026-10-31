@@ -132,7 +132,7 @@
   },
   "skillsSection": {
     "label": "Expertise",
-    "title": "Tech stack & languages",
+    "title": "programin languages ",
     "description": "The tools and technologies I use to bring useful ideas to life.",
     "skills": [
       { "name": "HTML5", "level": "95%", "icon": "Globe2", "color": "#e34f26", "category": "Frontend" },
