@@ -166,6 +166,11 @@ export type PortfolioContent = {
       fullDescription: string;
       image: string;
       gallery: string[];
+      projectDescription?: string;
+      problemStatement?: string;
+      solution?: string;
+      howItWorks?: string;
+      media?: { type: "image" | "video"; url: string }[];
       tags: string[];
       liveUrl: string;
       githubUrl: string;

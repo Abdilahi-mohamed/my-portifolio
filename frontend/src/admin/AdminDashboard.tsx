@@ -41,6 +41,7 @@ import {
   loadAdminPortfolio,
   saveAdminPortfolio,
   uploadImage,
+  uploadProjectMedia,
   type AdminPortfolioSnapshot,
 } from "./adminApi";
 import { subscribeToPortfolioUpdates } from "../api";
@@ -53,6 +54,7 @@ type EditorKind = "project" | "skill" | "experience" | "certificate";
 type EditorState = { kind: EditorKind; index: number | null };
 type Activity = { id: number; label: string; time: string };
 type GalleryItem = { url: string; file?: File };
+type ProjectMediaItem = { type: "image" | "video"; url: string; file?: File };
 
 function dashboardPortfolio(snapshot: AdminPortfolioSnapshot): PortfolioContent {
   return {
@@ -110,6 +112,10 @@ function makeDraft(kind: EditorKind, item?: Project | Skill | Experience | Certi
       category: project?.category ?? "Fullstack",
       description: project?.description ?? "",
       fullDescription: project?.fullDescription ?? project?.description ?? "",
+      projectDescription: project?.projectDescription ?? "",
+      problemStatement: project?.problemStatement ?? "",
+      solution: project?.solution ?? "",
+      howItWorks: project?.howItWorks ?? "",
       image: project?.image ?? "",
       linkedinUrl: project?.linkedinUrl ?? "",
       liveUrl: project?.liveUrl ?? "",
@@ -172,6 +178,7 @@ export function AdminDashboard({
   const [editor, setEditor] = useState<EditorState | null>(null);
   const [draft, setDraft] = useState<Record<string, string>>({});
   const [galleryItems, setGalleryItems] = useState<GalleryItem[]>([]);
+  const [projectMediaItems, setProjectMediaItems] = useState<ProjectMediaItem[]>([]);
   const [certificateImage, setCertificateImage] = useState<GalleryItem | null>(null);
   const [experienceImage, setExperienceImage] = useState<GalleryItem | null>(null);
   const [newSectionLabel, setNewSectionLabel] = useState("");
@@ -465,6 +472,9 @@ export function AdminDashboard({
     setGalleryItems(kind === "project" && item && "gallery" in item
       ? item.gallery.map((url) => ({ url }))
       : []);
+    setProjectMediaItems(kind === "project" && item && "media" in item
+      ? (item.media ?? []).map((media) => ({ ...media }))
+      : []);
     setCertificateImage(kind === "certificate" && item && "image" in item && item.image
       ? { url: item.image }
       : null);
@@ -478,11 +488,15 @@ export function AdminDashboard({
     galleryItems.forEach((item) => {
       if (item.file) URL.revokeObjectURL(item.url);
     });
+    projectMediaItems.forEach((item) => {
+      if (item.file) URL.revokeObjectURL(item.url);
+    });
     if (certificateImage?.file) URL.revokeObjectURL(certificateImage.url);
     if (experienceImage?.file) URL.revokeObjectURL(experienceImage.url);
     setCertificateImage(null);
     setExperienceImage(null);
     setGalleryItems([]);
+    setProjectMediaItems([]);
     setEditor(null);
   };
 
@@ -506,12 +520,21 @@ export function AdminDashboard({
         url: item.file ? await uploadImage(item.file) : item.url,
       })));
       const uploadedUrls = new Map(uploadedItems.map((item) => [item.oldUrl, item.url]));
+      const uploadedProjectMedia = await Promise.all(projectMediaItems.map(async (item) => ({
+        type: item.type,
+        url: item.file ? await uploadProjectMedia(item.file) : item.url,
+      })));
       const project: Project = {
         id: draft.id || `${draft.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 80) || "project"}-${crypto.randomUUID().slice(0, 8)}`,
         title: draft.title.trim(),
         category: draft.category.trim() || "Fullstack",
         description: draft.description.trim(),
         fullDescription: draft.fullDescription.trim(),
+        projectDescription: draft.projectDescription.trim(),
+        problemStatement: draft.problemStatement.trim(),
+        solution: draft.solution.trim(),
+        howItWorks: draft.howItWorks.trim(),
+        media: uploadedProjectMedia,
         image: uploadedUrls.get(draft.image) ?? draft.image.trim(),
         gallery: uploadedItems.map((item) => item.url),
         liveUrl: draft.liveUrl.trim(),
@@ -531,7 +554,7 @@ export function AdminDashboard({
       setNotice("Project updated. Save changes to publish it.");
       closeEditor();
       } catch (error) {
-        setNotice(error instanceof Error ? error.message : "Project images could not be uploaded.");
+        setNotice(error instanceof Error ? error.message : "Project media could not be uploaded.");
       } finally {
         setBusy(false);
       }
@@ -636,6 +659,38 @@ export function AdminDashboard({
     if (newItems[0]) {
       setDraft((current) => ({ ...current, image: current.image || newItems[0].url }));
     }
+  };
+
+  const addProjectMediaFiles = (files: FileList | null) => {
+    if (!files) return;
+    const accepted = Array.from(files);
+    const invalid = accepted.find((file) => {
+      const isImage = ["image/jpeg", "image/png", "image/webp", "image/gif"].includes(file.type);
+      const isVideo = ["video/mp4", "video/webm"].includes(file.type);
+      return (!isImage && !isVideo) || file.size > (isVideo ? 50 : 8) * 1024 * 1024;
+    });
+    if (invalid) {
+      setNotice(`${invalid.name}: choose a supported image up to 8 MB or MP4/WebM video up to 50 MB.`);
+      return;
+    }
+    if (projectMediaItems.length + accepted.length > 30) {
+      setNotice("A project can contain up to 30 project media files.");
+      return;
+    }
+    setProjectMediaItems((items) => [
+      ...items,
+      ...accepted.map((file) => ({
+        file,
+        url: URL.createObjectURL(file),
+        type: file.type.startsWith("video/") ? "video" as const : "image" as const,
+      })),
+    ]);
+  };
+
+  const removeProjectMediaItem = (index: number) => {
+    const removed = projectMediaItems[index];
+    if (removed?.file) URL.revokeObjectURL(removed.url);
+    setProjectMediaItems((items) => items.filter((_, itemIndex) => itemIndex !== index));
   };
 
   const replaceGalleryItem = (index: number, file: File | undefined) => {
@@ -1105,6 +1160,30 @@ export function AdminDashboard({
           </div>}
           <label className="cms-input-label">GitHub repository URL<input onChange={(event) => setDraft({ ...draft, githubUrl: event.target.value })} type="url" value={draft.githubUrl} /></label>
           <label className="cms-input-label">LinkedIn post or project URL<input onChange={(event) => setDraft({ ...draft, linkedinUrl: event.target.value })} type="url" value={draft.linkedinUrl} /></label>
+          <section aria-label="Project details" className="cms-project-details-fields">
+            <div className="cms-project-details-heading">
+              <span className="cms-section-index">PROJECT CASE STUDY</span>
+              <p>Document the project story visitors can explore from your portfolio.</p>
+            </div>
+            <label className="cms-input-label">1. Project Description<textarea maxLength={10000} onChange={(event) => setDraft({ ...draft, projectDescription: event.target.value })} placeholder="Describe the project, its purpose, and what it is designed to do." rows={4} value={draft.projectDescription} /></label>
+            <label className="cms-input-label">2. Problem Statement<textarea maxLength={10000} onChange={(event) => setDraft({ ...draft, problemStatement: event.target.value })} placeholder="Explain the specific problem this project is intended to solve." rows={4} value={draft.problemStatement} /></label>
+            <label className="cms-input-label">3. Solution<textarea maxLength={10000} onChange={(event) => setDraft({ ...draft, solution: event.target.value })} placeholder="Describe how the project solves the identified problem." rows={4} value={draft.solution} /></label>
+            <label className="cms-input-label">4. How It Works<textarea maxLength={10000} onChange={(event) => setDraft({ ...draft, howItWorks: event.target.value })} placeholder="Explain the workflow and how users interact with the system." rows={4} value={draft.howItWorks} /></label>
+            <div className="cms-project-media-field">
+              <strong>5. Project Media</strong>
+              <p>Upload supporting images, screenshots, and MP4 or WebM demonstrations. Up to 30 files; images up to 8 MB and videos up to 50 MB each.</p>
+              <label className="cms-file-choice">Add project media<input accept="image/png,image/jpeg,image/webp,image/gif,video/mp4,video/webm" multiple onChange={(event) => { addProjectMediaFiles(event.currentTarget.files); event.currentTarget.value = ""; }} type="file" /></label>
+              {projectMediaItems.length > 0 && <div aria-label="Project media files" className="cms-project-media-grid">
+                {projectMediaItems.map((item, mediaIndex) => <div className="cms-project-media-item" key={`${item.url}-${mediaIndex}`}>
+                  {item.type === "video"
+                    ? <video muted preload="metadata" src={item.url} />
+                    : <img alt={`Project media ${mediaIndex + 1}`} src={item.url} />}
+                  <span>{item.type === "video" ? "Video" : "Image"} {mediaIndex + 1}</span>
+                  <button aria-label={`Remove project media ${mediaIndex + 1}`} onClick={() => removeProjectMediaItem(mediaIndex)} type="button"><Trash2 size={13} /></button>
+                </div>)}
+              </div>}
+            </div>
+          </section>
         </>}
         {editor.kind === "skill" && <><label className="cms-input-label">Skill name<input autoFocus onChange={(event) => setDraft({ ...draft, name: event.target.value })} required value={draft.name} /></label><div className="cms-skill-icon-field"><span>Language, framework, or database icon</span><button aria-label="Choose technology icon" className="cms-social-icon-trigger" onClick={() => { setIconSearch(""); setSkillIconPickerOpen(true); }} type="button">{isProgrammingLanguageIcon(draft.icon) ? <ProgrammingLanguageIcon name={draft.icon} size={18} /> : <Code2 size={18} />}<span>{programmingIconOptions.find((option) => option.name === draft.icon)?.label ?? "Choose an icon"}</span><Search size={14} /></button><small>Search and select the matching technology logo.</small></div><div className="cms-form-row"><label className="cms-input-label">Proficiency (%)<input max="100" min="0" onChange={(event) => setDraft({ ...draft, level: event.target.value })} required type="number" value={draft.level} /></label><label className="cms-input-label">Category<select onChange={(event) => setDraft({ ...draft, category: event.target.value })} required value={draft.category}><option value="Frontend">Frontend</option><option value="Backend">Backend</option><option value="Databases">Databases</option><option value="Tools">Tools</option></select></label></div><label className="cms-input-label">Accent color<input onChange={(event) => setDraft({ ...draft, color: event.target.value })} type="color" value={draft.color} /></label></>}
         {editor.kind === "experience" && <>

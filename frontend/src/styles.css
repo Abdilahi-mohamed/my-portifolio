@@ -1300,7 +1300,112 @@ html[data-portfolio-theme="dark"] .password-dialog input {
 
 @media (max-width: 520px) {
   .topbar { min-height: 62px; justify-content: space-between; gap: 8px; }
-  .wordmark { margin-inline: 0 auto; font-size: 14px; }
+  .wordmark { margin-inline: 0 auto; font-size: 14px;   }
+
+  .project-title-button {
+    padding: 0;
+    border: 0;
+    color: inherit;
+    background: transparent;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .project-title-button:hover { color: var(--green); }
+
+  .project-detail-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 15px;
+    padding: 0;
+    border: 0;
+    color: var(--green);
+    background: transparent;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .project-detail-trigger:hover { text-decoration: underline; }
+
+  .project-detail-backdrop {
+    position: fixed;
+    z-index: 20;
+    inset: 0;
+    display: grid;
+    overflow: auto;
+    place-items: center;
+    padding: 24px;
+    background: rgb(12 22 17 / 68%);
+    backdrop-filter: blur(4px);
+  }
+
+  .project-detail-dialog {
+    position: relative;
+    width: min(900px, 100%);
+    max-height: min(88vh, 920px);
+    overflow: auto;
+    padding: clamp(24px, 5vw, 48px);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    color: var(--ink);
+    background: #fff;
+    box-shadow: 0 28px 90px rgb(0 0 0 / 30%);
+  }
+
+  .project-detail-close {
+    position: sticky;
+    z-index: 1;
+    top: 0;
+    display: grid;
+    width: 38px;
+    height: 38px;
+    float: right;
+    place-items: center;
+    margin: -7px -7px 0 12px;
+    border: 1px solid var(--line);
+    border-radius: 50%;
+    color: var(--muted);
+    background: #fff;
+    cursor: pointer;
+  }
+
+  .project-detail-dialog > .eyebrow { margin: 0 0 8px; }
+
+  .project-detail-dialog > h2 {
+    margin: 0;
+    font-family: "Manrope", sans-serif;
+    font-size: clamp(27px, 5vw, 42px);
+    letter-spacing: -.045em;
+  }
+
+  .project-detail-tags { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 14px; }
+  .project-detail-tags span { padding: 5px 9px; border-radius: 99px; color: var(--green); background: #e8efeb; font-size: 11px; font-weight: 700; }
+  .project-detail-sections { display: grid; gap: 22px; margin-top: 30px; }
+  .project-detail-sections > section { display: grid; grid-template-columns: 35px minmax(0, 1fr); gap: 13px; }
+  .project-detail-sections > section > span { padding-top: 4px; color: var(--green); font: 700 11px "JetBrains Mono", monospace; }
+  .project-detail-sections h3 { margin: 0; font-size: 16px; font-weight: 750; }
+  .project-detail-sections p { margin: 8px 0 0; color: var(--muted); font-size: 14px; line-height: 1.75; white-space: pre-line; }
+  .project-detail-media { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 12px; margin-top: 13px; }
+  .project-detail-media img,
+  .project-detail-media video { display: block; width: 100%; max-height: 420px; aspect-ratio: 16 / 10; border: 1px solid var(--line); border-radius: 10px; background: #e8eee9; object-fit: contain; }
+  .project-detail-links { display: flex; flex-wrap: wrap; gap: 10px 20px; margin: 28px 0 0 48px; padding-top: 18px; border-top: 1px solid var(--line); }
+  .project-detail-links a { display: inline-flex; align-items: center; gap: 5px; color: var(--green); font-size: 13px; font-weight: 700; }
+
+  html[data-portfolio-theme="dark"] .project-title-button:hover { color: #a7d9bb; }
+  html[data-portfolio-theme="dark"] .project-detail-dialog,
+  html[data-portfolio-theme="dark"] .project-detail-close { color: var(--ink); background: #19231d; }
+  html[data-portfolio-theme="dark"] .project-detail-tags span { color: #a7d9bb; background: #26372d; }
+  html[data-portfolio-theme="dark"] .project-detail-media img,
+  html[data-portfolio-theme="dark"] .project-detail-media video { border-color: #34443a; background: #26332b; }
+
+  @media (max-width: 520px) {
+    .project-detail-backdrop { align-items: end; padding: 0; }
+    .project-detail-dialog { width: 100%; max-height: 92vh; padding: 25px 20px; border-radius: 18px 18px 0 0; }
+    .project-detail-links { margin-left: 0; }
+  }
   .topbar-actions { justify-content: center; gap: 10px 14px; }
   .topbar-actions .edit-link { margin-left: 0; }
   .topbar-nav-link { font-size: 12px; }

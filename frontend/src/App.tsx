@@ -47,6 +47,16 @@ import defaultPortfolio from "../../shared/portfolio.default.json";
 import type { IconName, PortfolioContent } from "./types";
 
 type ToastMessage = { title: string; detail?: string };
+type Project = PortfolioContent["projectsSection"]["projects"][number];
+
+function projectMedia(project: Project): { type: "image" | "video"; url: string }[] {
+  const media = project.media ?? [];
+  const existingImages = [project.image, ...(project.gallery ?? [])]
+    .filter((url, index, urls) => Boolean(url) && urls.indexOf(url) === index)
+    .filter((url) => !media.some((item) => item.type === "image" && item.url === url))
+    .map((url) => ({ type: "image" as const, url }));
+  return [...media, ...existingImages];
+}
 
 function ProjectGallery({
   title,
@@ -159,6 +169,7 @@ function App() {
     }
   });
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [passwordBusy, setPasswordBusy] = useState(false);
   const [passwordError, setPasswordError] = useState("");
   const [passwordNotice, setPasswordNotice] = useState("");
@@ -230,6 +241,15 @@ function App() {
     window.addEventListener("keydown", closeOnEscape);
     return () => window.removeEventListener("keydown", closeOnEscape);
   }, [passwordBusy, passwordDialogOpen]);
+
+  useEffect(() => {
+    if (!selectedProject) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setSelectedProject(null);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [selectedProject]);
 
   const submitPasswordChange = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -428,8 +448,11 @@ function App() {
               <article className="project-card" key={project.id || project.title}>
                 <ProjectGallery gallery={project.gallery ?? []} image={project.image} title={project.title} />
                 <div className="project-content">
-                  <h3>{project.title}</h3>
+                  <h3><button className="project-title-button" onClick={() => setSelectedProject(project)} type="button">{project.title}</button></h3>
                   {project.description && <p>{project.description}</p>}
+                  <button className="project-detail-trigger" onClick={() => setSelectedProject(project)} type="button">
+                    View project details <ArrowUpRight size={15} />
+                  </button>
                   <div className="project-links">
                     {project.githubUrl && (
                       <a href={project.githubUrl} rel="noopener noreferrer" target="_blank">
@@ -455,6 +478,69 @@ function App() {
           </div>
         )}
       </section>
+
+      {selectedProject && (
+        <div
+          className="project-detail-backdrop"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setSelectedProject(null);
+          }}
+        >
+          <article aria-labelledby="project-detail-title" aria-modal="true" className="project-detail-dialog" role="dialog">
+            <button
+              aria-label="Close project details"
+              className="project-detail-close"
+              onClick={() => setSelectedProject(null)}
+              type="button"
+            >
+              <XIcon size={19} />
+            </button>
+            <p className="eyebrow">{selectedProject.category}</p>
+            <h2 id="project-detail-title">{selectedProject.title}</h2>
+            {selectedProject.tags.length > 0 && (
+              <div className="project-detail-tags">{selectedProject.tags.map((tag) => <span key={tag}>{tag}</span>)}</div>
+            )}
+            <div className="project-detail-sections">
+              <section>
+                <span>01</span>
+                <div><h3>Project Description</h3><p>{selectedProject.projectDescription || selectedProject.fullDescription || selectedProject.description}</p></div>
+              </section>
+              {selectedProject.problemStatement && <section>
+                <span>02</span>
+                <div><h3>Problem Statement</h3><p>{selectedProject.problemStatement}</p></div>
+              </section>}
+              {selectedProject.solution && <section>
+                <span>03</span>
+                <div><h3>Solution</h3><p>{selectedProject.solution}</p></div>
+              </section>}
+              {selectedProject.howItWorks && <section>
+                <span>04</span>
+                <div><h3>How It Works</h3><p>{selectedProject.howItWorks}</p></div>
+              </section>}
+              {projectMedia(selectedProject).length > 0 && <section className="project-detail-media-section">
+                <span>05</span>
+                <div>
+                  <h3>Project Media</h3>
+                  <div className="project-detail-media">
+                    {projectMedia(selectedProject).map((item, index) => item.type === "video"
+                      ? <video controls key={`${item.url}-${index}`} preload="metadata" src={item.url}>
+                        Your browser does not support video playback.
+                      </video>
+                      : <img alt={`${selectedProject.title} project media ${index + 1}`} key={`${item.url}-${index}`} loading="lazy" src={item.url} />)}
+                  </div>
+                </div>
+              </section>}
+            </div>
+            {(selectedProject.liveUrl || selectedProject.githubUrl || selectedProject.linkedinUrl) && (
+              <div className="project-detail-links">
+                {selectedProject.liveUrl && <a href={selectedProject.liveUrl} rel="noopener noreferrer" target="_blank">Live project <ArrowUpRight size={15} /></a>}
+                {selectedProject.githubUrl && <a href={selectedProject.githubUrl} rel="noopener noreferrer" target="_blank">GitHub <ArrowUpRight size={15} /></a>}
+                {selectedProject.linkedinUrl && <a href={selectedProject.linkedinUrl} rel="noopener noreferrer" target="_blank">LinkedIn <ArrowUpRight size={15} /></a>}
+              </div>
+            )}
+          </article>
+        </div>
+      )}
 
       <section aria-labelledby="skills-title" className="skills-section" id="skills">
         <div className="section-heading">

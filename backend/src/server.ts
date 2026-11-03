@@ -49,13 +49,16 @@ const defaultPortfolioFile = join(projectDirectory, "shared", "portfolio.default
 const mongoUri = process.env.MONGODB_URI?.trim() ?? "";
 const mongoDatabaseName = process.env.MONGODB_DB?.trim();
 const maxBodyBytes = 10_000;
-const maxPortfolioBytes = 1_000_000;
+const maxPortfolioBytes = 5_000_000;
 const maxUploadBytes = 8 * 1024 * 1024;
+const maxVideoUploadBytes = 50 * 1024 * 1024;
 const uploadMimeTypes: Record<string, string> = {
   jpg: "image/jpeg",
   png: "image/png",
   webp: "image/webp",
   gif: "image/gif",
+  mp4: "video/mp4",
+  webm: "video/webm",
 };
 const loginAttempts = new Map<string, { count: number; resetAt: number }>();
 const contactAttempts = new Map<string, { count: number; resetAt: number }>();
@@ -662,7 +665,7 @@ function isSecureRequest(request: IncomingMessage): boolean {
 
 function mediaFilenameSet(value: unknown, filenames = new Set<string>()): Set<string> {
   if (typeof value === "string") {
-    const match = /\/api\/media\/([a-f0-9]{32}\.(?:png|jpg|webp|gif))(?:[?#]|$)/.exec(value);
+    const match = /\/api\/media\/([a-f0-9]{32}\.(?:png|jpg|webp|gif|mp4|webm))(?:[?#]|$)/.exec(value);
     if (match) filenames.add(match[1]);
   } else if (Array.isArray(value)) {
     value.forEach((item) => mediaFilenameSet(item, filenames));
@@ -704,6 +707,13 @@ function isValidImage(image: Buffer, extension: string): boolean {
   );
 }
 
+function isValidVideo(video: Buffer, extension: string): boolean {
+  return extension === "mp4"
+    ? video.length >= 12 && video.toString("ascii", 4, 8) === "ftyp"
+    : extension === "webm" && video.length >= 4 &&
+      video.subarray(0, 4).equals(Buffer.from([0x1a, 0x45, 0xdf, 0xa3]));
+}
+
 function isObjectNotFound(error: unknown): boolean {
   return isRecord(error) && (
     error.name === "NotFound" ||
@@ -723,23 +733,27 @@ async function importLegacyUploads(): Promise<void> {
   }
 
   for (const filename of filenames) {
-    if (!/^[a-f0-9]{32}\.(?:png|jpg|webp|gif)$/.test(filename)) continue;
+    if (!/^[a-f0-9]{32}\.(?:png|jpg|webp|gif|mp4|webm)$/.test(filename)) continue;
     try {
       await b2Client.send(new HeadObjectCommand({ Bucket: b2Bucket, Key: filename }));
       continue;
     } catch (error) {
       if (!isObjectNotFound(error)) throw error;
     }
-    const image = await readFile(join(uploadDirectory, filename));
-    if (image.length === 0 || image.length > maxUploadBytes || !isValidImage(image, filename.split(".").at(-1) ?? "")) {
-      console.warn(`Skipping invalid or oversized legacy image: ${filename}`);
+    const media = await readFile(join(uploadDirectory, filename));
+    const extension = filename.split(".").at(-1) ?? "";
+    const valid = ["mp4", "webm"].includes(extension)
+      ? media.length <= maxVideoUploadBytes && isValidVideo(media, extension)
+      : media.length <= maxUploadBytes && isValidImage(media, extension);
+    if (media.length === 0 || !valid) {
+      console.warn(`Skipping invalid or oversized legacy media: ${filename}`);
       continue;
     }
     await b2Client.send(new PutObjectCommand({
       Bucket: b2Bucket,
       Key: filename,
-      Body: image,
-      ContentLength: image.length,
+      Body: media,
+      ContentLength: media.length,
       ContentType: mediaContentType(filename),
       CacheControl: "public, max-age=31536000, immutable",
     }));
@@ -879,35 +893,66 @@ async function handleRequest(
     return;
   }
 
-  const mediaMatch = /^\/api\/media\/([a-f0-9]{32}\.(?:png|jpg|webp|gif))$/.exec(url.pathname);
+  const mediaMatch = /^\/api\/media\/([a-f0-9]{32}\.(?:png|jpg|webp|gif|mp4|webm))$/.exec(url.pathname);
   if (request.method === "GET" && mediaMatch) {
     try {
       const filename = mediaMatch[1];
-      let image: Buffer;
+      const isVideo = /\.(?:mp4|webm)$/.test(filename);
+      const rangeHeader = isVideo ? request.headers.range : undefined;
+      if (rangeHeader && !/^bytes=(?:\d+-\d*|-\d+)$/.test(rangeHeader)) {
+        response.writeHead(416, { "Content-Range": "bytes */*", "Accept-Ranges": "bytes" });
+        response.end();
+        return;
+      }
+      let media: Buffer;
       let contentType = mediaContentType(filename);
+      let contentRange: string | undefined;
       if (b2Client) {
         const storedObject = await b2Client.send(new GetObjectCommand({
           Bucket: b2Bucket,
           Key: filename,
+          ...(rangeHeader ? { Range: rangeHeader } : {}),
         }));
         if (!storedObject.Body) throw new Error("The B2 object has no response body.");
-        image = Buffer.from(await storedObject.Body.transformToByteArray());
+        media = Buffer.from(await storedObject.Body.transformToByteArray());
         if (storedObject.ContentType) contentType = storedObject.ContentType;
+        contentRange = storedObject.ContentRange;
       } else {
-        image = await readFile(join(uploadDirectory, filename));
+        media = await readFile(join(uploadDirectory, filename));
+        if (rangeHeader) {
+          const range = /^bytes=(\d*)-(\d*)$/.exec(rangeHeader);
+          if (!range) throw new Error("The requested media range is invalid.");
+          const suffixLength = range[1] ? 0 : Number(range[2]);
+          const start = range[1] ? Number(range[1]) : Math.max(0, media.length - suffixLength);
+          const end = range[2] && range[1]
+            ? Math.min(Number(range[2]), media.length - 1)
+            : media.length - 1;
+          if (start >= media.length || start > end || suffixLength === 0 && !range[1]) {
+            response.writeHead(416, {
+              "Content-Range": `bytes */${media.length}`,
+              "Accept-Ranges": "bytes",
+            });
+            response.end();
+            return;
+          }
+          contentRange = `bytes ${start}-${end}/${media.length}`;
+          media = media.subarray(start, end + 1);
+        }
       }
-      response.writeHead(200, {
+      response.writeHead(contentRange ? 206 : 200, {
         "Content-Type": contentType,
-        "Content-Length": image.byteLength,
+        "Content-Length": media.byteLength,
         "Cache-Control": "public, max-age=31536000, immutable",
+        ...(isVideo ? { "Accept-Ranges": "bytes" } : {}),
+        ...(contentRange ? { "Content-Range": contentRange } : {}),
       });
-      response.end(image);
+      response.end(media);
     } catch (error) {
       if ((isRecord(error) && error.code === "ENOENT") || isObjectNotFound(error)) {
-        respond(response, 404, { message: "Image not found." });
+        respond(response, 404, { message: "Media not found." });
       } else {
-        console.error("Unable to load uploaded image:", error);
-        respond(response, 500, { message: "Image could not be loaded." });
+        console.error("Unable to load uploaded media:", error);
+        respond(response, 500, { message: "Media could not be loaded." });
       }
     }
     return;
@@ -1042,35 +1087,44 @@ async function handleRequest(
         "image/png": "png",
         "image/webp": "webp",
         "image/gif": "gif",
+        "video/mp4": "mp4",
+        "video/webm": "webm",
       };
       const extension = contentType ? extensionByType[contentType.split(";")[0].trim()] : undefined;
       if (!extension) {
-        respond(response, 415, { message: "Choose a PNG, JPEG, WebP, or GIF image." });
+        respond(response, 415, { message: "Choose a PNG, JPEG, WebP, or GIF image, or an MP4 or WebM video." });
         return;
       }
+      const maxBytes = extension === "mp4" || extension === "webm"
+        ? maxVideoUploadBytes
+        : maxUploadBytes;
+      const mediaLabel = extension === "mp4" || extension === "webm" ? "video" : "image";
       try {
         const chunks: Buffer[] = [];
         let size = 0;
         for await (const chunk of request) {
           const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
           size += buffer.length;
-          if (size > maxUploadBytes) {
-            respond(response, 413, { message: "Each image must be 8 MB or smaller." });
+          if (size > maxBytes) {
+            respond(response, 413, { message: `Each ${mediaLabel} exceeds its upload size limit.` });
             return;
           }
           chunks.push(buffer);
         }
-        const image = Buffer.concat(chunks);
-        if (!isValidImage(image, extension) || image.length === 0) {
-          respond(response, 400, { message: "The selected file is not a valid supported image." });
+        const media = Buffer.concat(chunks);
+        const valid = mediaLabel === "video"
+          ? isValidVideo(media, extension)
+          : isValidImage(media, extension);
+        if (!valid || media.length === 0) {
+          respond(response, 400, { message: `The selected file is not a valid supported ${mediaLabel}.` });
           return;
         }
         const filename = `${randomBytes(16).toString("hex")}.${extension}`;
         await b2Client.send(new PutObjectCommand({
           Bucket: b2Bucket,
           Key: filename,
-          Body: image,
-          ContentLength: image.length,
+          Body: media,
+          ContentLength: media.length,
           ContentType: contentType?.split(";")[0].trim(),
           CacheControl: "public, max-age=31536000, immutable",
         }));
@@ -1078,10 +1132,10 @@ async function handleRequest(
         response.end(JSON.stringify({ url: `/api/media/${filename}` }));
       } catch (error) {
         if (error instanceof Error && error.message === "Request body is too large.") {
-          respond(response, 413, { message: "Each image must be 8 MB or smaller." });
+          respond(response, 413, { message: "The selected media exceeds its upload size limit." });
         } else {
-          console.error("Unable to save uploaded project image:", error);
-          respond(response, 500, { message: "The image could not be saved." });
+          console.error("Unable to save uploaded project media:", error);
+          respond(response, 500, { message: "The media could not be saved." });
         }
       }
       return;

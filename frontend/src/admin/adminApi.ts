@@ -120,7 +120,7 @@ export async function saveAdminPortfolio(
   return { message: body.message ?? "Portfolio changes saved.", revision: nextRevision };
 }
 
-export async function uploadImage(file: File): Promise<string> {
+async function uploadMedia(file: File): Promise<string> {
   await requirePersistentStorage();
   const response = await fetch(apiUrl("/api/admin/uploads"), {
     method: "POST",
@@ -130,7 +130,15 @@ export async function uploadImage(file: File): Promise<string> {
   });
   const body = await parseJson<{ url?: string; message?: string }>(response);
   if (!response.ok || !body.url) {
-    throw new Error(body.message ?? "The image could not be uploaded.");
+    throw new Error(body.message ?? "The media could not be uploaded.");
   }
   return apiUrl(body.url);
+}
+
+export async function uploadImage(file: File): Promise<string> {
+  return uploadMedia(file);
+}
+
+export async function uploadProjectMedia(file: File): Promise<string> {
+  return uploadMedia(file);
 }

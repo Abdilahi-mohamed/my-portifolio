@@ -41,6 +41,11 @@ function isSafeImageReference(value: unknown): value is string {
     (/^\/api\/media\/[a-f0-9]{32}\.(?:png|jpg|webp|gif)$/.test(value) || isSafeWebUrl(value));
 }
 
+function isSafeVideoReference(value: unknown): value is string {
+  return typeof value === "string" &&
+    (/^\/api\/media\/[a-f0-9]{32}\.(?:mp4|webm)$/.test(value) || isSafeWebUrl(value));
+}
+
 export function isPortfolioContent(value: unknown): boolean {
   if (!isRecord(value)) return false;
   const {
@@ -125,6 +130,9 @@ export function isPortfolioContent(value: unknown): boolean {
     !projects.every(
       (project) => typeof project.id === "string" &&
         /^[a-z0-9][a-z0-9-]{0,99}$/.test(project.id) &&
+        ["projectDescription", "problemStatement", "solution", "howItWorks"].every(
+          (key) => project[key] === undefined || validText(project[key]),
+        ) &&
         (project.image === "" || isSafeImageReference(project.image)) &&
         (project.liveUrl === "" || isSafeWebUrl(project.liveUrl)) &&
         (project.githubUrl === "" || isSafeWebUrl(project.githubUrl)) &&
@@ -134,6 +142,15 @@ export function isPortfolioContent(value: unknown): boolean {
         Array.isArray(project.gallery) &&
         project.gallery.length <= 30 &&
         project.gallery.every((image) => isSafeImageReference(image)) &&
+        (project.media === undefined ||
+          (Array.isArray(project.media) &&
+            project.media.length <= 30 &&
+            project.media.every((item) =>
+              isRecord(item) &&
+              (item.type === "image"
+                ? isSafeImageReference(item.url)
+                : item.type === "video" && isSafeVideoReference(item.url)),
+            ))) &&
         Array.isArray(project.tags) &&
         project.tags.length <= 30 && project.tags.every((tag) => validText(tag, 200)),
     )

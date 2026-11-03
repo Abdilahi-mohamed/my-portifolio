@@ -7,7 +7,7 @@ A responsive React and TypeScript portfolio with a Node.js API. MongoDB stores p
 - `frontend/` — React, Vite, TypeScript, and the public portfolio/admin UI.
 - `backend/src/` — Node.js API, MongoDB persistence, admin authentication, and B2 integration.
 - `backend/scripts/migrate-mongodb-to-files.mjs` — Read-only export utility for older MongoDB installations.
-- `backend/data/` — Legacy JSON and uploaded images retained for migration (ignored by Git).
+- `backend/data/` — Legacy JSON and uploaded media retained for migration (ignored by Git).
 - `backend/.env.example` — Backend environment variable template.
 - `shared/portfolio.default.json` — Local-development starter content; MongoDB seeding requires explicit opt-in.
 
@@ -22,7 +22,7 @@ npm install --prefix frontend
 
 Copy `backend/.env.example` to `backend/.env`. Configure `MONGODB_URI` (and optionally `MONGODB_DB`), `ADMIN_USERNAME`, a private `ADMIN_PASSWORD`, and `FRONTEND_ORIGIN`. Create a Backblaze B2 bucket and a bucket-scoped application key, then set `B2_ENDPOINT`, `B2_REGION`, `B2_BUCKET_NAME`, `B2_ACCESS_KEY_ID`, and `B2_APPLICATION_KEY`. The endpoint and region must match the bucket's Backblaze region. Never put database or B2 credentials in frontend environment variables or commit `.env`. The backend requires Node.js 20.19 or newer.
 
-`MONGODB_URI` is required in development and production; the backend never serves an editable file-backed portfolio. Production also requires a fully configured B2 bucket. If the MongoDB portfolio collection is empty, the backend imports an existing `portfolio.json` instead of overwriting records. Starter content is seeded only when explicitly enabled with `PORTFOLIO_INIT_DEFAULTS=true`. Existing admin account, active sessions, and contact messages are imported only when their corresponding MongoDB collections are empty. Once configured, startup copies supported legacy images from `backend/data/uploads/` to B2 without changing their `/api/media/<filename>` URLs; production media reads come from B2, not the server filesystem.
+`MONGODB_URI` is required in development and production; the backend never serves an editable file-backed portfolio. Production also requires a fully configured B2 bucket. If the MongoDB portfolio collection is empty, the backend imports an existing `portfolio.json` instead of overwriting records. Starter content is seeded only when explicitly enabled with `PORTFOLIO_INIT_DEFAULTS=true`. Existing admin account, active sessions, and contact messages are imported only when their corresponding MongoDB collections are empty. Once configured, startup copies supported legacy images and videos from `backend/data/uploads/` to B2 without changing their `/api/media/<filename>` URLs; production media reads come from B2, not the server filesystem.
 
 If backend startup reports `querySrv ECONNREFUSED` for a `mongodb+srv://` URI, the configured system DNS resolver is refusing the MongoDB SRV lookup. Configure `MONGODB_DNS_SERVERS` with one or more comma-separated, trusted DNS resolver IP addresses in `backend/.env`; this optional setting applies to DNS lookups made by the backend process.
 
@@ -60,6 +60,7 @@ npm run dev --prefix frontend
 - Admin password hashes, sessions, and contact submissions use `adminAccounts`, `adminSessions`, and `contactMessages`. Passwords remain salted scrypt hashes. MongoDB data is independent of source code, builds, and deployments.
 - `DATA_DIRECTORY` identifies legacy JSON for one-time imports. Keep the old directory until MongoDB content is verified; do not delete the MongoDB database or its collections.
 - B2 object keys back profile photos, cover photos, project screenshots, certificate images, and experience images. The database stores stable `/api/media/<key>` references, and the backend serves those objects without exposing B2 credentials to the browser.
+- Project case-study fields (description, problem statement, solution, workflow) and up to 30 additional media items are saved alongside each project in the MongoDB portfolio document. Project media supports images up to 8 MB and MP4/WebM videos up to 50 MB each; existing project records remain valid without these optional fields.
 - Do not use a Render ephemeral filesystem for portfolio data or uploads. Back up MongoDB and B2 independently using their provider-supported backup/versioning facilities.
 - B2 private bucket objects are served through the backend media route, so the frontend never receives storage credentials. Use an application key scoped to the portfolio bucket and grant only the read, write, and delete capabilities needed by this API.
 
@@ -70,13 +71,13 @@ npm run dev --prefix frontend
 | `GET` | `/api/health` | MongoDB readiness and current database/media storage modes. Admin editing is blocked unless this endpoint reports `database: "mongodb"`; production uploads also require `storage: "backblaze-b2"`. |
 | `GET` | `/api/health/storage` | Storage-mode health check. |
 | `GET` | `/api/portfolio` | Public portfolio content. |
-| `GET` | `/api/media/:filename` | Retrieve an uploaded image from B2 (or a legacy local image). |
+| `GET` | `/api/media/:filename` | Retrieve uploaded images or videos from B2 (or a legacy local file). |
 | `POST` | `/api/contact` | Validate and persist a contact submission in MongoDB. |
 | `GET` | `/api/admin/session` | Check admin session/configuration status. |
 | `POST` | `/api/admin/login` | Sign in and issue an HttpOnly session cookie. |
 | `POST` | `/api/admin/logout` | Revoke the current admin session. |
 | `POST` | `/api/admin/password` | Change the admin password from the portfolio settings menu after verifying admin credentials. |
-| `POST` | `/api/admin/uploads` | Upload an authenticated image to persistent B2 storage (maximum 8 MB). |
+| `POST` | `/api/admin/uploads` | Upload authenticated image (maximum 8 MB) or MP4/WebM video (maximum 50 MB) media to persistent B2 storage. |
 | `GET` | `/api/admin/portfolio` | Load portfolio content and its revision (ETag) in the CMS. |
 | `PUT` | `/api/admin/portfolio` | Validate and update the MongoDB portfolio document using its required `If-Match` revision. |
 
