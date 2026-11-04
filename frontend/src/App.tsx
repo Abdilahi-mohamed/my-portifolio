@@ -480,7 +480,12 @@ function App() {
                 </a>
                 <div className="project-content project-card-links">
                   <div className="project-links">
-                    {project.githubUrl && (
+                  {project.liveUrl && (
+                    <a href={project.liveUrl} rel="noopener noreferrer" target="_blank">
+                      <Globe2 size={16} /> Live project <ArrowUpRight size={14} />
+                    </a>
+                  )}
+                  {project.githubUrl && (
                       <a href={project.githubUrl} rel="noopener noreferrer" target="_blank">
                         <Github size={16} /> GitHub <ArrowUpRight size={14} />
                       </a>
