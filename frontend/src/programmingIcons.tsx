@@ -12,6 +12,7 @@ import SiElixir from "@icons-pack/react-simple-icons/icons/SiElixir";
 import SiElm from "@icons-pack/react-simple-icons/icons/SiElm";
 import SiErlang from "@icons-pack/react-simple-icons/icons/SiErlang";
 import SiExpress from "@icons-pack/react-simple-icons/icons/SiExpress";
+import SiFirebase from "@icons-pack/react-simple-icons/icons/SiFirebase";
 import SiFsharp from "@icons-pack/react-simple-icons/icons/SiFsharp";
 import SiFortran from "@icons-pack/react-simple-icons/icons/SiFortran";
 import SiGo from "@icons-pack/react-simple-icons/icons/SiGo";
@@ -45,13 +46,15 @@ import SiRust from "@icons-pack/react-simple-icons/icons/SiRust";
 import SiScala from "@icons-pack/react-simple-icons/icons/SiScala";
 import SiSolidity from "@icons-pack/react-simple-icons/icons/SiSolidity";
 import SiSqlite from "@icons-pack/react-simple-icons/icons/SiSqlite";
+import SiSupabase from "@icons-pack/react-simple-icons/icons/SiSupabase";
 import SiSwift from "@icons-pack/react-simple-icons/icons/SiSwift";
 import SiTypescript from "@icons-pack/react-simple-icons/icons/SiTypescript";
+import SiTailwindcss from "@icons-pack/react-simple-icons/icons/SiTailwindcss";
 import SiV from "@icons-pack/react-simple-icons/icons/SiV";
 import SiWebassembly from "@icons-pack/react-simple-icons/icons/SiWebassembly";
 import SiZig from "@icons-pack/react-simple-icons/icons/SiZig";
 import SiZsh from "@icons-pack/react-simple-icons/icons/SiZsh";
-import type { IconName } from "./types";
+import type { IconName, ProjectTechnology } from "./types";
 
 export const programmingIconOptions: { name: IconName; label: string }[] = [
   { name: "Code2", label: "General code" },
@@ -109,6 +112,32 @@ export const programmingIconOptions: { name: IconName; label: string }[] = [
   { name: "Purescript", label: "PureScript" },
   { name: "Racket", label: "Racket" },
   { name: "D", label: "D" },
+  { name: "Firebase", label: "Firebase" },
+  { name: "Supabase", label: "Supabase" },
+  { name: "Tailwindcss", label: "Tailwind CSS" },
+];
+
+export const projectTechnologyOptions: ProjectTechnology[] = [
+  { name: "JavaScript", id: "javascript", icon: "Javascript" },
+  { name: "TypeScript", id: "typescript", icon: "Typescript" },
+  { name: "Python", id: "python", icon: "Python" },
+  { name: "Java", id: "java", icon: "Java" },
+  { name: "C++", id: "cpp", icon: "Cplusplus" },
+  { name: "PHP", id: "php", icon: "Php" },
+  { name: "React", id: "react", icon: "React" },
+  { name: "Next.js", id: "nextjs", icon: "Nextjs" },
+  { name: "Node.js", id: "nodejs", icon: "Nodejs" },
+  { name: "Express.js", id: "expressjs", icon: "Express" },
+  { name: "MongoDB", id: "mongodb", icon: "Mongodb" },
+  { name: "MySQL", id: "mysql", icon: "Mysql" },
+  { name: "PostgreSQL", id: "postgresql", icon: "Postgresql" },
+  { name: "Firebase", id: "firebase", icon: "Firebase" },
+  { name: "Supabase", id: "supabase", icon: "Supabase" },
+  { name: "HTML5", id: "html5", icon: "Html5" },
+  { name: "CSS3", id: "css3", icon: "Css3" },
+  { name: "Tailwind CSS", id: "tailwindcss", icon: "Tailwindcss" },
+  { name: "Docker", id: "docker", icon: "Docker" },
+  { name: "AWS", id: "aws", icon: "Code2" },
 ];
 
 const programmingIcons: Partial<Record<IconName, typeof SiJavascript>> = {
@@ -126,6 +155,7 @@ const programmingIcons: Partial<Record<IconName, typeof SiJavascript>> = {
   Elm: SiElm,
   Erlang: SiErlang,
   Express: SiExpress,
+  Firebase: SiFirebase,
   Fsharp: SiFsharp,
   Fortran: SiFortran,
   Go: SiGo,
@@ -159,6 +189,8 @@ const programmingIcons: Partial<Record<IconName, typeof SiJavascript>> = {
   Scala: SiScala,
   Solidity: SiSolidity,
   Sqlite: SiSqlite,
+  Supabase: SiSupabase,
+  Tailwindcss: SiTailwindcss,
   Swift: SiSwift,
   Typescript: SiTypescript,
   V: SiV,
@@ -181,6 +213,7 @@ const programmingBrandColors: Partial<Record<IconName, string>> = {
   Elm: "#1293D8",
   Erlang: "#A90533",
   Express: "#000000",
+  Firebase: "#FFCA28",
   Fsharp: "#378BBA",
   Fortran: "#734F96",
   Go: "#00ADD8",
@@ -215,6 +248,8 @@ const programmingBrandColors: Partial<Record<IconName, string>> = {
   Solidity: "#363636",
   Sqlite: "#003B57",
   Swift: "#F05138",
+  Supabase: "#3FCF8E",
+  Tailwindcss: "#06B6D4",
   Typescript: "#3178C6",
   V: "#5D87BF",
   Webassembly: "#654FF0",

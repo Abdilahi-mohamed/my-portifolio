@@ -815,6 +815,20 @@
 .cms-project-details-heading p { margin: 6px 0 0; color: var(--cms-muted); font-size: 11px; line-height: 1.5; }
 .cms-project-details-fields .cms-input-label { margin-bottom: 13px; }
 .cms-project-details-fields .cms-input-label > textarea { min-height: 92px; font-size: 12px; }
+.cms-project-technologies-field { margin: 4px 0 16px; }
+.cms-project-technology-selected { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 10px; }
+.cms-project-technology-chip { display: inline-flex; min-height: 29px; align-items: center; gap: 6px; padding: 4px 5px 4px 8px; border: 1px solid #dce8df; border-radius: 5px; color: #355342; background: #f1f7f2; font-size: 10px; font-weight: 700; }
+.cms-project-technology-chip > button { display: grid; width: 19px; height: 19px; place-items: center; padding: 0; border: 0; border-radius: 4px; color: #66776c; background: transparent; }
+.cms-project-technology-chip > button:hover { color: #a33b3b; background: #fcecec; }
+.cms-project-technology-search { display: flex; min-height: 36px; align-items: center; gap: 8px; padding: 0 10px; border: 1px solid var(--cms-line); border-radius: 5px; color: var(--cms-muted); background: #fff; }
+.cms-project-technology-search:focus-within { border-color: #8ba8e6; box-shadow: 0 0 0 2px #edf3ff; }
+.cms-project-technology-search input { width: 100%; border: 0; outline: 0; color: var(--cms-ink); background: transparent; font-size: 11px; }
+.cms-project-technology-options { display: grid; max-height: 190px; grid-template-columns: repeat(auto-fill, minmax(125px, 1fr)); gap: 6px; overflow-y: auto; margin-top: 8px; padding: 1px; }
+.cms-project-technology-options > button { display: flex; min-width: 0; min-height: 35px; align-items: center; gap: 7px; padding: 6px 8px; border: 1px solid var(--cms-line); border-radius: 5px; color: #526075; background: #fff; text-align: left; }
+.cms-project-technology-options > button:hover,
+.cms-project-technology-options > button.is-selected { border-color: #9dc5a8; color: #285d3e; background: #f0f7f2; }
+.cms-project-technology-options > button > span { flex: 1; overflow: hidden; font-size: 10px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.cms-project-technology-empty { grid-column: 1 / -1; margin: 12px; color: var(--cms-muted); font-size: 11px; text-align: center; }
 .cms-project-media-field { margin-top: 4px; padding: 13px; border: 1px dashed var(--cms-line); border-radius: 8px; background: #f7faf8; }
 .cms-project-media-field > strong { color: var(--cms-ink); font-size: 11px; }
 .cms-project-media-field > p { margin: 5px 0 8px; color: var(--cms-muted); font-size: 10px; line-height: 1.5; }

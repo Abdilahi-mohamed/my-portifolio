@@ -1,6 +1,7 @@
 const allowedIcons = new Set([
   "ArrowUpRight", "Check", "Code2", "Javascript", "Typescript", "React",
   "Nextjs", "Express", "Git", "Docker",
+  "Firebase", "Supabase", "Tailwindcss",
   "Nodejs", "Mongodb", "Mysql", "Postgresql", "Sqlite", "Redis", "Python",
   "Java", "C", "Cplusplus", "Csharp", "Go", "Rust", "Php", "Ruby",
   "Kotlin", "Swift", "Dart", "Lua", "R", "Scala", "Haskell", "Elixir",
@@ -151,6 +152,20 @@ export function isPortfolioContent(value: unknown): boolean {
                 ? isSafeImageReference(item.url)
                 : item.type === "video" && isSafeVideoReference(item.url)),
             ))) &&
+        (project.technologies === undefined ||
+          (Array.isArray(project.technologies) &&
+            project.technologies.length <= 30 &&
+            project.technologies.every((technology) =>
+              isRecord(technology) &&
+              textKeys(technology, ["name", "id", "icon"]) &&
+              validText(technology.name, 100) &&
+              typeof technology.id === "string" &&
+              /^[a-z0-9][a-z0-9-]{0,99}$/.test(technology.id) &&
+              iconKey(technology),
+            ) &&
+            new Set(project.technologies.map((technology) =>
+              isRecord(technology) ? technology.id : undefined,
+            )).size === project.technologies.length)) &&
         Array.isArray(project.tags) &&
         project.tags.length <= 30 && project.tags.every((tag) => validText(tag, 200)),
     )

@@ -27,7 +27,7 @@ import {
   UserRound,
   X,
 } from "lucide-react";
-import type { PortfolioContent } from "../types";
+import type { PortfolioContent, ProjectTechnology } from "../types";
 import { SocialBrandIcon, socialIconForUrl, socialIconOptions } from "../socialIcons";
 import {
   isProgrammingLanguageIcon,
@@ -35,6 +35,7 @@ import {
   programmingIconBackground,
   programmingIconColor,
   programmingIconOptions,
+  projectTechnologyOptions,
 } from "../programmingIcons";
 import {
   adminLogout,
@@ -83,7 +84,7 @@ const portfolioSchema = {
     customSections: { type: "array", items: { type: "object" } },
     hero: { type: "object", properties: { brand: { type: "string" }, badge: { type: "string" }, title: { type: "string" }, titleAccent: { type: "string" }, description: { type: "string" }, stats: { type: "array" } }, required: ["brand", "title", "description"] },
     about: { type: "object", properties: { profileName: { type: "string" }, profileRole: { type: "string" }, location: { type: "string" }, bio: { type: "string" }, photo: { type: "string", format: "uri" }, coverPhoto: { type: "string" }, coverPhotoZoom: { type: "number", minimum: 1, maximum: 3 }, coverPhotoX: { type: "number", minimum: 0, maximum: 100 }, coverPhotoY: { type: "number", minimum: 0, maximum: 100 } }, required: ["profileName", "profileRole", "location", "bio"] },
-    projectsSection: { type: "object", properties: { label: { type: "string" }, title: { type: "string" }, description: { type: "string" }, projects: { type: "array", items: { type: "object", properties: { category: { type: "string" }, title: { type: "string" }, description: { type: "string" }, image: { type: "string" }, tags: { type: "array", items: { type: "string" } }, liveUrl: { type: "string" }, githubUrl: { type: "string" } }, required: ["category", "title", "description"] } } }, required: ["projects"] },
+    projectsSection: { type: "object", properties: { label: { type: "string" }, title: { type: "string" }, description: { type: "string" }, projects: { type: "array", items: { type: "object", properties: { category: { type: "string" }, title: { type: "string" }, description: { type: "string" }, image: { type: "string" }, tags: { type: "array", items: { type: "string" } }, liveUrl: { type: "string" }, githubUrl: { type: "string" }, technologies: { type: "array", items: { type: "object", properties: { name: { type: "string" }, id: { type: "string" }, icon: { type: "string" } }, required: ["name", "id", "icon"] } } }, required: ["category", "title", "description"] } } }, required: ["projects"] },
     skillsSection: { type: "object", properties: { label: { type: "string" }, title: { type: "string" }, description: { type: "string" }, skills: { type: "array", items: { type: "object", properties: { name: { type: "string" }, level: { type: "string", pattern: "^(100|[1-9]?\\d)%$" }, icon: { type: "string" }, color: { type: "string", pattern: "^#[\\da-fA-F]{6}$" }, category: { type: "string" } }, required: ["name", "level", "icon", "color"] } } }, required: ["skills"] },
     experience: { type: "array", items: { type: "object", properties: { role: { type: "string" }, company: { type: "string" }, desc: { type: "string" }, year: { type: "string" }, location: { type: "string" }, image: { type: "string" } }, required: ["role", "desc", "year"] } },
     certificates: { type: "array", items: { type: "object", properties: { title: { type: "string" }, issuer: { type: "string" }, year: { type: "string" }, description: { type: "string" }, image: { type: "string" } }, required: ["title", "issuer", "year", "description", "image"] } },
@@ -179,6 +180,8 @@ export function AdminDashboard({
   const [draft, setDraft] = useState<Record<string, string>>({});
   const [galleryItems, setGalleryItems] = useState<GalleryItem[]>([]);
   const [projectMediaItems, setProjectMediaItems] = useState<ProjectMediaItem[]>([]);
+  const [selectedTechnologies, setSelectedTechnologies] = useState<ProjectTechnology[]>([]);
+  const [technologySearch, setTechnologySearch] = useState("");
   const [certificateImage, setCertificateImage] = useState<GalleryItem | null>(null);
   const [experienceImage, setExperienceImage] = useState<GalleryItem | null>(null);
   const [newSectionLabel, setNewSectionLabel] = useState("");
@@ -475,6 +478,10 @@ export function AdminDashboard({
     setProjectMediaItems(kind === "project" && item && "media" in item
       ? (item.media ?? []).map((media) => ({ ...media }))
       : []);
+    setSelectedTechnologies(kind === "project" && item && "technologies" in item
+      ? (item.technologies ?? []).map((technology) => ({ ...technology }))
+      : []);
+    setTechnologySearch("");
     setCertificateImage(kind === "certificate" && item && "image" in item && item.image
       ? { url: item.image }
       : null);
@@ -497,6 +504,8 @@ export function AdminDashboard({
     setExperienceImage(null);
     setGalleryItems([]);
     setProjectMediaItems([]);
+    setSelectedTechnologies([]);
+    setTechnologySearch("");
     setEditor(null);
   };
 
@@ -534,6 +543,7 @@ export function AdminDashboard({
         problemStatement: draft.problemStatement.trim(),
         solution: draft.solution.trim(),
         howItWorks: draft.howItWorks.trim(),
+        technologies: selectedTechnologies,
         media: uploadedProjectMedia,
         image: uploadedUrls.get(draft.image) ?? draft.image.trim(),
         gallery: uploadedItems.map((item) => item.url),
@@ -1169,8 +1179,39 @@ export function AdminDashboard({
             <label className="cms-input-label">2. Problem Statement<textarea maxLength={10000} onChange={(event) => setDraft({ ...draft, problemStatement: event.target.value })} placeholder="Explain the specific problem this project is intended to solve." rows={4} value={draft.problemStatement} /></label>
             <label className="cms-input-label">3. Solution<textarea maxLength={10000} onChange={(event) => setDraft({ ...draft, solution: event.target.value })} placeholder="Describe how the project solves the identified problem." rows={4} value={draft.solution} /></label>
             <label className="cms-input-label">4. How It Works<textarea maxLength={10000} onChange={(event) => setDraft({ ...draft, howItWorks: event.target.value })} placeholder="Explain the workflow and how users interact with the system." rows={4} value={draft.howItWorks} /></label>
+            <section aria-label="Technologies used" className="cms-project-technologies-field">
+              <div className="cms-project-details-heading">
+                <span className="cms-section-index">5. TECHNOLOGY STACK</span>
+                <p>Select the languages, frameworks, libraries, and databases used in this project.</p>
+              </div>
+              {selectedTechnologies.length > 0 && <div aria-label="Selected technologies" className="cms-project-technology-selected">
+                {selectedTechnologies.map((technology) => <span className="cms-project-technology-chip" key={technology.id}>
+                  {isProgrammingLanguageIcon(technology.icon)
+                    ? <ProgrammingLanguageIcon color={programmingIconColor(technology.icon, "#56665c")} name={technology.icon} size={16} />
+                    : <Code2 aria-hidden="true" size={16} />}
+                  {technology.name}
+                  <button aria-label={`Remove ${technology.name}`} onClick={() => setSelectedTechnologies((items) => items.filter((item) => item.id !== technology.id))} type="button"><X size={13} /></button>
+                </span>)}
+              </div>}
+              <label className="cms-project-technology-search"><Search aria-hidden="true" size={16} /><input onChange={(event) => setTechnologySearch(event.target.value)} placeholder="Search technologies..." type="search" value={technologySearch} /></label>
+              <div aria-label="Available technologies" className="cms-project-technology-options">
+                {projectTechnologyOptions.filter((technology) => technology.name.toLowerCase().includes(technologySearch.trim().toLowerCase())).map((technology) => {
+                  const selected = selectedTechnologies.some((item) => item.id === technology.id);
+                  return <button aria-pressed={selected} className={selected ? "is-selected" : ""} key={technology.id} onClick={() => setSelectedTechnologies((items) => selected
+                    ? items.filter((item) => item.id !== technology.id)
+                    : [...items, technology])} type="button">
+                    {isProgrammingLanguageIcon(technology.icon)
+                      ? <ProgrammingLanguageIcon color={programmingIconColor(technology.icon, "#56665c")} name={technology.icon} size={18} />
+                      : <Code2 aria-hidden="true" size={18} />}
+                    <span>{technology.name}</span>
+                    {selected && <Check aria-hidden="true" size={14} />}
+                  </button>;
+                })}
+                {projectTechnologyOptions.filter((technology) => technology.name.toLowerCase().includes(technologySearch.trim().toLowerCase())).length === 0 && <p className="cms-project-technology-empty">No technologies match your search.</p>}
+              </div>
+            </section>
             <div className="cms-project-media-field">
-              <strong>5. Project Media</strong>
+              <strong>6. Project Media</strong>
               <p>Upload supporting images, screenshots, and MP4 or WebM demonstrations. Up to 30 files; images up to 8 MB and videos up to 50 MB each.</p>
               <label className="cms-file-choice">Add project media<input accept="image/png,image/jpeg,image/webp,image/gif,video/mp4,video/webm" multiple onChange={(event) => { addProjectMediaFiles(event.currentTarget.files); event.currentTarget.value = ""; }} type="file" /></label>
               {projectMediaItems.length > 0 && <div aria-label="Project media files" className="cms-project-media-grid">

@@ -1474,3 +1474,54 @@ html[data-portfolio-theme="dark"] .password-dialog input {
     transition-duration: .01ms !important;
   }
 }
+
+.project-card-main { display: block; color: inherit; text-decoration: none; }
+.project-card-main:focus-visible { outline: 3px solid var(--green); outline-offset: -3px; }
+.project-card-links { padding-top: 4px; }
+.project-card-links .project-links { margin-top: 0; }
+.project-detail-page {
+  width: min(900px, 100%);
+  margin: clamp(24px, 6vw, 64px) auto;
+  padding: clamp(24px, 5vw, 48px);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  color: var(--ink);
+  background: #fff;
+  box-shadow: 0 18px 55px rgb(25 44 35 / 7%);
+}
+.project-detail-back { display: inline-flex; align-items: center; gap: 7px; margin-bottom: 30px; color: var(--green); font-size: 13px; font-weight: 700; text-decoration: none; }
+.project-detail-back:hover { text-decoration: underline; }
+.project-detail-page > .eyebrow { margin: 0 0 8px; }
+.project-detail-page > h1 { margin: 0; font-family: "Manrope", sans-serif; font-size: clamp(28px, 5vw, 44px); letter-spacing: -.045em; }
+.project-detail-owner { margin: 10px 0 0; color: var(--muted); font-size: 13px; }
+.project-detail-sections { display: grid; gap: 24px; margin-top: 32px; }
+.project-detail-sections > section { display: grid; grid-template-columns: 35px minmax(0, 1fr); gap: 13px; }
+.project-detail-sections > section > span { padding-top: 4px; color: var(--green); font: 700 11px "JetBrains Mono", monospace; }
+.project-detail-sections h2 { margin: 0; font-size: 17px; font-weight: 750; }
+.project-detail-sections p { margin: 8px 0 0; color: var(--muted); font-size: 14px; line-height: 1.75; white-space: pre-line; }
+.project-detail-tags { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 12px; }
+.project-detail-tags span { padding: 5px 9px; border-radius: 99px; color: var(--green); background: #e8efeb; font-size: 11px; font-weight: 700; }
+.project-detail-technologies { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 12px; }
+.project-detail-technology { display: inline-flex; min-height: 37px; align-items: center; gap: 8px; padding: 7px 10px; border: 1px solid var(--line); border-radius: 8px; color: var(--ink); background: #f8faf8; font-size: 12px; font-weight: 650; }
+.project-detail-media { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 12px; margin-top: 13px; }
+.project-detail-media img,
+.project-detail-media video { display: block; width: 100%; max-height: 420px; aspect-ratio: 16 / 10; border: 1px solid var(--line); border-radius: 10px; background: #e8eee9; object-fit: contain; }
+.project-detail-links { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 20px; margin: 28px 0 0 48px; padding-top: 18px; border-top: 1px solid var(--line); }
+.project-detail-links h2 { flex-basis: 100%; margin: 0; font-size: 17px; }
+.project-detail-links a { display: inline-flex; align-items: center; gap: 5px; color: var(--green); font-size: 13px; font-weight: 700; text-decoration: none; }
+.project-detail-links a:hover { text-decoration: underline; }
+.project-not-found h1 { margin: 0; font-family: "Manrope", sans-serif; }
+.project-not-found p { color: var(--muted); }
+html[data-portfolio-theme="dark"] .project-detail-page { border-color: #34443a; color: var(--ink); background: #19231d; }
+html[data-portfolio-theme="dark"] .project-detail-tags span { color: #a7d9bb; background: #26372d; }
+html[data-portfolio-theme="dark"] .project-detail-technology { border-color: #34443a; background: #26332b; }
+html[data-portfolio-theme="dark"] .project-detail-media img,
+html[data-portfolio-theme="dark"] .project-detail-media video { border-color: #34443a; background: #26332b; }
+@media (max-width: 520px) {
+  .project-detail-page { margin: 18px auto; padding: 23px 19px; border-radius: 14px; }
+  .project-detail-back { margin-bottom: 24px; }
+  .project-detail-sections { gap: 21px; margin-top: 26px; }
+  .project-detail-sections > section { grid-template-columns: 26px minmax(0, 1fr); gap: 10px; }
+  .project-detail-links { margin-left: 36px; }
+  .project-card-links { padding-top: 0; }
+}

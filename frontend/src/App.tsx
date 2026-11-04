@@ -4,8 +4,6 @@ import {
   ArrowUpRight,
   BriefcaseBusiness,
   Check,
-  ChevronLeft,
-  ChevronRight,
   Code2,
   ExternalLink,
   Figma,
@@ -58,78 +56,6 @@ function projectMedia(project: Project): { type: "image" | "video"; url: string 
   return [...media, ...existingImages];
 }
 
-function ProjectGallery({
-  title,
-  image,
-  gallery,
-}: {
-  title: string;
-  image: string;
-  gallery: string[];
-}) {
-  const images = image
-    ? [image, ...gallery.filter((url) => url && url !== image)]
-    : gallery.filter(Boolean);
-  const [activeIndex, setActiveIndex] = useState(0);
-  const currentIndex = Math.min(activeIndex, Math.max(images.length - 1, 0));
-
-  if (images.length === 0) {
-    return (
-      <div className="project-image-wrap">
-        <div aria-label="Project preview not added" className="project-image-placeholder" role="img">
-          <span>Project preview</span>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div aria-label={`${title} screenshots`} className="project-image-wrap project-gallery">
-      <img
-        alt={`${title} screenshot ${currentIndex + 1} of ${images.length}`}
-        className="project-image"
-        loading="lazy"
-        src={images[currentIndex]}
-      />
-      {images.length > 1 && (
-        <>
-          <button
-            aria-label={`Previous ${title} screenshot`}
-            className="project-gallery-arrow is-previous"
-            onClick={() => setActiveIndex((currentIndex - 1 + images.length) % images.length)}
-            type="button"
-          >
-            <ChevronLeft size={21} />
-          </button>
-          <button
-            aria-label={`Next ${title} screenshot`}
-            className="project-gallery-arrow is-next"
-            onClick={() => setActiveIndex((currentIndex + 1) % images.length)}
-            type="button"
-          >
-            <ChevronRight size={21} />
-          </button>
-          <div aria-label="Choose screenshot" className="project-gallery-pagination">
-            <span aria-live="polite">{currentIndex + 1} / {images.length}</span>
-            <div>
-              {images.map((url, index) => (
-                <button
-                  aria-label={`Show ${title} screenshot ${index + 1}`}
-                  aria-pressed={index === currentIndex}
-                  className={index === currentIndex ? "is-active" : ""}
-                  key={`${url}-${index}`}
-                  onClick={() => setActiveIndex(index)}
-                  type="button"
-                />
-              ))}
-            </div>
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
-
 const icons: Partial<Record<IconName, typeof ArrowUpRight>> = {
   ArrowUpRight,
   Check,
@@ -153,6 +79,90 @@ const icons: Partial<Record<IconName, typeof ArrowUpRight>> = {
 };
 const skillGroups = ["Frontend", "Backend", "Databases", "Tools"] as const;
 
+function ProjectDetailsPage({ project, profileName }: { project: Project; profileName: string }) {
+  const media = projectMedia(project);
+  const technologies = project.technologies ?? [];
+  const description = project.projectDescription || project.fullDescription || project.description;
+  const sections = [
+    { number: "01", title: "Project Description", content: description },
+    { number: "02", title: "Problem Statement", content: project.problemStatement },
+    { number: "03", title: "Solution", content: project.solution },
+    { number: "04", title: "How It Works", content: project.howItWorks },
+  ];
+
+  return (
+    <main className="portfolio-page project-page">
+      <article aria-labelledby="project-detail-title" className="project-detail-page">
+        <a className="project-detail-back" href="/#projects">← Back to projects</a>
+        <p className="eyebrow">{project.category}</p>
+        <h1 id="project-detail-title">{project.title}</h1>
+        <p className="project-detail-owner">{profileName} · Project case study</p>
+        <div className="project-detail-sections">
+          {sections.map((section) => (
+            <section key={section.number}>
+              <span>{section.number}</span>
+              <div>
+                <h2>{section.title}</h2>
+                <p>{section.content || "No information has been added yet."}</p>
+              </div>
+            </section>
+          ))}
+          {project.tags.length > 0 && <section>
+            <span>05</span>
+            <div>
+              <h2>Project Tags</h2>
+              <div aria-label="Project tags" className="project-detail-tags">
+                {project.tags.map((tag) => <span key={tag}>{tag}</span>)}
+              </div>
+            </div>
+          </section>}
+          <section>
+            <span>06</span>
+            <div>
+              <h2>Technologies Used</h2>
+              {technologies.length > 0
+                ? <div aria-label="Project technologies" className="project-detail-technologies">
+                  {technologies.map((technology) => (
+                    <span className="project-detail-technology" key={technology.id}>
+                      {isProgrammingLanguageIcon(technology.icon)
+                        ? <ProgrammingLanguageIcon color={programmingIconColor(technology.icon, "#56665c")} name={technology.icon} size={19} />
+                        : <Code2 aria-hidden="true" size={19} />}
+                      {technology.name}
+                    </span>
+                  ))}
+                </div>
+                : <p>No technologies have been added yet.</p>}
+            </div>
+          </section>
+          <section className="project-detail-media-section">
+            <span>07</span>
+            <div>
+              <h2>Project Images and Videos</h2>
+              {media.length > 0
+                ? <div className="project-detail-media">
+                  {media.map((item, index) => item.type === "video"
+                    ? <video controls key={`${item.url}-${index}`} preload="metadata" src={item.url}>
+                      Your browser does not support video playback.
+                    </video>
+                    : <img alt={`${project.title} project media ${index + 1}`} key={`${item.url}-${index}`} loading="lazy" src={item.url} />)}
+                </div>
+                : <p>No project media has been added yet.</p>}
+            </div>
+          </section>
+        </div>
+        {(project.liveUrl || project.githubUrl || project.linkedinUrl) && (
+          <div aria-label="Project links" className="project-detail-links">
+            <h2>Project Links</h2>
+            {project.liveUrl && <a href={project.liveUrl} rel="noopener noreferrer" target="_blank"><Globe2 size={16} /> Live project <ArrowUpRight size={15} /></a>}
+            {project.githubUrl && <a href={project.githubUrl} rel="noopener noreferrer" target="_blank"><Github size={16} /> GitHub <ArrowUpRight size={15} /></a>}
+            {project.linkedinUrl && <a href={project.linkedinUrl} rel="noopener noreferrer" target="_blank"><Linkedin size={16} /> LinkedIn <ArrowUpRight size={15} /></a>}
+          </div>
+        )}
+      </article>
+    </main>
+  );
+}
+
 function App() {
   const [portfolio, setPortfolio] = useState<PortfolioContent>(
     defaultPortfolio as PortfolioContent,
@@ -169,7 +179,6 @@ function App() {
     }
   });
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
-  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [passwordBusy, setPasswordBusy] = useState(false);
   const [passwordError, setPasswordError] = useState("");
   const [passwordNotice, setPasswordNotice] = useState("");
@@ -242,15 +251,6 @@ function App() {
     return () => window.removeEventListener("keydown", closeOnEscape);
   }, [passwordBusy, passwordDialogOpen]);
 
-  useEffect(() => {
-    if (!selectedProject) return;
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setSelectedProject(null);
-    };
-    window.addEventListener("keydown", closeOnEscape);
-    return () => window.removeEventListener("keydown", closeOnEscape);
-  }, [selectedProject]);
-
   const submitPasswordChange = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setPasswordError("");
@@ -280,14 +280,23 @@ function App() {
 
   const profile = portfolio.about;
   const projects = portfolio.projectsSection.projects.filter((project) => project.visible);
+  const projectRouteId = /^\/projects\/([a-z0-9][a-z0-9-]{0,99})\/?$/.exec(window.location.pathname)?.[1];
+  const isProjectRoute = window.location.pathname.startsWith("/projects/");
+  const routeProject = projectRouteId
+    ? projects.find((project) => project.id === projectRouteId)
+    : undefined;
   const skills = portfolio.skillsSection.skills;
   const experience = portfolio.experience;
   const certificates = portfolio.certificates ?? [];
   const socials = portfolio.contact.socials;
 
   useEffect(() => {
-    const pageTitle = `${profile.profileName} — Portfolio`;
-    const pageDescription = profile.profileDescription ||
+    const pageTitle = routeProject
+      ? `${routeProject.title} — ${profile.profileName} — Portfolio`
+      : `${profile.profileName} — Portfolio`;
+    const pageDescription = routeProject
+      ? routeProject.projectDescription || routeProject.fullDescription || routeProject.description
+      : profile.profileDescription ||
       `Explore ${profile.profileName}'s portfolio, projects, skills, and professional experience.`;
     const imageUrl = new URL("/abdilahi-portfolio.png", window.location.origin).href;
     document.title = pageTitle;
@@ -302,7 +311,7 @@ function App() {
     document.querySelector('meta[name="twitter:title"]')?.setAttribute("content", pageTitle);
     document.querySelector('meta[name="twitter:description"]')?.setAttribute("content", pageDescription);
     document.querySelector('meta[name="twitter:image"]')?.setAttribute("content", imageUrl);
-  }, [profile.profileDescription, profile.profileName]);
+  }, [profile.profileDescription, profile.profileName, routeProject]);
 
   if (!portfolioLoaded) {
     return (
@@ -320,6 +329,21 @@ function App() {
         </section>
       </main>
     );
+  }
+
+  if (isProjectRoute) {
+    if (!routeProject) {
+      return (
+        <main className="portfolio-page project-page">
+          <section className="project-detail-page project-not-found">
+            <h1>Project not found</h1>
+            <p>This project may have been removed or is no longer published.</p>
+            <a className="project-detail-back" href="/#projects">Back to projects</a>
+          </section>
+        </main>
+      );
+    }
+    return <ProjectDetailsPage profileName={profile.profileName} project={routeProject} />;
   }
 
   return (
@@ -446,22 +470,24 @@ function App() {
           <div className="project-grid">
             {projects.map((project) => (
               <article className="project-card" key={project.id || project.title}>
-                <ProjectGallery gallery={project.gallery ?? []} image={project.image} title={project.title} />
-                <div className="project-content">
-                  <h3><button className="project-title-button" onClick={() => setSelectedProject(project)} type="button">{project.title}</button></h3>
-                  {project.description && <p>{project.description}</p>}
-                  <button className="project-detail-trigger" onClick={() => setSelectedProject(project)} type="button">
-                    View project details <ArrowUpRight size={15} />
-                  </button>
+                <a aria-label={`View ${project.title} project details`} className="project-card-main" href={`/projects/${project.id}`}>
+                  <div className="project-image-wrap">
+                    {project.image
+                      ? <img alt={`${project.title} preview`} className="project-image" loading="lazy" src={project.image} />
+                      : <div aria-label="Project preview not added" className="project-image-placeholder" role="img"><span>Project preview</span></div>}
+                  </div>
+                  <div className="project-content"><h3>{project.title}</h3></div>
+                </a>
+                <div className="project-content project-card-links">
                   <div className="project-links">
                     {project.githubUrl && (
                       <a href={project.githubUrl} rel="noopener noreferrer" target="_blank">
-                        <Github size={16} /> GitHub repository <ArrowUpRight size={14} />
+                        <Github size={16} /> GitHub <ArrowUpRight size={14} />
                       </a>
                     )}
                     {project.linkedinUrl && (
                       <a href={project.linkedinUrl} rel="noopener noreferrer" target="_blank">
-                        <Linkedin size={16} /> LinkedIn post <ArrowUpRight size={14} />
+                        <Linkedin size={16} /> LinkedIn <ArrowUpRight size={14} />
                       </a>
                     )}
                   </div>
@@ -478,69 +504,6 @@ function App() {
           </div>
         )}
       </section>
-
-      {selectedProject && (
-        <div
-          className="project-detail-backdrop"
-          onMouseDown={(event) => {
-            if (event.target === event.currentTarget) setSelectedProject(null);
-          }}
-        >
-          <article aria-labelledby="project-detail-title" aria-modal="true" className="project-detail-dialog" role="dialog">
-            <button
-              aria-label="Close project details"
-              className="project-detail-close"
-              onClick={() => setSelectedProject(null)}
-              type="button"
-            >
-              <XIcon size={19} />
-            </button>
-            <p className="eyebrow">{selectedProject.category}</p>
-            <h2 id="project-detail-title">{selectedProject.title}</h2>
-            {selectedProject.tags.length > 0 && (
-              <div className="project-detail-tags">{selectedProject.tags.map((tag) => <span key={tag}>{tag}</span>)}</div>
-            )}
-            <div className="project-detail-sections">
-              <section>
-                <span>01</span>
-                <div><h3>Project Description</h3><p>{selectedProject.projectDescription || selectedProject.fullDescription || selectedProject.description}</p></div>
-              </section>
-              {selectedProject.problemStatement && <section>
-                <span>02</span>
-                <div><h3>Problem Statement</h3><p>{selectedProject.problemStatement}</p></div>
-              </section>}
-              {selectedProject.solution && <section>
-                <span>03</span>
-                <div><h3>Solution</h3><p>{selectedProject.solution}</p></div>
-              </section>}
-              {selectedProject.howItWorks && <section>
-                <span>04</span>
-                <div><h3>How It Works</h3><p>{selectedProject.howItWorks}</p></div>
-              </section>}
-              {projectMedia(selectedProject).length > 0 && <section className="project-detail-media-section">
-                <span>05</span>
-                <div>
-                  <h3>Project Media</h3>
-                  <div className="project-detail-media">
-                    {projectMedia(selectedProject).map((item, index) => item.type === "video"
-                      ? <video controls key={`${item.url}-${index}`} preload="metadata" src={item.url}>
-                        Your browser does not support video playback.
-                      </video>
-                      : <img alt={`${selectedProject.title} project media ${index + 1}`} key={`${item.url}-${index}`} loading="lazy" src={item.url} />)}
-                  </div>
-                </div>
-              </section>}
-            </div>
-            {(selectedProject.liveUrl || selectedProject.githubUrl || selectedProject.linkedinUrl) && (
-              <div className="project-detail-links">
-                {selectedProject.liveUrl && <a href={selectedProject.liveUrl} rel="noopener noreferrer" target="_blank">Live project <ArrowUpRight size={15} /></a>}
-                {selectedProject.githubUrl && <a href={selectedProject.githubUrl} rel="noopener noreferrer" target="_blank">GitHub <ArrowUpRight size={15} /></a>}
-                {selectedProject.linkedinUrl && <a href={selectedProject.linkedinUrl} rel="noopener noreferrer" target="_blank">LinkedIn <ArrowUpRight size={15} /></a>}
-              </div>
-            )}
-          </article>
-        </div>
-      )}
 
       <section aria-labelledby="skills-title" className="skills-section" id="skills">
         <div className="section-heading">

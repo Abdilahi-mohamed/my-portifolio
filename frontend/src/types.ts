@@ -6,6 +6,9 @@ export type IconName =
   | "Typescript"
   | "React"
   | "Nextjs"
+  | "Firebase"
+  | "Supabase"
+  | "Tailwindcss"
   | "Express"
   | "Git"
   | "Docker"
@@ -110,6 +113,12 @@ export type IconName =
   | "X"
   | "Zap";
 
+export type ProjectTechnology = {
+  name: string;
+  id: string;
+  icon: IconName;
+};
+
 export type PortfolioContent = {
   navigation: { id: string; label: string }[];
   customSections: {
@@ -170,6 +179,7 @@ export type PortfolioContent = {
       problemStatement?: string;
       solution?: string;
       howItWorks?: string;
+      technologies?: ProjectTechnology[];
       media?: { type: "image" | "video"; url: string }[];
       tags: string[];
       liveUrl: string;
