@@ -217,10 +217,27 @@ function getMongoCollection(name: string) {
   return mongoDatabase.collection<MongoRecord>(name);
 }
 
+async function getVisitorAnalytics(): Promise<{
+  totalSessions: number;
+  sessionsToday: number;
+  sessionsLast7Days: number;
+}> {
+  const visitors = getMongoCollection("portfolioVisitors");
+  const now = new Date();
+  const todayStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  const weekStart = new Date(todayStart.getTime() - 6 * 24 * 60 * 60 * 1000);
+  const [totalSessions, sessionsToday, sessionsLast7Days] = await Promise.all([
+    visitors.countDocuments(),
+    visitors.countDocuments({ firstSeenAt: { $gte: todayStart } }),
+    visitors.countDocuments({ firstSeenAt: { $gte: weekStart } }),
+  ]);
+  return { totalSessions, sessionsToday, sessionsLast7Days };
+}
+
 function respond(
   response: ServerResponse,
   status: number,
-  body: Record<string, string>,
+  body: Record<string, unknown>,
 ): void {
   response.writeHead(status, {
     "Content-Type": "application/json; charset=utf-8",
@@ -848,6 +865,40 @@ async function handleRequest(
   }
 
   const url = new URL(request.url ?? "/", `http://${request.headers.host ?? "localhost"}`);
+  if (request.method === "POST" && url.pathname === "/api/visits") {
+    if (!request.headers["content-type"]?.includes("application/json")) {
+      respond(response, 415, { message: "Send the visitor session as JSON." });
+      return;
+    }
+    try {
+      const body = await readJson(request);
+      if (!isRecord(body) || typeof body.visitorId !== "string" ||
+        !/^[\da-f]{8}-[\da-f]{4}-4[\da-f]{3}-[89ab][\da-f]{3}-[\da-f]{12}$/i.test(body.visitorId)) {
+        respond(response, 400, { message: "A valid anonymous visitor session is required." });
+        return;
+      }
+      const visitorHash = createHash("sha256").update(body.visitorId).digest("hex");
+      await getMongoCollection("portfolioVisitors").updateOne(
+        { visitorHash },
+        { $setOnInsert: { visitorHash, firstSeenAt: new Date() } },
+        { upsert: true },
+      );
+      respond(response, 200, { message: "Visitor session recorded." });
+    } catch (error) {
+      if (error instanceof SyntaxError) {
+        respond(response, 400, { message: "The request body must contain valid JSON." });
+      } else if (error instanceof Error && error.message === "Request body is too large.") {
+        respond(response, 413, { message: "The request is too large." });
+      } else if (isRecord(error) && error.code === 11000) {
+        respond(response, 200, { message: "Visitor session recorded." });
+      } else {
+        console.error("Unable to record anonymous visitor session:", error);
+        respond(response, 500, { message: "Visitor analytics could not be updated." });
+      }
+    }
+    return;
+  }
+
   if (
     request.method === "GET" &&
     (url.pathname === "/api/health" || url.pathname === "/api/health/storage")
@@ -1072,6 +1123,20 @@ async function handleRequest(
       return;
     }
 
+    if (request.method === "GET" && url.pathname === "/api/admin/analytics") {
+      if (!await isAdminAuthenticated(request)) {
+        respond(response, 401, { message: "Sign in to view visitor analytics." });
+        return;
+      }
+      try {
+        respond(response, 200, await getVisitorAnalytics());
+      } catch (error) {
+        console.error("Unable to load visitor analytics:", error);
+        respond(response, 500, { message: "Visitor analytics could not be loaded." });
+      }
+      return;
+    }
+
     if (request.method === "POST" && url.pathname === "/api/admin/uploads") {
       if (!await isAdminAuthenticated(request)) {
         respond(response, 401, { message: "Sign in to upload project images." });
@@ -1266,6 +1331,8 @@ async function handleRequest(
 
 async function startServer(): Promise<void> {
   await connectToDatabase();
+  await getMongoCollection("portfolioVisitors").createIndex({ visitorHash: 1 }, { unique: true });
+  await getMongoCollection("portfolioVisitors").createIndex({ firstSeenAt: 1 });
   if (process.env.NODE_ENV === "production" && !b2Client) {
     throw new Error("Configure Backblaze B2 storage in production to keep uploaded media persistent.");
   }

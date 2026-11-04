@@ -237,6 +237,25 @@ function App() {
   }, [portfolioRetry]);
 
   useEffect(() => {
+    let visitorId: string;
+    try {
+      visitorId = window.sessionStorage.getItem("portfolio-visitor-session") ?? crypto.randomUUID();
+      window.sessionStorage.setItem("portfolio-visitor-session", visitorId);
+    } catch (error) {
+      console.warn("Anonymous visitor analytics could not access session storage:", error);
+      visitorId = crypto.randomUUID();
+    }
+
+    void fetch(apiUrl("/api/visits"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ visitorId }),
+    }).catch((error: unknown) => {
+      console.warn("Anonymous visitor analytics could not be recorded:", error);
+    });
+  }, []);
+
+  useEffect(() => {
     if (!toast) return;
     const timeout = window.setTimeout(() => setToast(null), 4200);
     return () => window.clearTimeout(timeout);
@@ -356,6 +375,7 @@ function App() {
           </summary>
           <div className="portfolio-menu-items">
             <a href="/admin"><Pencil size={16} /> Edit portfolio settings</a>
+            <a href="/admin/analytics"><Monitor size={16} /> Visitor analytics</a>
             <button onClick={() => setDarkMode((enabled) => !enabled)} type="button">
               {darkMode ? <Sun size={16} /> : <Moon size={16} />}
               {darkMode ? "Light mode" : "Dark mode"}

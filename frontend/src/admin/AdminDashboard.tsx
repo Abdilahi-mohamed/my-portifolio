@@ -901,6 +901,7 @@ export function AdminDashboard({
           <a href="#experience"><BriefcaseBusiness size={16} /> Experience</a>
           <a href="#contact-editor"><ExternalLink size={16} /> Social profiles</a>
           <a href="#sections"><LayoutDashboard size={16} /> Sections</a>
+          <a href="/admin/analytics"><Eye size={16} /> Visitors</a>
         </nav>
         <div className="cms-global-actions">
           <a className="cms-top-site-link" href="/"><ExternalLink size={15} /> View portfolio</a>

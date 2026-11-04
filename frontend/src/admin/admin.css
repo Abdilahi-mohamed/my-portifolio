@@ -469,6 +469,8 @@
   .cms-topbar { top: 106px; padding: 11px 18px; }
   .cms-content { width: min(calc(100% - 36px), 560px); padding: 20px 0 13px; }
   .cms-panel { padding: 16px; }
+  .cms-analytics-metrics { grid-template-columns: 1fr; }
+  .cms-analytics-page { width: min(calc(100% - 36px), 560px); padding: 22px 0; }
 }
 
 @media (max-width: 440px) {
@@ -476,6 +478,7 @@
   .cms-global-nav .cms-nav { margin-inline: -14px; }
   .cms-topbar { padding-inline: 14px; }
   .cms-content { width: calc(100% - 28px); }
+  .cms-analytics-page { width: calc(100% - 28px); }
   .cms-panel { padding: 14px; }
 }
 
@@ -484,6 +487,20 @@
   color: #202b28;
   background: #f7f8f6;
 }
+
+.cms-analytics-page { width: min(1120px, calc(100% - 56px)); margin: 0 auto; padding: 34px 0; }
+.cms-analytics-back { display: inline-flex; align-items: center; gap: 7px; margin-bottom: 18px; color: #53665b; font-size: 11px; font-weight: 700; }
+.cms-analytics-back:hover { color: #2d6d58; }
+.cms-analytics-panel { margin-bottom: 20px; }
+.cms-analytics-panel .cms-panel-heading { margin-bottom: 18px; }
+.cms-analytics-panel .cms-panel-heading h1 { margin: 8px 0; color: var(--cms-ink); font: 800 clamp(24px, 2.4vw, 31px) "Manrope", sans-serif; }
+.cms-analytics-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.cms-analytics-metrics article { display: flex; min-height: 92px; flex-direction: column; justify-content: center; gap: 7px; padding: 14px 16px; border: 1px solid var(--cms-line); border-radius: 8px; background: #f7f8f6; }
+.cms-analytics-metrics article > span { color: #7b8981; font: 600 9px "JetBrains Mono", monospace; }
+.cms-analytics-metrics article > strong { color: var(--cms-ink); font: 700 25px "JetBrains Mono", monospace; }
+.cms-analytics-metrics article > small, .cms-analytics-note { color: var(--cms-muted); font-size: 10px; }
+.cms-analytics-note { margin: 14px 0 0; line-height: 1.5; }
+.cms-analytics-message { display: flex; align-items: center; gap: 12px; color: #8c4a38; font-size: 11px; }
 
 .cms-sidebar,
 .cms-topbar {

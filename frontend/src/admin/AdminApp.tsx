@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { AdminDashboard } from "./AdminDashboard";
 import { AdminLogin } from "./AdminLogin";
+import { VisitorAnalyticsPage } from "./VisitorAnalyticsPage";
 import { checkAdminSession } from "./adminApi";
 import "./admin.css";
 
@@ -11,6 +12,9 @@ export function AdminApp() {
   const [configured, setConfigured] = useState(true);
   const [authDisabled, setAuthDisabled] = useState(false);
   const [error, setError] = useState("");
+  const isAnalyticsPage = window.location.pathname.replace(/\/+$/, "") === "/admin/analytics";
+  const handleSignedOut = useCallback(() => setGate("login"), []);
+  const handleUnauthorized = useCallback(() => setGate("login"), []);
 
   useEffect(() => {
     document.title = "Portfolio CMS";
@@ -65,11 +69,7 @@ export function AdminApp() {
     );
   }
 
-  return (
-    <AdminDashboard
-      authDisabled={authDisabled}
-      onSignedOut={() => setGate("login")}
-      onUnauthorized={() => setGate("login")}
-    />
-  );
+  return isAnalyticsPage
+    ? <VisitorAnalyticsPage authDisabled={authDisabled} onSignedOut={handleSignedOut} onUnauthorized={handleUnauthorized} />
+    : <AdminDashboard authDisabled={authDisabled} onSignedOut={handleSignedOut} onUnauthorized={handleUnauthorized} />;
 }

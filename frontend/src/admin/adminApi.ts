@@ -11,6 +11,11 @@ export type AdminPortfolioSnapshot = {
   content: PortfolioContent;
   revision: string;
 };
+export type AdminVisitorAnalytics = {
+  totalSessions: number;
+  sessionsToday: number;
+  sessionsLast7Days: number;
+};
 
 function portfolioRevision(response: Response): string {
   const match = /^"([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})"$/i.exec(
@@ -98,6 +103,23 @@ export async function loadAdminPortfolio(): Promise<AdminPortfolioSnapshot> {
     throw new Error(body.message ?? "Could not load portfolio content.");
   }
   return { content: resolvePortfolioMedia(body), revision: portfolioRevision(response) };
+}
+
+export async function loadAdminVisitorAnalytics(): Promise<AdminVisitorAnalytics> {
+  const response = await fetch(apiUrl("/api/admin/analytics"), {
+    credentials: "include",
+    cache: "no-store",
+  });
+  const body = await parseJson<AdminVisitorAnalytics & MessageResponse>(response);
+  if (
+    !response.ok ||
+    !Number.isInteger(body.totalSessions) ||
+    !Number.isInteger(body.sessionsToday) ||
+    !Number.isInteger(body.sessionsLast7Days)
+  ) {
+    throw new Error(body.message ?? "Could not load visitor analytics.");
+  }
+  return body;
 }
 
 export async function saveAdminPortfolio(
