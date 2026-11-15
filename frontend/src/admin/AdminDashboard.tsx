@@ -84,7 +84,7 @@ const portfolioSchema = {
     customSections: { type: "array", items: { type: "object" } },
     hero: { type: "object", properties: { brand: { type: "string" }, badge: { type: "string" }, title: { type: "string" }, titleAccent: { type: "string" }, description: { type: "string" }, stats: { type: "array" } }, required: ["brand", "title", "description"] },
     about: { type: "object", properties: { profileName: { type: "string" }, profileRole: { type: "string" }, location: { type: "string" }, bio: { type: "string" }, photo: { type: "string", format: "uri" }, coverPhoto: { type: "string" }, coverPhotoZoom: { type: "number", minimum: 1, maximum: 3 }, coverPhotoX: { type: "number", minimum: 0, maximum: 100 }, coverPhotoY: { type: "number", minimum: 0, maximum: 100 } }, required: ["profileName", "profileRole", "location", "bio"] },
-    projectsSection: { type: "object", properties: { label: { type: "string" }, title: { type: "string" }, description: { type: "string" }, projects: { type: "array", items: { type: "object", properties: { category: { type: "string" }, title: { type: "string" }, description: { type: "string" }, image: { type: "string" }, tags: { type: "array", items: { type: "string" } }, liveUrl: { type: "string" }, githubUrl: { type: "string" }, technologies: { type: "array", items: { type: "object", properties: { name: { type: "string" }, id: { type: "string" }, icon: { type: "string" } }, required: ["name", "id", "icon"] } } }, required: ["category", "title", "description"] } } }, required: ["projects"] },
+    projectsSection: { type: "object", properties: { label: { type: "string" }, title: { type: "string" }, description: { type: "string" }, projects: { type: "array", items: { type: "object", properties: { category: { type: "string" }, title: { type: "string" }, ownershipLabel: { type: "string", maxLength: 80 }, description: { type: "string" }, image: { type: "string" }, tags: { type: "array", items: { type: "string" } }, liveUrl: { type: "string" }, githubUrl: { type: "string" }, technologies: { type: "array", items: { type: "object", properties: { name: { type: "string" }, id: { type: "string" }, icon: { type: "string" } }, required: ["name", "id", "icon"] } } }, required: ["category", "title", "description"] } } }, required: ["projects"] },
     skillsSection: { type: "object", properties: { label: { type: "string" }, title: { type: "string" }, description: { type: "string" }, skills: { type: "array", items: { type: "object", properties: { name: { type: "string" }, level: { type: "string", pattern: "^(100|[1-9]?\\d)%$" }, icon: { type: "string" }, color: { type: "string", pattern: "^#[\\da-fA-F]{6}$" }, category: { type: "string" } }, required: ["name", "level", "icon", "color"] } } }, required: ["skills"] },
     experience: { type: "array", items: { type: "object", properties: { role: { type: "string" }, company: { type: "string" }, desc: { type: "string" }, year: { type: "string" }, location: { type: "string" }, image: { type: "string" } }, required: ["role", "desc", "year"] } },
     certificates: { type: "array", items: { type: "object", properties: { title: { type: "string" }, issuer: { type: "string" }, year: { type: "string" }, description: { type: "string" }, image: { type: "string" } }, required: ["title", "issuer", "year", "description", "image"] } },
@@ -111,6 +111,7 @@ function makeDraft(kind: EditorKind, item?: Project | Skill | Experience | Certi
       title: project?.title ?? "",
       id: project?.id ?? "",
       category: project?.category ?? "Fullstack",
+      ownershipLabel: project?.ownershipLabel ?? "Personal Project",
       description: project?.description ?? "",
       fullDescription: project?.fullDescription ?? project?.description ?? "",
       projectDescription: project?.projectDescription ?? "",
@@ -537,6 +538,7 @@ export function AdminDashboard({
         id: draft.id || `${draft.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 80) || "project"}-${crypto.randomUUID().slice(0, 8)}`,
         title: draft.title.trim(),
         category: draft.category.trim() || "Fullstack",
+        ownershipLabel: draft.ownershipLabel.trim() || "Personal Project",
         description: draft.description.trim(),
         fullDescription: draft.fullDescription.trim(),
         projectDescription: draft.projectDescription.trim(),
@@ -1157,6 +1159,7 @@ export function AdminDashboard({
       {editor && <div className="cms-modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) closeEditor(); }}><section aria-labelledby="cms-modal-title" aria-modal="true" className="cms-modal" role="dialog"><div className="cms-modal-heading"><div><span className="cms-section-index">CONTENT EDITOR</span><h2 id="cms-modal-title">{editorTitle}</h2></div><button aria-label="Close editor" className="cms-icon-button" onClick={closeEditor} type="button"><X size={18} /></button></div><form onSubmit={submitEditor}>
         {editor.kind === "project" && <>
           <label className="cms-input-label">Project title<input autoFocus onChange={(event) => setDraft({ ...draft, title: event.target.value })} required value={draft.title} /></label>
+          <label className="cms-input-label">Ownership label <small>Shown below the title on your project card. Leave blank to use “Personal Project”.</small><input maxLength={80} onChange={(event) => setDraft({ ...draft, ownershipLabel: event.target.value })} placeholder="Personal Project" value={draft.ownershipLabel} /></label>
           <label className="cms-input-label">Short description<textarea onChange={(event) => setDraft({ ...draft, description: event.target.value })} required rows={2} value={draft.description} /></label>
           <div className="cms-gallery-upload">
             <span><strong>System screenshots</strong><br />Add at least one image for a new project. Select several at once, or add and replace images later. PNG, JPEG, WebP, or GIF · up to 8 MB each · 30 images per project.</span>

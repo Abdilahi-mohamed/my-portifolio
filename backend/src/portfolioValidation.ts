@@ -134,6 +134,7 @@ export function isPortfolioContent(value: unknown): boolean {
         ["projectDescription", "problemStatement", "solution", "howItWorks"].every(
           (key) => project[key] === undefined || validText(project[key]),
         ) &&
+        (project.ownershipLabel === undefined || validText(project.ownershipLabel, 80)) &&
         (project.image === "" || isSafeImageReference(project.image)) &&
         (project.liveUrl === "" || isSafeWebUrl(project.liveUrl)) &&
         (project.githubUrl === "" || isSafeWebUrl(project.githubUrl)) &&

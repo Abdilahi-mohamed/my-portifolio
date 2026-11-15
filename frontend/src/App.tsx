@@ -499,6 +499,7 @@ function App() {
                   <div className="project-content"><h3>{project.title}</h3></div>
                 </a>
                 <div className="project-content project-card-links">
+                  <p className="project-ownership">{project.ownershipLabel?.trim() || "Personal Project"}</p>
                   <div className="project-links">
                   {project.liveUrl && (
                     <a href={project.liveUrl} rel="noopener noreferrer" target="_blank">

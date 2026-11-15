@@ -1478,6 +1478,7 @@ html[data-portfolio-theme="dark"] .password-dialog input {
 .project-card-main { display: block; color: inherit; text-decoration: none; }
 .project-card-main:focus-visible { outline: 3px solid var(--green); outline-offset: -3px; }
 .project-card-links { padding-top: 4px; }
+.project-content.project-card-links > .project-ownership { margin: 0 0 2px; color: #16A34A; font-size: 11px; font-weight: 600; line-height: 1.4; }
 .project-card-links .project-links { margin-top: 0; }
 .project-detail-page {
   width: min(900px, 100%);
