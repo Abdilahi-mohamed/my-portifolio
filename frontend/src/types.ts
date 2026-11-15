@@ -171,6 +171,7 @@ export type PortfolioContent = {
       id: string;
       category: string;
       title: string;
+      ownershipLabel?: string;
       description: string;
       fullDescription: string;
       image: string;
