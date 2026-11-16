@@ -32,6 +32,8 @@ import { SocialBrandIcon, socialIconForUrl, socialIconOptions } from "./socialIc
 import { adminLogin, changeAdminPassword } from "./admin/adminApi";
 import {
   apiUrl,
+  cachePortfolio,
+  getCachedPortfolio,
   resolvePortfolioMedia,
   subscribeToPortfolioUpdates,
 } from "./api";
@@ -41,7 +43,6 @@ import {
   programmingIconBackground,
   programmingIconColor,
 } from "./programmingIcons";
-import defaultPortfolio from "../../shared/portfolio.default.json";
 import type { IconName, PortfolioContent } from "./types";
 
 type ToastMessage = { title: string; detail?: string };
@@ -164,10 +165,7 @@ function ProjectDetailsPage({ project, profileName }: { project: Project; profil
 }
 
 function App() {
-  const [portfolio, setPortfolio] = useState<PortfolioContent>(
-    defaultPortfolio as PortfolioContent,
-  );
-  const [portfolioLoaded, setPortfolioLoaded] = useState(false);
+  const [portfolio, setPortfolio] = useState<PortfolioContent | null>(getCachedPortfolio);
   const [portfolioLoadError, setPortfolioLoadError] = useState("");
   const [portfolioRetry, setPortfolioRetry] = useState(0);
   const [toast, setToast] = useState<ToastMessage | null>(null);
@@ -212,10 +210,10 @@ function App() {
       fetch(apiUrl("/api/portfolio"), { signal: controller.signal, cache: "no-store" })
         .then(async (response) => {
           if (!response.ok) throw new Error("Portfolio content could not be loaded.");
-          const nextPortfolio = resolvePortfolioMedia((await response.json()) as PortfolioContent);
+          const content = (await response.json()) as PortfolioContent;
           if (!active) return;
-          setPortfolio(nextPortfolio);
-          setPortfolioLoaded(true);
+          setPortfolio(resolvePortfolioMedia(content));
+          cachePortfolio(content);
         })
         .catch((error: unknown) => {
           if (!active || (error instanceof Error && error.name === "AbortError")) return;
@@ -297,19 +295,15 @@ function App() {
     }
   };
 
-  const profile = portfolio.about;
-  const projects = portfolio.projectsSection.projects.filter((project) => project.visible);
   const projectRouteId = /^\/projects\/([a-z0-9][a-z0-9-]{0,99})\/?$/.exec(window.location.pathname)?.[1];
   const isProjectRoute = window.location.pathname.startsWith("/projects/");
-  const routeProject = projectRouteId
-    ? projects.find((project) => project.id === projectRouteId)
+  const routeProject = portfolio && projectRouteId
+    ? portfolio.projectsSection.projects.find((project) => project.id === projectRouteId && project.visible)
     : undefined;
-  const skills = portfolio.skillsSection.skills;
-  const experience = portfolio.experience;
-  const certificates = portfolio.certificates ?? [];
-  const socials = portfolio.contact.socials;
 
   useEffect(() => {
+    if (!portfolio) return;
+    const profile = portfolio.about;
     const pageTitle = routeProject
       ? `${routeProject.title} — ${profile.profileName} — Portfolio`
       : `${profile.profileName} — Portfolio`;
@@ -330,12 +324,16 @@ function App() {
     document.querySelector('meta[name="twitter:title"]')?.setAttribute("content", pageTitle);
     document.querySelector('meta[name="twitter:description"]')?.setAttribute("content", pageDescription);
     document.querySelector('meta[name="twitter:image"]')?.setAttribute("content", imageUrl);
-  }, [profile.profileDescription, profile.profileName, routeProject]);
+  }, [portfolio, routeProject]);
 
-  if (!portfolioLoaded) {
+  if (!portfolio) {
     return (
       <main className="portfolio-page">
-        <section aria-live="polite" className="portfolio-load-state" role={portfolioLoadError ? "alert" : "status"}>
+        <section
+          aria-live="polite"
+          className="portfolio-load-state"
+          role={portfolioLoadError ? "alert" : "status"}
+        >
           <h1>{portfolioLoadError ? "Portfolio unavailable" : "Loading portfolio..."}</h1>
           {portfolioLoadError && (
             <>
@@ -349,6 +347,13 @@ function App() {
       </main>
     );
   }
+
+  const profile = portfolio.about;
+  const projects = portfolio.projectsSection.projects.filter((project) => project.visible);
+  const skills = portfolio.skillsSection.skills;
+  const experience = portfolio.experience;
+  const certificates = portfolio.certificates ?? [];
+  const socials = portfolio.contact.socials;
 
   if (isProjectRoute) {
     if (!routeProject) {
@@ -689,6 +694,15 @@ function App() {
         <div aria-live="polite" className="toast" role="status">
           <strong>{toast.title}</strong>
           {toast.detail && <span>{toast.detail}</span>}
+          {portfolioLoadError && (
+            <button
+              className="toast-action"
+              onClick={() => setPortfolioRetry((attempt) => attempt + 1)}
+              type="button"
+            >
+              Try again
+            </button>
+          )}
         </div>
       )}
       {passwordDialogOpen && (

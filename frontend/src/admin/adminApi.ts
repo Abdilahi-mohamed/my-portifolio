@@ -1,5 +1,5 @@
 import type { PortfolioContent } from "../types";
-import { apiUrl, notifyPortfolioUpdated, resolvePortfolioMedia } from "../api";
+import { apiUrl, cachePortfolio, notifyPortfolioUpdated, resolvePortfolioMedia } from "../api";
 
 type SessionResponse = { authenticated: string; configured: string; authDisabled: string };
 type MessageResponse = { message?: string };
@@ -102,6 +102,7 @@ export async function loadAdminPortfolio(): Promise<AdminPortfolioSnapshot> {
   if (!response.ok || !("hero" in body)) {
     throw new Error(body.message ?? "Could not load portfolio content.");
   }
+  cachePortfolio(body);
   return { content: resolvePortfolioMedia(body), revision: portfolioRevision(response) };
 }
 
@@ -138,6 +139,7 @@ export async function saveAdminPortfolio(
     throw new Error(body.message ?? "Could not save portfolio changes.");
   }
   const nextRevision = portfolioRevision(response);
+  cachePortfolio(content);
   notifyPortfolioUpdated();
   return { message: body.message ?? "Portfolio changes saved.", revision: nextRevision };
 }

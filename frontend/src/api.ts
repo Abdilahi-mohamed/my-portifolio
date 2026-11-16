@@ -1,6 +1,7 @@
 import type { PortfolioContent } from "./types";
 
 const deployedApiUrl = "https://my-portifolio-3fo7.onrender.com";
+const portfolioCacheKey = "portfolio-content-cache";
 const configuredApiUrl = import.meta.env.VITE_API_URL?.trim();
 const apiBaseUrl = (
   configuredApiUrl || (import.meta.env.PROD ? deployedApiUrl : "")
@@ -41,4 +42,23 @@ function resolveMediaUrls(value: unknown): unknown {
 
 export function resolvePortfolioMedia(content: PortfolioContent): PortfolioContent {
   return resolveMediaUrls(content) as PortfolioContent;
+}
+
+export function getCachedPortfolio(): PortfolioContent | null {
+  try {
+    const cachedContent = window.localStorage.getItem(portfolioCacheKey);
+    if (!cachedContent) return null;
+    return resolvePortfolioMedia(JSON.parse(cachedContent) as PortfolioContent);
+  } catch (error) {
+    console.warn("The saved portfolio cache could not be read:", error);
+    return null;
+  }
+}
+
+export function cachePortfolio(content: PortfolioContent): void {
+  try {
+    window.localStorage.setItem(portfolioCacheKey, JSON.stringify(content));
+  } catch (error) {
+    console.warn("The latest portfolio could not be cached:", error);
+  }
 }
