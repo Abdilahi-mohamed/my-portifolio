@@ -959,6 +959,18 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 
 .toast strong { font-size: 13px; }
 .toast span { font-size: 12px; line-height: 1.5; }
+.toast-action {
+  justify-self: start;
+  padding: 5px 0;
+  border: 0;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}
 
 @media (max-width: 900px) {
   .topbar { flex-wrap: wrap; justify-content: center; gap: 8px 16px; padding: 12px 0; }
