@@ -111,7 +111,7 @@ export function socialIconForUrl(value: string): IconName | null {
       hostname === domain || hostname.endsWith(`.${domain}`);
     if (matchesDomain("instagram.com")) return "Instagram";
     if (matchesDomain("github.com")) return "Github";
-    if (matchesDomain("linkedin.com")) return "Linkedin";
+    if (matchesDomain("linkedin.com") || matchesDomain("lnkd.in")) return "Linkedin";
     if (matchesDomain("facebook.com") || matchesDomain("fb.com")) return "Facebook";
     if (matchesDomain("x.com") || matchesDomain("twitter.com")) return "X";
     const socialDomains: [string, IconName][] = [
@@ -135,6 +135,31 @@ export function socialIconForUrl(value: string): IconName | null {
   } catch {
     return null;
   }
+}
+
+export function isValidLinkedInUrl(value: unknown): value is string {
+  if (typeof value !== "string" || value.trim().length === 0 || value.length > 2_000) {
+    return false;
+  }
+
+  try {
+    const url = new URL(value.trim());
+    const hostname = url.hostname.toLowerCase().replace(/^www\./, "");
+    return (url.protocol === "http:" || url.protocol === "https:") &&
+      (hostname === "linkedin.com" || hostname.endsWith(".linkedin.com") || hostname === "lnkd.in");
+  } catch {
+    return false;
+  }
+}
+
+export function isLinkedInProfile(social: {
+  name?: unknown;
+  icon?: unknown;
+  url?: unknown;
+}): boolean {
+  return (typeof social.name === "string" && social.name.trim().toLowerCase() === "linkedin") ||
+    social.icon === "Linkedin" ||
+    isValidLinkedInUrl(social.url);
 }
 
 const brandIcons: Partial<Record<IconName, typeof SiInstagram>> = {

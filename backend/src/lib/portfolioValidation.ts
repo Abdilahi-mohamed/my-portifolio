@@ -37,6 +37,17 @@ function isSafeWebUrl(value: unknown): value is string {
   }
 }
 
+function isLinkedInUrl(value: unknown): value is string {
+  if (!isSafeWebUrl(value)) return false;
+  const hostname = new URL(value).hostname.toLowerCase().replace(/^www\./, "");
+  return hostname === "linkedin.com" || hostname.endsWith(".linkedin.com") || hostname === "lnkd.in";
+}
+
+function isLinkedInSocial(social: Record<string, unknown>): boolean {
+  const name = typeof social.name === "string" ? social.name.trim().toLowerCase() : "";
+  return name === "linkedin" || social.icon === "Linkedin" || isLinkedInUrl(social.url);
+}
+
 function isSafeImageReference(value: unknown): value is string {
   return typeof value === "string" &&
     (/^\/api\/media\/[a-f0-9]{32}\.(?:png|jpg|webp|gif)$/.test(value) || isSafeWebUrl(value));
@@ -233,8 +244,16 @@ export function isPortfolioContent(value: unknown): boolean {
       "emailLabel", "locationLabel", "contactInfoTitle", "socialTitle", "availabilityTitle",
       "availabilityDescription", "email", "location",
     ]) &&
-    textArray(contact.socials, ["name", "url", "icon"], 30) &&
-    contact.socials.every((social) => iconKey(social) && isSafeWebUrl(social.url)) &&
+    textArray(contact.socials, ["name", "icon"], 30) &&
+    contact.socials.every((social) => {
+      if (!iconKey(social)) return false;
+      const isLinkedIn = isLinkedInSocial(social);
+      const isEmptyUrl = social.url === undefined ||
+        social.url === null ||
+        (typeof social.url === "string" && social.url.trim() === "");
+      if (isEmptyUrl) return isLinkedIn;
+      return isLinkedIn ? isLinkedInUrl(social.url) : isSafeWebUrl(social.url);
+    }) &&
     textKeys(footer, ["copyright"])
   );
 }

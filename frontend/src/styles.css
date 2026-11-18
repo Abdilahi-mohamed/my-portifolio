@@ -2063,8 +2063,7 @@ html[data-portfolio-theme="dark"] .project-detail-media video {
 .contact-grid { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); align-items: start; gap: 16px; }
 .contact-details { display: grid; gap: 11px; }
 .availability-card,
-.contact-email-card,
-.contact-form {
+.contact-email-card {
   border: 1px solid var(--home-border);
   border-radius: 14px;
   background: var(--home-panel);
@@ -2082,35 +2081,6 @@ html[data-portfolio-theme="dark"] .project-detail-media video {
 .contact-icon { display: grid; width: 35px; height: 35px; flex: none; place-items: center; border-radius: 9px; color: var(--home-accent); background: #1b3828; }
 .contact-location { display: flex; align-items: center; gap: 7px; margin: 0; color: #a6b5ab; font-size: 11px; }
 .contact-location svg { color: var(--home-accent); }
-.contact-form { display: grid; gap: 12px; padding: 17px; }
-.contact-form-heading h3 { margin: 0; color: var(--home-copy); font-size: 16px; }
-.contact-form-heading p { margin: 6px 0 0; color: #94a49a; font-size: 11px; line-height: 1.6; }
-.contact-form label { display: grid; gap: 6px; color: #b7c5bc; font-size: 10px; font-weight: 650; }
-.contact-form input,
-.contact-form textarea {
-  width: 100%;
-  min-height: 39px;
-  padding: 9px 10px;
-  border: 1px solid #304638;
-  border-radius: 8px;
-  outline: 0;
-  color: #e5eee8;
-  background: #0c130f;
-  font-size: 11px;
-}
-
-.contact-form textarea { min-height: 100px; resize: vertical; }
-.contact-form input::placeholder,
-.contact-form textarea::placeholder { color: #708176; }
-.contact-form input:focus,
-.contact-form textarea:focus { border-color: #53a571; box-shadow: 0 0 0 2px rgb(83 211 154 / 12%); }
-.contact-submit { display: inline-flex; min-height: 39px; align-items: center; justify-content: space-between; gap: 10px; padding: 0 12px; border: 0; border-radius: 8px; color: #07180f; background: var(--home-accent); font-size: 11px; font-weight: 750; cursor: pointer; }
-.contact-submit:hover:not(:disabled) { background: #71e6aa; }
-.contact-submit:disabled { opacity: .65; cursor: wait; }
-.contact-feedback { margin: 0; font-size: 11px; line-height: 1.5; }
-.contact-feedback.is-success { color: #78dfa6; }
-.contact-feedback.is-error { color: #ff9a8f; }
-
 .portfolio-home .page-footer { min-height: 54px; margin-bottom: 10px; border-color: var(--home-border); color: #82948a; }
 .portfolio-home .page-footer a { color: #a9b9af; }
 .portfolio-home .page-footer a:hover { color: var(--home-accent); }
@@ -2175,8 +2145,7 @@ html[data-portfolio-theme="light"] .portfolio-home .wordmark,
 html[data-portfolio-theme="light"] .portfolio-home .profile-copy h1,
 html[data-portfolio-theme="light"] .portfolio-home .section-heading h2,
 html[data-portfolio-theme="light"] .portfolio-home .summary-heading h2,
-html[data-portfolio-theme="light"] .about-panel h2,
-html[data-portfolio-theme="light"] .contact-form-heading h3 { color: var(--home-copy); }
+html[data-portfolio-theme="light"] .about-panel h2 { color: var(--home-copy); }
 html[data-portfolio-theme="light"] .wordmark-mark,
 html[data-portfolio-theme="light"] .topbar-contact-link,
 html[data-portfolio-theme="light"] .profile-social-links a,
@@ -2185,8 +2154,7 @@ html[data-portfolio-theme="light"] .portfolio-home .summary-card,
 html[data-portfolio-theme="light"] .portfolio-home .skill-card,
 html[data-portfolio-theme="light"] .portfolio-home .social-card,
 html[data-portfolio-theme="light"] .availability-card,
-html[data-portfolio-theme="light"] .contact-email-card,
-html[data-portfolio-theme="light"] .contact-form {
+html[data-portfolio-theme="light"] .contact-email-card {
   border-color: var(--home-border);
   color: var(--home-copy);
   background: var(--home-panel);
@@ -2197,9 +2165,7 @@ html[data-portfolio-theme="light"] .portfolio-home .profile-role,
 html[data-portfolio-theme="light"] .profile-location,
 html[data-portfolio-theme="light"] .about-panel > p:last-of-type,
 html[data-portfolio-theme="light"] .portfolio-home .summary-label,
-html[data-portfolio-theme="light"] .portfolio-home .project-description,
-html[data-portfolio-theme="light"] .contact-form-heading p,
-html[data-portfolio-theme="light"] .contact-form label { color: #617267; }
+html[data-portfolio-theme="light"] .portfolio-home .project-description { color: #617267; }
 html[data-portfolio-theme="light"] .portfolio-home .profile-copy .eyebrow,
 html[data-portfolio-theme="light"] .portfolio-home .project-links a { color: #24744d; }
 html[data-portfolio-theme="light"] .portfolio-home .summary-icon,
@@ -2221,8 +2187,6 @@ html[data-portfolio-theme="light"] .project-category,
 html[data-portfolio-theme="light"] .project-featured { color: #e8f1eb; background: rgb(15 31 21 / 84%); }
 html[data-portfolio-theme="light"] .portfolio-home .skill-group-title { color: #4a5d50; }
 html[data-portfolio-theme="light"] .portfolio-home .skill-meter { background: #e1e9e3; }
-html[data-portfolio-theme="light"] .contact-form input,
-html[data-portfolio-theme="light"] .contact-form textarea { border-color: #d5e0d8; color: #22342a; background: #f8faf8; }
 html[data-portfolio-theme="light"] .quick-nav { border-color: #d4e2d8; background: rgb(255 255 255 / 92%); box-shadow: 0 12px 35px rgb(28 54 37 / 16%); }
 html[data-portfolio-theme="light"] .quick-nav a,
 html[data-portfolio-theme="light"] .quick-nav button { color: #52665a; }
@@ -2876,10 +2840,9 @@ html[data-portfolio-theme="dark"] body {
 }
 .portfolio-home .contact-section .section-heading { margin-bottom: 12px; }
 .portfolio-home .contact-grid { grid-template-columns: minmax(0, 1fr); gap: 10px; }
-.portfolio-home .contact-details { gap: 8px; }
+.portfolio-home .contact-details { width: min(100%, 780px); gap: 8px; margin-inline: auto; }
 .portfolio-home .availability-card,
-.portfolio-home .contact-email-card,
-.portfolio-home .contact-form {
+.portfolio-home .contact-email-card {
   border-color: var(--home-border);
   border-radius: 12px;
   color: var(--home-copy);
@@ -2901,26 +2864,6 @@ html[data-portfolio-theme="dark"] body {
 .portfolio-home .contact-icon { color: #020617; background: var(--accent-gradient); }
 .portfolio-home .contact-location { color: var(--home-muted); font-size: 10px; }
 .portfolio-home .contact-location svg { color: var(--accent-one); }
-.portfolio-home .contact-form { gap: 9px; padding: 13px; }
-.portfolio-home .contact-form-heading h3 { color: var(--home-copy); font-size: 13px; }
-.portfolio-home .contact-form-heading p,
-.portfolio-home .contact-form label { color: var(--home-muted); font-size: 9px; }
-.portfolio-home .contact-form input,
-.portfolio-home .contact-form textarea {
-  min-height: 35px;
-  border-color: var(--home-border);
-  border-radius: 8px;
-  color: var(--home-copy);
-  background: #020617;
-  font-size: 10px;
-}
-.portfolio-home .contact-form textarea { min-height: 84px; }
-.portfolio-home .contact-submit {
-  min-height: 35px;
-  color: #020617;
-  background: var(--accent-gradient);
-  font-size: 10px;
-}
 .portfolio-home .page-footer { min-height: 48px; margin-top: 18px; border-color: var(--home-border); color: var(--home-muted); font-size: 9px; }
 .portfolio-home .page-footer a { color: var(--accent-one); }
 .portfolio-home .page-footer a:hover { color: var(--accent-three); }
@@ -2946,7 +2889,7 @@ html[data-container-mode="boxed"] .portfolio-home .profile-content { padding-blo
 @media (min-width: 900px) {
   html[data-container-mode="boxed"] .portfolio-home .project-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   html[data-container-mode="boxed"] .portfolio-home .skills-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-  html[data-container-mode="boxed"] .portfolio-home .contact-grid { grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); }
+    html[data-container-mode="boxed"] .portfolio-home .contact-grid { grid-template-columns: minmax(0, 1fr); }
 }
 
 @media (max-width: 620px) {
@@ -3010,8 +2953,7 @@ html[data-portfolio-theme="light"] .portfolio-home .project-card,
 html[data-portfolio-theme="light"] .portfolio-home .summary-card,
 html[data-portfolio-theme="light"] .portfolio-home .social-card,
 html[data-portfolio-theme="light"] .portfolio-home .availability-card,
-html[data-portfolio-theme="light"] .portfolio-home .contact-email-card,
-html[data-portfolio-theme="light"] .portfolio-home .contact-form {
+html[data-portfolio-theme="light"] .portfolio-home .contact-email-card {
   border-color: var(--home-border);
   color: var(--home-copy);
   background: var(--home-panel);
@@ -3029,8 +2971,6 @@ html[data-portfolio-theme="light"] .portfolio-home .contact-section {
     linear-gradient(#fff, #fff) padding-box,
     var(--accent-gradient) border-box;
 }
-html[data-portfolio-theme="light"] .portfolio-home .contact-form input,
-html[data-portfolio-theme="light"] .portfolio-home .contact-form textarea { color: #0f172a; background: #f8fafc; }
 html[data-portfolio-theme="light"] .portfolio-home .hero-secondary-action { border-color: var(--home-border); color: #334155; background: #fff; }
 html[data-portfolio-theme="light"] .portfolio-home .toast { border-color: var(--home-border); color: #0f172a; background: #fff; }
 
@@ -3074,7 +3014,7 @@ html[data-portfolio-theme="dark"] .portfolio-home .social-card {
   justify-content: center;
   margin: 0;
   color: var(--home-muted);
-  font-size: 9px;
+  font-size: 10px;
   line-height: 1.4;
 }
 .portfolio-home .profile-location svg { width: 12px; height: 12px; }
@@ -3095,15 +3035,18 @@ html[data-portfolio-theme="dark"] .portfolio-home .social-card {
   flex: 1 1 auto;
   padding: 0 11px;
   border: 1px solid var(--home-border);
-  color: var(--home-muted);
+  color: #facc15;
   background: var(--home-panel);
-  font-size: 10px;
+  font-size: 12px;
 }
 .portfolio-home .quick-nav a:hover,
 .portfolio-home .quick-nav a:focus-visible {
-  color: var(--accent-one);
+  color: #facc15;
   background: rgb(148 163 184 / 10%);
 }
+html[data-portfolio-theme="light"] .portfolio-home .quick-nav a { color: #a16207; }
+html[data-portfolio-theme="light"] .portfolio-home .quick-nav a:hover,
+html[data-portfolio-theme="light"] .portfolio-home .quick-nav a:focus-visible { color: #854d0e; }
 html[data-portfolio-theme="light"] .portfolio-home > .quick-nav {
   background: rgb(255 255 255 / 92%);
 }
@@ -3114,5 +3057,5 @@ html[data-portfolio-theme="light"] .portfolio-home > .quick-nav {
 }
 
 @media (max-width: 380px) {
-  .portfolio-home .quick-nav a { padding-inline: 6px; font-size: 9px; }
+  .portfolio-home .quick-nav a { padding-inline: 6px; font-size: 11px; }
 }
