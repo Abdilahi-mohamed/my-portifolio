@@ -10,26 +10,25 @@ import {
   Facebook,
   Github,
   Globe2,
+  Home,
   Layers3,
-  KeyRound,
   Linkedin,
   Instagram,
+  Mail,
   MapPin,
   MessageCircle,
   Monitor,
-  MoreVertical,
   Moon,
   Palette,
-  Pencil,
   FolderKanban,
   Send,
   Sun,
   Terminal,
+  UserRound,
   X as XIcon,
   Zap,
 } from "lucide-react";
 import { SocialBrandIcon, socialIconForUrl, socialIconOptions } from "./socialIcons";
-import { adminLogin, changeAdminPassword } from "./admin/adminApi";
 import {
   apiUrl,
   cachePortfolio,
@@ -47,6 +46,7 @@ import type { IconName, PortfolioContent } from "./types";
 
 type ToastMessage = { title: string; detail?: string };
 type Project = PortfolioContent["projectsSection"]["projects"][number];
+type ContactFeedback = { status: "success" | "error"; message: string };
 
 function projectMedia(project: Project): { type: "image" | "video"; url: string }[] {
   const media = project.media ?? [];
@@ -169,23 +169,29 @@ function App() {
   const [portfolioLoadError, setPortfolioLoadError] = useState("");
   const [portfolioRetry, setPortfolioRetry] = useState(0);
   const [toast, setToast] = useState<ToastMessage | null>(null);
-  const [darkMode, setDarkMode] = useState(() => {
-    try {
-      return window.localStorage.getItem("portfolio-theme") === "dark";
-    } catch {
-      return false;
-    }
-  });
-  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
-  const [passwordBusy, setPasswordBusy] = useState(false);
-  const [passwordError, setPasswordError] = useState("");
-  const [passwordNotice, setPasswordNotice] = useState("");
-  const [adminUsername, setAdminUsername] = useState("");
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const [darkMode, setDarkMode] = useState(true);
+  const [themeReady, setThemeReady] = useState(false);
+  const [contactName, setContactName] = useState("");
+  const [contactEmail, setContactEmail] = useState("");
+  const [contactMessage, setContactMessage] = useState("");
+  const [contactBusy, setContactBusy] = useState(false);
+  const [contactFeedback, setContactFeedback] = useState<ContactFeedback | null>(null);
 
   useEffect(() => {
+    try {
+      const savedTheme = window.localStorage.getItem("portfolio-theme");
+      if (savedTheme !== null) setDarkMode(savedTheme === "dark");
+    } catch {
+      setToast({
+        title: "Theme preference could not be loaded",
+        detail: "The default dark theme will be used for this visit.",
+      });
+    }
+    setThemeReady(true);
+  }, []);
+
+  useEffect(() => {
+    if (!themeReady) return;
     document.documentElement.dataset.portfolioTheme = darkMode ? "dark" : "light";
     try {
       window.localStorage.setItem("portfolio-theme", darkMode ? "dark" : "light");
@@ -198,7 +204,7 @@ function App() {
     return () => {
       delete document.documentElement.dataset.portfolioTheme;
     };
-  }, [darkMode]);
+  }, [darkMode, themeReady]);
 
   useEffect(() => {
     let active = true;
@@ -259,41 +265,40 @@ function App() {
     return () => window.clearTimeout(timeout);
   }, [toast]);
 
-  useEffect(() => {
-    if (!passwordDialogOpen) return;
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && !passwordBusy) setPasswordDialogOpen(false);
-    };
-    window.addEventListener("keydown", closeOnEscape);
-    return () => window.removeEventListener("keydown", closeOnEscape);
-  }, [passwordBusy, passwordDialogOpen]);
-
-  const submitPasswordChange = async (event: FormEvent<HTMLFormElement>) => {
+  async function submitContact(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setPasswordError("");
-    setPasswordNotice("");
-    if (newPassword.length < 7) {
-      setPasswordError("Use at least 7 characters for your new password.");
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      setPasswordError("The new passwords do not match.");
-      return;
-    }
-    setPasswordBusy(true);
+    setContactBusy(true);
+    setContactFeedback(null);
     try {
-      await adminLogin(adminUsername, currentPassword);
-      const message = await changeAdminPassword(currentPassword, newPassword);
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
-      setPasswordNotice(message);
+      const response = await fetch(apiUrl("/api/contact"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: contactName,
+          email: contactEmail,
+          message: contactMessage,
+        }),
+      });
+      const result = (await response.json()) as { message?: string };
+      if (!response.ok) {
+        throw new Error(result.message ?? "Your message could not be sent.");
+      }
+      setContactName("");
+      setContactEmail("");
+      setContactMessage("");
+      setContactFeedback({
+        status: "success",
+        message: result.message ?? "Your message was sent.",
+      });
     } catch (error) {
-      setPasswordError(error instanceof Error ? error.message : "Could not change the admin password.");
+      setContactFeedback({
+        status: "error",
+        message: error instanceof Error ? error.message : "Your message could not be sent.",
+      });
     } finally {
-      setPasswordBusy(false);
+      setContactBusy(false);
     }
-  };
+  }
 
   const projectRouteId = /^\/projects\/([a-z0-9][a-z0-9-]{0,99})\/?$/.exec(window.location.pathname)?.[1];
   const isProjectRoute = window.location.pathname.startsWith("/projects/");
@@ -352,6 +357,9 @@ function App() {
   const projects = portfolio.projectsSection.projects.filter((project) => project.visible);
   const skills = portfolio.skillsSection.skills;
   const socials = portfolio.contact.socials;
+  const profileNameWords = profile.profileName.trim().split(/\s+/);
+  const accentName = profileNameWords.length > 1 ? profileNameWords.pop() ?? "" : "";
+  const profileNameLead = accentName ? profileNameWords.join(" ") : profile.profileName;
 
   if (isProjectRoute) {
     if (!routeProject) {
@@ -369,37 +377,17 @@ function App() {
   }
 
   return (
-    <main className="portfolio-page">
+    <main className="portfolio-page portfolio-home">
       <header className="topbar">
-        <a className="wordmark" href="#profile">{profile.profileName}</a>
-        <details className="portfolio-menu">
-          <summary aria-label="More portfolio options" title="More options">
-            <MoreVertical size={19} />
-          </summary>
-          <div className="portfolio-menu-items">
-            <a href="/admin"><Pencil size={16} /> Edit portfolio settings</a>
-            <a href="/admin/analytics"><Monitor size={16} /> Visitor analytics</a>
-            <button onClick={() => setDarkMode((enabled) => !enabled)} type="button">
-              {darkMode ? <Sun size={16} /> : <Moon size={16} />}
-              {darkMode ? "Light mode" : "Dark mode"}
-            </button>
-            <button
-              onClick={() => {
-                setPasswordError("");
-                setPasswordNotice("");
-                setPasswordDialogOpen(true);
-              }}
-              type="button"
-            >
-              <KeyRound size={16} /> Change password
-            </button>
-          </div>
-        </details>
-        <nav aria-label="Portfolio sections" className="topbar-actions">
-          <a className="topbar-nav-link" href="#projects">Projects</a>
-          <a className="topbar-nav-link" href="#skills">Skills</a>
-          <a className="topbar-nav-link" href="#socials">Social profiles</a>
-        </nav>
+        <a className="wordmark" href="#profile">
+          <span className="wordmark-mark"><Zap size={17} /></span>
+          <span>{profile.profileName}<small>PORTFOLIO</small></span>
+        </a>
+        <a className="topbar-contact-link" href="#contact">
+          <MessageCircle size={16} />
+          {portfolio.hero.contactButton || "Get in touch"}
+          <ArrowUpRight size={14} />
+        </a>
       </header>
 
       <section aria-label="Profile" className="profile" id="profile">
@@ -412,40 +400,68 @@ function App() {
               </span>}
           </div>
           <div className="profile-copy">
-            <p className="eyebrow">PORTFOLIO</p>
-            <h1>{profile.profileName}</h1>
+            <p className="eyebrow">WELCOME TO MY PORTFOLIO</p>
+            <h1>{profileNameLead}{accentName && <> <span>{accentName}</span></>}</h1>
             <p className="profile-role">{profile.profileRole}</p>
-            {profile.profileDescription && <p className="profile-bio">{profile.profileDescription}</p>}
+            {profile.location && <p className="profile-location"><MapPin size={16} /> {profile.location}</p>}
+            <div className="profile-social-links">
+              {socials
+                .filter((social) => /github|linkedin/i.test(`${social.name} ${social.url}`))
+                .slice(0, 2)
+                .map((social) => {
+                  const icon = socialIconForUrl(social.url) ?? social.icon;
+                  return (
+                    <a aria-label={`Open ${social.name} profile`} href={social.url} key={`${social.name}-${social.url}`} rel="noopener noreferrer" target="_blank">
+                      <SocialBrandIcon name={icon} size={18} />
+                      <span>{social.name}</span>
+                    </a>
+                  );
+                })}
+            </div>
+            <div className="profile-actions">
+              <a className="hero-primary-action" href="#projects">{portfolio.hero.projectsButton || "View projects"} <ArrowUpRight size={15} /></a>
+              <a className="hero-secondary-action" href="#about"><UserRound size={15} /> About me</a>
+            </div>
           </div>
         </div>
       </section>
 
-      <section aria-labelledby="summary-title" className="summary-section">
-        <div className="summary-heading">
-          <p className="eyebrow">AT A GLANCE</p>
-          <h2 id="summary-title">Summary</h2>
-        </div>
-        <div className="summary-grid">
-          <article className="summary-card">
-            <span className="summary-icon"><FolderKanban size={19} /></span>
-            <span className="summary-label">Projects</span>
-            <strong>{projects.length.toString().padStart(2, "0")}</strong>
-            <small>Projects in my portfolio</small>
-          </article>
-          <article className="summary-card">
-            <span className="summary-icon"><Code2 size={19} /></span>
-            <span className="summary-label">Programming Languages</span>
-            <strong>{skills.length.toString().padStart(2, "0")}</strong>
-            <small>Frontend, Backend, Databases & Tools</small>
-          </article>
-          <article className="summary-card">
-            <span className="summary-icon"><ExternalLink size={19} /></span>
-            <span className="summary-label">Social profiles</span>
-            <strong>{socials.length.toString().padStart(2, "0")}</strong>
-            <small>Profiles in my portfolio</small>
-          </article>
-        </div>
-      </section>
+      <div className="portfolio-intro-grid">
+        <section aria-labelledby="about-title" className="about-panel" id="about">
+          <p className="eyebrow">{profile.label || "A LITTLE ABOUT ME"}</p>
+          <h2 id="about-title">{profile.bioTitle || profile.title || "About Me"}</h2>
+          <p>{profile.bio || profile.profileDescription}</p>
+          {profile.values.length > 0 && (
+            <div className="about-values">
+              {profile.values.map((value) => <span key={value.title}>{value.title}</span>)}
+            </div>
+          )}
+        </section>
+
+        <section aria-labelledby="summary-title" className="summary-section">
+          <div className="summary-heading">
+            <p className="eyebrow">PORTFOLIO SNAPSHOT</p>
+            <h2 id="summary-title">At a glance</h2>
+          </div>
+          <div className="summary-grid">
+            <article className="summary-card">
+              <span className="summary-icon"><FolderKanban size={18} /></span>
+              <span className="summary-label">Projects</span>
+              <strong>{projects.length.toString().padStart(2, "0")}</strong>
+            </article>
+            <article className="summary-card">
+              <span className="summary-icon"><Code2 size={18} /></span>
+              <span className="summary-label">Skills</span>
+              <strong>{skills.length.toString().padStart(2, "0")}</strong>
+            </article>
+            <article className="summary-card">
+              <span className="summary-icon"><ExternalLink size={18} /></span>
+              <span className="summary-label">Social links</span>
+              <strong>{socials.length.toString().padStart(2, "0")}</strong>
+            </article>
+          </div>
+        </section>
+      </div>
 
       <section aria-labelledby="projects-title" className="projects-section" id="projects">
         <div className="section-heading">
@@ -466,11 +482,22 @@ function App() {
                     {project.image
                       ? <img alt={`${project.title} preview`} className="project-image" loading="lazy" src={project.image} />
                       : <div aria-label="Project preview not added" className="project-image-placeholder" role="img"><span>Project preview</span></div>}
+                    <span className="project-category">{project.category}</span>
+                    {project.featured && <span className="project-featured">Featured</span>}
                   </div>
-                  <div className="project-content"><h3>{project.title}</h3></div>
+                  <div className="project-content">
+                    <div className="project-title-row">
+                      <div>
+                        <h3>{project.title}</h3>
+                        <p className="project-ownership">{project.ownershipLabel?.trim() || "Personal Project"}</p>
+                      </div>
+                      <ArrowUpRight size={17} />
+                    </div>
+                    {project.description && <p className="project-description">{project.description}</p>}
+                    {project.tags.length > 0 && <div className="project-tags">{project.tags.map((tag) => <span key={tag}>{tag}</span>)}</div>}
+                  </div>
                 </a>
                 <div className="project-content project-card-links">
-                  <p className="project-ownership">{project.ownershipLabel?.trim() || "Personal Project"}</p>
                   <div className="project-links">
                   {project.liveUrl && (
                     <a href={project.liveUrl} rel="noopener noreferrer" target="_blank">
@@ -554,42 +581,101 @@ function App() {
         )}
       </section>
 
-      <section aria-labelledby="socials-title" className="socials-section" id="socials">
+      <section aria-labelledby="contact-title" className="contact-section" id="contact">
         <div className="section-heading">
           <div>
             <p className="eyebrow">{portfolio.contact.label || "CONNECT"}</p>
-            <h2 id="socials-title">{portfolio.contact.socialTitle}</h2>
+            <h2 id="contact-title">{portfolio.contact.title || portfolio.contact.socialTitle}</h2>
             {portfolio.contact.description && <p className="section-description">{portfolio.contact.description}</p>}
           </div>
         </div>
-        {socials.length > 0 ? (
-          <div className="socials-grid">
-            {socials.map((social) => {
-              const icon = socialIconForUrl(social.url) ?? social.icon;
-              const Icon = icons[icon] ?? ExternalLink;
-              const isSocialBrand = socialIconOptions.some((option) => option.name === icon);
-              return (
-                <a aria-label={`Open ${social.name} profile in a new tab`} className="social-card" href={social.url} key={`${social.name}-${social.url}`} rel="noopener noreferrer" target="_blank">
-                  <span className={`social-icon social-icon-${icon.toLowerCase()}`}>
-                    {isSocialBrand
-                      ? <SocialBrandIcon name={icon} size={19} />
-                      : <Icon size={19} strokeWidth={1.8} />}
-                  </span>
-                  <span className="social-name">{social.name}</span>
-                  <ArrowUpRight className="social-arrow" size={16} />
-                </a>
-              );
-            })}
+        <div className="contact-grid">
+          <div className="contact-details">
+            {portfolio.contact.availabilityTitle && (
+              <article className="availability-card">
+                <span className="availability-indicator" />
+                <div>
+                  <h3>{portfolio.contact.availabilityTitle}</h3>
+                  {portfolio.contact.availabilityDescription && <p>{portfolio.contact.availabilityDescription}</p>}
+                </div>
+              </article>
+            )}
+            {portfolio.contact.email && (
+              <a className="contact-email-card" href={`mailto:${portfolio.contact.email}`}>
+                <span className="contact-icon"><Mail size={18} /></span>
+                <span><small>{portfolio.contact.emailLabel || "Email"}</small><strong>{portfolio.contact.email}</strong></span>
+                <ArrowUpRight size={16} />
+              </a>
+            )}
+            {portfolio.contact.location && (
+              <p className="contact-location"><MapPin size={16} /> {portfolio.contact.location}</p>
+            )}
+            {socials.length > 0 && (
+              <div aria-label={portfolio.contact.socialTitle || "Social profiles"} className="socials-grid" id="socials">
+                {socials.map((social) => {
+                  const icon = socialIconForUrl(social.url) ?? social.icon;
+                  const Icon = icons[icon] ?? ExternalLink;
+                  const isSocialBrand = socialIconOptions.some((option) => option.name === icon);
+                  return (
+                    <a aria-label={`Open ${social.name} profile in a new tab`} className="social-card" href={social.url} key={`${social.name}-${social.url}`} rel="noopener noreferrer" target="_blank">
+                      <span className={`social-icon social-icon-${icon.toLowerCase()}`}>
+                        {isSocialBrand
+                          ? <SocialBrandIcon name={icon} size={19} />
+                          : <Icon size={19} strokeWidth={1.8} />}
+                      </span>
+                      <span className="social-name">{social.name}</span>
+                      <ArrowUpRight className="social-arrow" size={16} />
+                    </a>
+                  );
+                })}
+              </div>
+            )}
           </div>
-        ) : (
-          <p className="section-empty">Social profiles will appear here when added.</p>
-        )}
+
+          <form className="contact-form" onSubmit={(event) => { void submitContact(event); }}>
+            <div className="contact-form-heading">
+              <h3>{portfolio.contact.formTitle || "Send a message"}</h3>
+              {portfolio.contact.formDescription && <p>{portfolio.contact.formDescription}</p>}
+            </div>
+            <label>{portfolio.contact.nameLabel || "Name"}
+              <input autoComplete="name" maxLength={100} onChange={(event) => setContactName(event.target.value)} placeholder={portfolio.contact.namePlaceholder} required value={contactName} />
+            </label>
+            <label>{portfolio.contact.emailFieldLabel || "Email"}
+              <input autoComplete="email" maxLength={254} onChange={(event) => setContactEmail(event.target.value)} placeholder={portfolio.contact.emailPlaceholder} required type="email" value={contactEmail} />
+            </label>
+            <label>{portfolio.contact.messageLabel || "Message"}
+              <textarea maxLength={5000} minLength={10} onChange={(event) => setContactMessage(event.target.value)} placeholder={portfolio.contact.messagePlaceholder} required rows={5} value={contactMessage} />
+            </label>
+            {contactFeedback && <p className={`contact-feedback is-${contactFeedback.status}`} role={contactFeedback.status === "error" ? "alert" : "status"}>{contactFeedback.message}</p>}
+            <button className="contact-submit" disabled={contactBusy} type="submit">
+              {contactBusy ? "Sending..." : portfolio.contact.sendButton || "Send message"}
+              <Send size={16} />
+            </button>
+          </form>
+        </div>
       </section>
 
       <footer className="page-footer">
-        <span>© {new Date().getFullYear()} {profile.profileName}</span>
-        <a href="#profile">Back to top <ArrowUpRight size={14} /></a>
+        <span>{portfolio.footer.copyright || `© ${new Date().getFullYear()} ${profile.profileName}`}</span>
+        <a href="#profile"><Home size={14} /> Back to top</a>
       </footer>
+
+      <nav aria-label="Quick navigation" className="quick-nav">
+        <a href="#profile"><Home size={16} /><span>Home</span></a>
+        <a href="#about"><UserRound size={16} /><span>About</span></a>
+        <a href="#projects"><FolderKanban size={16} /><span>Projects</span></a>
+        <a href="#skills"><Code2 size={16} /><span>Skills</span></a>
+        <a href="#contact"><MessageCircle size={16} /><span>Contact</span></a>
+        <button
+          aria-label={darkMode ? "Switch to light mode" : "Switch to dark mode"}
+          onClick={() => setDarkMode((enabled) => !enabled)}
+          title={darkMode ? "Light mode" : "Dark mode"}
+          type="button"
+        >
+          {darkMode ? <Sun size={16} /> : <Moon size={16} />}
+          <span>{darkMode ? "Light" : "Dark"}</span>
+        </button>
+      </nav>
 
       {toast && (
         <div aria-live="polite" className="toast" role="status">
@@ -604,55 +690,6 @@ function App() {
               Try again
             </button>
           )}
-        </div>
-      )}
-      {passwordDialogOpen && (
-        <div
-          className="password-dialog-backdrop"
-          onMouseDown={(event) => {
-            if (event.target === event.currentTarget && !passwordBusy) {
-              setPasswordDialogOpen(false);
-            }
-          }}
-        >
-          <section aria-labelledby="password-dialog-title" aria-modal="true" className="password-dialog" role="dialog">
-            <button
-              aria-label="Close change password dialog"
-              className="password-dialog-close"
-              disabled={passwordBusy}
-              onClick={() => setPasswordDialogOpen(false)}
-              type="button"
-            >
-              <XIcon size={18} />
-            </button>
-            <span className="password-dialog-kicker">ADMIN ACCOUNT</span>
-            <h2 id="password-dialog-title">Change password</h2>
-            <p>Verify your admin credentials before choosing a new password.</p>
-            <form onSubmit={(event) => { void submitPasswordChange(event); }}>
-              <label>
-                Username
-                <input autoComplete="username" autoFocus onChange={(event) => setAdminUsername(event.target.value)} required value={adminUsername} />
-              </label>
-              <label>
-                Current password
-                <input autoComplete="current-password" onChange={(event) => setCurrentPassword(event.target.value)} required type="password" value={currentPassword} />
-              </label>
-              <label>
-                New password
-                <input autoComplete="new-password" maxLength={128} minLength={7} onChange={(event) => setNewPassword(event.target.value)} required type="password" value={newPassword} />
-                <small>Use at least 7 characters.</small>
-              </label>
-              <label>
-                Confirm new password
-                <input autoComplete="new-password" onChange={(event) => setConfirmPassword(event.target.value)} required type="password" value={confirmPassword} />
-              </label>
-              {passwordError && <p className="password-dialog-error" role="alert">{passwordError}</p>}
-              {passwordNotice && <p className="password-dialog-notice" role="status">{passwordNotice}</p>}
-              <button className="password-dialog-submit" disabled={passwordBusy} type="submit">
-                {passwordBusy ? "Changing password..." : "Change password"}
-              </button>
-            </form>
-          </section>
         </div>
       )}
     </main>

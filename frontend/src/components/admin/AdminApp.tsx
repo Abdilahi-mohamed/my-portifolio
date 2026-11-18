@@ -36,7 +36,7 @@ export function AdminApp() {
         if (controller.signal.aborted) return;
         setConfigured(session.configured === "true");
         setAuthDisabled(session.authDisabled === "true");
-        setGate("login");
+        setGate(session.authenticated === "true" || session.authDisabled === "true" ? "dashboard" : "login");
       })
       .catch((cause: unknown) => {
         if (controller.signal.aborted) return;

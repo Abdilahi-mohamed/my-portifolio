@@ -12,6 +12,7 @@ import {
   EyeOff,
   FileJson2,
   FolderKanban,
+  KeyRound,
   LayoutDashboard,
   LogOut,
   MapPin,
@@ -39,6 +40,7 @@ import {
 } from "../programmingIcons";
 import {
   adminLogout,
+  changeAdminPassword,
   loadAdminPortfolio,
   saveAdminPortfolio,
   uploadImage,
@@ -175,6 +177,12 @@ export function AdminDashboard({
   const [saved, setSaved] = useState(true);
   const [notice, setNotice] = useState("");
   const [query, setQuery] = useState("");
+  const [passwordOpen, setPasswordOpen] = useState(false);
+  const [passwordBusy, setPasswordBusy] = useState(false);
+  const [passwordError, setPasswordError] = useState("");
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [projectFilter, setProjectFilter] = useState("All");
   const [skillFilter, setSkillFilter] = useState("All");
   const [editor, setEditor] = useState<EditorState | null>(null);
@@ -837,6 +845,32 @@ export function AdminDashboard({
     onSignedOut();
   };
 
+  const submitPasswordChange = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setPasswordError("");
+    if (newPassword.length < 7) {
+      setPasswordError("Use at least 7 characters for the new password.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordError("The new passwords do not match.");
+      return;
+    }
+    setPasswordBusy(true);
+    try {
+      const message = await changeAdminPassword(currentPassword, newPassword);
+      setNotice(message);
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setPasswordOpen(false);
+    } catch (error) {
+      setPasswordError(error instanceof Error ? error.message : "Could not change the admin password.");
+    } finally {
+      setPasswordBusy(false);
+    }
+  };
+
   if (!content) {
     return <main className="cms-loading">{loadingError || "Loading admin workspace..."}</main>;
   }
@@ -880,6 +914,7 @@ export function AdminDashboard({
         </nav>
         <div className="cms-global-actions">
           <a className="cms-top-site-link" href="/"><ExternalLink size={15} /> View portfolio</a>
+          {!authDisabled && <button aria-label="Change password" className="cms-icon-button" onClick={() => { setPasswordError(""); setPasswordOpen(true); }} title="Change password" type="button"><KeyRound size={16} /></button>}
           {!authDisabled && <button aria-label="Sign out" className="cms-icon-button" onClick={signOut} title="Sign out" type="button"><LogOut size={16} /></button>}
         </div>
       </header>
@@ -1024,6 +1059,8 @@ export function AdminDashboard({
       </main>
 
       {notice && <div className="cms-toast" role="status"><Check size={16} /> {notice}<button aria-label="Dismiss" onClick={() => setNotice("")} type="button"><X size={15} /></button></div>}
+
+      {passwordOpen && <div className="cms-modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget && !passwordBusy) setPasswordOpen(false); }}><section aria-labelledby="cms-password-title" aria-modal="true" className="cms-modal" role="dialog"><div className="cms-modal-heading"><div><span className="cms-section-index">ADMIN ACCOUNT</span><h2 id="cms-password-title">Change password</h2></div><button aria-label="Close change password" className="cms-icon-button" disabled={passwordBusy} onClick={() => setPasswordOpen(false)} type="button"><X size={18} /></button></div><form onSubmit={(event) => { void submitPasswordChange(event); }}><label className="cms-input-label">Current password<input autoFocus autoComplete="current-password" onChange={(event) => setCurrentPassword(event.target.value)} required type="password" value={currentPassword} /></label><label className="cms-input-label">New password<input autoComplete="new-password" minLength={7} onChange={(event) => setNewPassword(event.target.value)} required type="password" value={newPassword} /></label><label className="cms-input-label">Confirm new password<input autoComplete="new-password" onChange={(event) => setConfirmPassword(event.target.value)} required type="password" value={confirmPassword} /></label>{passwordError && <p className="cms-error" role="alert">{passwordError}</p>}<div className="cms-modal-actions"><button className="cms-quiet-btn" disabled={passwordBusy} onClick={() => setPasswordOpen(false)} type="button">Cancel</button><button className="cms-primary-btn" disabled={passwordBusy} type="submit">{passwordBusy ? "Changing..." : "Change password"}</button></div></form></section></div>}
 
       {editor && <div className="cms-modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) closeEditor(); }}><section aria-labelledby="cms-modal-title" aria-modal="true" className="cms-modal" role="dialog"><div className="cms-modal-heading"><div><span className="cms-section-index">CONTENT EDITOR</span><h2 id="cms-modal-title">{editorTitle}</h2></div><button aria-label="Close editor" className="cms-icon-button" onClick={closeEditor} type="button"><X size={18} /></button></div><form onSubmit={submitEditor}>
         {editor.kind === "project" && <>
