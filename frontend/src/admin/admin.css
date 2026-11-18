@@ -857,7 +857,7 @@
 .cms-project-media-item > button { position: absolute; top: 4px; right: 4px; display: grid; width: 25px; height: 25px; place-items: center; border: 1px solid var(--cms-line); border-radius: 5px; color: #202b28; background: #fff; cursor: pointer; }
 
 .cms-dashboard-grid #contact-editor.cms-social-profiles-panel {
-  width: min(100%, 960px);
+  width: min(100%, 1200px);
   grid-column: 1 / -1;
   justify-self: center;
 }
