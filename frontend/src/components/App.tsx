@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState } from "react";
 import {
   ArrowUpRight,
   Check,
@@ -28,7 +28,13 @@ import {
   X as XIcon,
   Zap,
 } from "lucide-react";
-import { SocialBrandIcon, socialIconForUrl, socialIconOptions } from "./socialIcons";
+import {
+  isLinkedInProfile,
+  isValidLinkedInUrl,
+  SocialBrandIcon,
+  socialIconForUrl,
+  socialIconOptions,
+} from "./socialIcons";
 import {
   apiUrl,
   cachePortfolio,
@@ -46,7 +52,6 @@ import type { IconName, PortfolioContent } from "./types";
 
 type ToastMessage = { title: string; detail?: string };
 type Project = PortfolioContent["projectsSection"]["projects"][number];
-type ContactFeedback = { status: "success" | "error"; message: string };
 type AccentTheme = "aurora" | "sunset" | "emerald" | "gold";
 type ContainerMode = "compact" | "boxed";
 
@@ -183,11 +188,6 @@ function App() {
   const [accentTheme, setAccentTheme] = useState<AccentTheme>("aurora");
   const [containerMode, setContainerMode] = useState<ContainerMode>("compact");
   const [themeReady, setThemeReady] = useState(false);
-  const [contactName, setContactName] = useState("");
-  const [contactEmail, setContactEmail] = useState("");
-  const [contactMessage, setContactMessage] = useState("");
-  const [contactBusy, setContactBusy] = useState(false);
-  const [contactFeedback, setContactFeedback] = useState<ContactFeedback | null>(null);
 
   useEffect(() => {
     try {
@@ -288,41 +288,6 @@ function App() {
     return () => window.clearTimeout(timeout);
   }, [toast]);
 
-  async function submitContact(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setContactBusy(true);
-    setContactFeedback(null);
-    try {
-      const response = await fetch(apiUrl("/api/contact"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: contactName,
-          email: contactEmail,
-          message: contactMessage,
-        }),
-      });
-      const result = (await response.json()) as { message?: string };
-      if (!response.ok) {
-        throw new Error(result.message ?? "Your message could not be sent.");
-      }
-      setContactName("");
-      setContactEmail("");
-      setContactMessage("");
-      setContactFeedback({
-        status: "success",
-        message: result.message ?? "Your message was sent.",
-      });
-    } catch (error) {
-      setContactFeedback({
-        status: "error",
-        message: error instanceof Error ? error.message : "Your message could not be sent.",
-      });
-    } finally {
-      setContactBusy(false);
-    }
-  }
-
   async function copyEmail(email: string) {
     try {
       if (!navigator.clipboard) throw new Error("Clipboard access is unavailable in this browser.");
@@ -392,7 +357,9 @@ function App() {
   const profile = portfolio.about;
   const projects = portfolio.projectsSection.projects.filter((project) => project.visible);
   const skills = portfolio.skillsSection.skills;
-  const socials = portfolio.contact.socials;
+  const socials = portfolio.contact.socials.filter((social) =>
+    !isLinkedInProfile(social) || isValidLinkedInUrl(social.url),
+  );
 
   if (isProjectRoute) {
     if (!routeProject) {
@@ -671,11 +638,12 @@ function App() {
             {socials.length > 0 && (
               <div aria-label={portfolio.contact.socialTitle || "Social profiles"} className="socials-grid" id="socials">
                 {socials.map((social) => {
-                  const icon = socialIconForUrl(social.url) ?? social.icon;
+                  const url = social.url ?? "";
+                  const icon = socialIconForUrl(url) ?? social.icon;
                   const Icon = icons[icon] ?? ExternalLink;
                   const isSocialBrand = socialIconOptions.some((option) => option.name === icon);
                   return (
-                    <a aria-label={`Open ${social.name} profile in a new tab`} className="social-card" href={social.url} key={`${social.name}-${social.url}`} rel="noopener noreferrer" target="_blank">
+                    <a aria-label={`Open ${social.name} profile in a new tab`} className="social-card" href={url} key={`${social.name}-${url}`} rel="noopener noreferrer" target="_blank">
                       <span className={`social-icon social-icon-${icon.toLowerCase()}`}>
                         {isSocialBrand
                           ? <SocialBrandIcon name={icon} size={19} />
@@ -690,26 +658,6 @@ function App() {
             )}
           </div>
 
-          <form className="contact-form" onSubmit={(event) => { void submitContact(event); }}>
-            <div className="contact-form-heading">
-              <h3>{portfolio.contact.formTitle || "Send a message"}</h3>
-              {portfolio.contact.formDescription && <p>{portfolio.contact.formDescription}</p>}
-            </div>
-            <label>{portfolio.contact.nameLabel || "Name"}
-              <input autoComplete="name" maxLength={100} onChange={(event) => setContactName(event.target.value)} placeholder={portfolio.contact.namePlaceholder} required value={contactName} />
-            </label>
-            <label>{portfolio.contact.emailFieldLabel || "Email"}
-              <input autoComplete="email" maxLength={254} onChange={(event) => setContactEmail(event.target.value)} placeholder={portfolio.contact.emailPlaceholder} required type="email" value={contactEmail} />
-            </label>
-            <label>{portfolio.contact.messageLabel || "Message"}
-              <textarea maxLength={5000} minLength={10} onChange={(event) => setContactMessage(event.target.value)} placeholder={portfolio.contact.messagePlaceholder} required rows={5} value={contactMessage} />
-            </label>
-            {contactFeedback && <p className={`contact-feedback is-${contactFeedback.status}`} role={contactFeedback.status === "error" ? "alert" : "status"}>{contactFeedback.message}</p>}
-            <button className="contact-submit" disabled={contactBusy} type="submit">
-              {contactBusy ? "Sending..." : portfolio.contact.sendButton || "Send message"}
-              <Send size={16} />
-            </button>
-          </form>
         </div>
       </section>
 

@@ -240,7 +240,7 @@ export type PortfolioContent = {
     availabilityDescription: string;
     email: string;
     location: string;
-    socials: { name: string; url: string; icon: IconName }[];
+    socials: { name: string; url?: string | null; icon: IconName }[];
   };
   footer: { copyright: string };
 };

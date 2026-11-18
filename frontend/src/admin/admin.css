@@ -855,3 +855,22 @@
 .cms-project-media-item > video { width: 100%; height: 100%; object-fit: cover; }
 .cms-project-media-item > span { position: absolute; right: 4px; bottom: 4px; left: 4px; overflow: hidden; padding: 4px 5px; border-radius: 4px; color: #202b28; background: rgb(255 255 255 / 92%); font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
 .cms-project-media-item > button { position: absolute; top: 4px; right: 4px; display: grid; width: 25px; height: 25px; place-items: center; border: 1px solid var(--cms-line); border-radius: 5px; color: #202b28; background: #fff; cursor: pointer; }
+
+.cms-dashboard-grid #contact-editor.cms-social-profiles-panel {
+  width: min(100%, 960px);
+  grid-column: 1 / -1;
+  justify-self: center;
+}
+
+@media (max-width: 760px) {
+  .cms-dashboard-grid #contact-editor.cms-social-profiles-panel { width: 100%; }
+  .cms-social-profiles-panel .cms-social-editor-row {
+    grid-template-columns: minmax(0, 1fr) 26px;
+  }
+  .cms-social-profiles-panel .cms-social-icon-field,
+  .cms-social-profiles-panel .cms-social-editor-row .cms-input-label { grid-column: 1; }
+  .cms-social-profiles-panel .cms-social-editor-row .cms-managed-card-delete {
+    grid-column: 2;
+    grid-row: 1;
+  }
+}

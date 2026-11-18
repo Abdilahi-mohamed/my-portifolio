@@ -28,7 +28,13 @@ import {
   X as XIcon,
   Zap,
 } from "lucide-react";
-import { SocialBrandIcon, socialIconForUrl, socialIconOptions } from "./socialIcons";
+import {
+  isLinkedInProfile,
+  isValidLinkedInUrl,
+  SocialBrandIcon,
+  socialIconForUrl,
+  socialIconOptions,
+} from "./socialIcons";
 import { adminLogin, changeAdminPassword } from "./admin/adminApi";
 import {
   apiUrl,
@@ -351,7 +357,9 @@ function App() {
   const profile = portfolio.about;
   const projects = portfolio.projectsSection.projects.filter((project) => project.visible);
   const skills = portfolio.skillsSection.skills;
-  const socials = portfolio.contact.socials;
+  const socials = portfolio.contact.socials.filter((social) =>
+    !isLinkedInProfile(social) || isValidLinkedInUrl(social.url),
+  );
 
   if (isProjectRoute) {
     if (!routeProject) {
@@ -562,14 +570,15 @@ function App() {
             {portfolio.contact.description && <p className="section-description">{portfolio.contact.description}</p>}
           </div>
         </div>
-        {socials.length > 0 ? (
+        {socials.length > 0 && (
           <div className="socials-grid">
             {socials.map((social) => {
-              const icon = socialIconForUrl(social.url) ?? social.icon;
+              const url = social.url ?? "";
+              const icon = socialIconForUrl(url) ?? social.icon;
               const Icon = icons[icon] ?? ExternalLink;
               const isSocialBrand = socialIconOptions.some((option) => option.name === icon);
               return (
-                <a aria-label={`Open ${social.name} profile in a new tab`} className="social-card" href={social.url} key={`${social.name}-${social.url}`} rel="noopener noreferrer" target="_blank">
+                <a aria-label={`Open ${social.name} profile in a new tab`} className="social-card" href={url} key={`${social.name}-${url}`} rel="noopener noreferrer" target="_blank">
                   <span className={`social-icon social-icon-${icon.toLowerCase()}`}>
                     {isSocialBrand
                       ? <SocialBrandIcon name={icon} size={19} />
@@ -581,8 +590,6 @@ function App() {
               );
             })}
           </div>
-        ) : (
-          <p className="section-empty">Social profiles will appear here when added.</p>
         )}
       </section>
 
