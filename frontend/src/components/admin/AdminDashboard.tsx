@@ -996,22 +996,6 @@ export function AdminDashboard({
                 {content.about.photo && <button className="cms-quiet-btn cms-remove-photo" onClick={() => updateContent((current) => ({ ...current, about: { ...current.about, photo: "" } }))} type="button"><Trash2 size={13} /> Remove picture</button>}
               </section>
 
-              <section className="cms-panel cms-contact-editor cms-social-profiles-panel" id="contact-editor">
-                <div className="cms-panel-heading"><div><span className="cms-section-index">PUBLIC SOCIAL PROFILES</span><h2>Social profiles</h2><p>Manage the links displayed on your portfolio. This section contains social profiles only.</p></div></div>
-                <label className="cms-input-label">Social profiles heading<input onChange={(event) => updateContact("socialTitle", event.target.value)} value={content.contact.socialTitle} /></label>
-                <div className="cms-social-editor-heading"><span><strong>Social profiles</strong><small>Names and valid HTTP(S) URLs are required. LinkedIn URL is optional.</small></span><button className="cms-add-link" onClick={addSocial} type="button"><Plus size={14} /> Add profile</button></div>
-                {content.contact.socials.map((social, index) => {
-                  const icon = socialIconForUrl(typeof social.url === "string" ? social.url : "") ?? social.icon;
-                  const selectedIcon = socialIconOptions.find((option) => option.name === icon);
-                  return <div className="cms-social-editor-row" key={`social-${index}`}>
-                    <div className="cms-social-icon-field"><span>Social platform</span><button aria-label={`Choose icon for ${social.name || "social profile"}`} className="cms-social-icon-trigger" onClick={() => { setIconSearch(""); setIconPickerIndex(index); }} type="button"><SocialBrandIcon name={icon} size={17} /><span>{selectedIcon?.label ?? "Choose icon"}</span><Search size={14} /></button><small>Detected from profile URL when available.</small></div>
-                    <label className="cms-input-label">Profile name<input onChange={(event) => updateSocial(index, "name", event.target.value)} value={social.name} /></label>
-                    <label className="cms-input-label">Profile URL{isLinkedInProfile(social) ? " (optional)" : ""}<input onChange={(event) => updateSocial(index, "url", event.target.value)} placeholder={isLinkedInProfile(social) ? "https://linkedin.com/in/your-profile" : "https://instagram.com/your-profile"} type="url" value={social.url ?? ""} /><small>Logo updates automatically when you paste a supported profile URL.</small></label>
-                    <button aria-label={`Remove ${social.name || "social profile"}`} className="cms-managed-card-delete" onClick={() => removeSocial(index)} type="button"><Trash2 size={13} /></button>
-                  </div>;
-                })}
-              </section>
-
               <section className="cms-panel cms-section-manager" id="sections">
                 <div className="cms-panel-heading"><div><span className="cms-section-index">PORTFOLIO STRUCTURE</span><h2>Sections</h2><p>Reorder, rename, show or hide each public section.</p></div></div>
                 <div className="cms-section-list">
@@ -1061,6 +1045,21 @@ export function AdminDashboard({
               <article><span className="cms-kpi-icon kpi-blue"><FolderKanban size={17} /></span><span className="cms-kpi-label">PROJECTS</span><strong>{projects.length.toString().padStart(2, "0")}</strong><small>Projects in your portfolio</small></article>
               <article><span className="cms-kpi-icon kpi-green"><Code2 size={17} /></span><span className="cms-kpi-label">TECH STACK & LANGUAGES</span><strong>{skills.length.toString().padStart(2, "0")}</strong><small>Frontend, Backend, Databases & Tools</small></article>
               <article><span className="cms-kpi-icon kpi-green"><ExternalLink size={17} /></span><span className="cms-kpi-label">SOCIAL PROFILES</span><strong>{content.contact.socials.length.toString().padStart(2, "0")}</strong><small>Profiles in your portfolio</small></article>
+            </section>
+            <section className="cms-panel cms-contact-editor cms-social-profiles-panel" id="contact-editor">
+              <div className="cms-panel-heading"><div><span className="cms-section-index">PUBLIC SOCIAL PROFILES</span><h2>Social profiles</h2><p>Manage the links displayed on your portfolio. This section contains social profiles only.</p></div></div>
+              <label className="cms-input-label">Social profiles heading<input onChange={(event) => updateContact("socialTitle", event.target.value)} value={content.contact.socialTitle} /></label>
+              <div className="cms-social-editor-heading"><span><strong>Social profiles</strong><small>Names and valid HTTP(S) URLs are required. LinkedIn URL is optional.</small></span><button className="cms-add-link" onClick={addSocial} type="button"><Plus size={14} /> Add profile</button></div>
+              {content.contact.socials.map((social, index) => {
+                const icon = socialIconForUrl(typeof social.url === "string" ? social.url : "") ?? social.icon;
+                const selectedIcon = socialIconOptions.find((option) => option.name === icon);
+                return <div className="cms-social-editor-row" key={`social-${index}`}>
+                  <div className="cms-social-icon-field"><span>Social platform</span><button aria-label={`Choose icon for ${social.name || "social profile"}`} className="cms-social-icon-trigger" onClick={() => { setIconSearch(""); setIconPickerIndex(index); }} type="button"><SocialBrandIcon name={icon} size={17} /><span>{selectedIcon?.label ?? "Choose icon"}</span><Search size={14} /></button><small>Detected from profile URL when available.</small></div>
+                  <label className="cms-input-label">Profile name<input onChange={(event) => updateSocial(index, "name", event.target.value)} value={social.name} /></label>
+                  <label className="cms-input-label">Profile URL{isLinkedInProfile(social) ? " (optional)" : ""}<input onChange={(event) => updateSocial(index, "url", event.target.value)} placeholder={isLinkedInProfile(social) ? "https://linkedin.com/in/your-profile" : "https://instagram.com/your-profile"} type="url" value={social.url ?? ""} /><small>Logo updates automatically when you paste a supported profile URL.</small></label>
+                  <button aria-label={`Remove ${social.name || "social profile"}`} className="cms-managed-card-delete" onClick={() => removeSocial(index)} type="button"><Trash2 size={13} /></button>
+                </div>;
+              })}
             </section>
           </div>
 
