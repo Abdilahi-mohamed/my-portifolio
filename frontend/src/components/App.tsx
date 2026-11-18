@@ -5,6 +5,7 @@ import {
   ArrowUpRight,
   Check,
   Code2,
+  Copy,
   ExternalLink,
   Figma,
   Facebook,
@@ -24,7 +25,6 @@ import {
   Send,
   Sun,
   Terminal,
-  UserRound,
   X as XIcon,
   Zap,
 } from "lucide-react";
@@ -47,6 +47,16 @@ import type { IconName, PortfolioContent } from "./types";
 type ToastMessage = { title: string; detail?: string };
 type Project = PortfolioContent["projectsSection"]["projects"][number];
 type ContactFeedback = { status: "success" | "error"; message: string };
+type AccentTheme = "aurora" | "sunset" | "emerald" | "gold";
+type ContainerMode = "compact" | "boxed";
+
+function isAccentTheme(value: string | null): value is AccentTheme {
+  return value === "aurora" || value === "sunset" || value === "emerald" || value === "gold";
+}
+
+function isContainerMode(value: string | null): value is ContainerMode {
+  return value === "compact" || value === "boxed";
+}
 
 function projectMedia(project: Project): { type: "image" | "video"; url: string }[] {
   const media = project.media ?? [];
@@ -170,6 +180,8 @@ function App() {
   const [portfolioRetry, setPortfolioRetry] = useState(0);
   const [toast, setToast] = useState<ToastMessage | null>(null);
   const [darkMode, setDarkMode] = useState(true);
+  const [accentTheme, setAccentTheme] = useState<AccentTheme>("aurora");
+  const [containerMode, setContainerMode] = useState<ContainerMode>("compact");
   const [themeReady, setThemeReady] = useState(false);
   const [contactName, setContactName] = useState("");
   const [contactEmail, setContactEmail] = useState("");
@@ -181,6 +193,10 @@ function App() {
     try {
       const savedTheme = window.localStorage.getItem("portfolio-theme");
       if (savedTheme !== null) setDarkMode(savedTheme === "dark");
+      const savedAccentTheme = window.localStorage.getItem("portfolio-accent-theme");
+      if (isAccentTheme(savedAccentTheme)) setAccentTheme(savedAccentTheme);
+      const savedContainerMode = window.localStorage.getItem("portfolio-container-mode");
+      if (isContainerMode(savedContainerMode)) setContainerMode(savedContainerMode);
     } catch {
       setToast({
         title: "Theme preference could not be loaded",
@@ -192,19 +208,26 @@ function App() {
 
   useEffect(() => {
     if (!themeReady) return;
-    document.documentElement.dataset.portfolioTheme = darkMode ? "dark" : "light";
+    const root = document.documentElement;
+    root.dataset.portfolioTheme = darkMode ? "dark" : "light";
+    root.dataset.accentTheme = accentTheme;
+    root.dataset.containerMode = containerMode;
     try {
       window.localStorage.setItem("portfolio-theme", darkMode ? "dark" : "light");
+      window.localStorage.setItem("portfolio-accent-theme", accentTheme);
+      window.localStorage.setItem("portfolio-container-mode", containerMode);
     } catch {
       setToast({
-        title: "Theme preference could not be saved",
-        detail: "Your selected theme will be reset when you leave this page.",
+        title: "Display preferences could not be saved",
+        detail: "Your selected colors and layout will reset when you leave this page.",
       });
     }
     return () => {
-      delete document.documentElement.dataset.portfolioTheme;
+      delete root.dataset.portfolioTheme;
+      delete root.dataset.accentTheme;
+      delete root.dataset.containerMode;
     };
-  }, [darkMode, themeReady]);
+  }, [accentTheme, containerMode, darkMode, themeReady]);
 
   useEffect(() => {
     let active = true;
@@ -300,6 +323,19 @@ function App() {
     }
   }
 
+  async function copyEmail(email: string) {
+    try {
+      if (!navigator.clipboard) throw new Error("Clipboard access is unavailable in this browser.");
+      await navigator.clipboard.writeText(email);
+      setToast({ title: "Email copied", detail: email });
+    } catch (error) {
+      setToast({
+        title: "Email could not be copied",
+        detail: error instanceof Error ? error.message : "Clipboard permission was denied.",
+      });
+    }
+  }
+
   const projectRouteId = /^\/projects\/([a-z0-9][a-z0-9-]{0,99})\/?$/.exec(window.location.pathname)?.[1];
   const isProjectRoute = window.location.pathname.startsWith("/projects/");
   const routeProject = portfolio && projectRouteId
@@ -357,9 +393,6 @@ function App() {
   const projects = portfolio.projectsSection.projects.filter((project) => project.visible);
   const skills = portfolio.skillsSection.skills;
   const socials = portfolio.contact.socials;
-  const profileNameWords = profile.profileName.trim().split(/\s+/);
-  const accentName = profileNameWords.length > 1 ? profileNameWords.pop() ?? "" : "";
-  const profileNameLead = accentName ? profileNameWords.join(" ") : profile.profileName;
 
   if (isProjectRoute) {
     if (!routeProject) {
@@ -379,15 +412,56 @@ function App() {
   return (
     <main className="portfolio-page portfolio-home">
       <header className="topbar">
-        <a className="wordmark" href="#profile">
-          <span className="wordmark-mark"><Zap size={17} /></span>
-          <span>{profile.profileName}<small>PORTFOLIO</small></span>
-        </a>
-        <a className="topbar-contact-link" href="#contact">
-          <MessageCircle size={16} />
-          {portfolio.hero.contactButton || "Get in touch"}
-          <ArrowUpRight size={14} />
-        </a>
+        <div className="topbar-main">
+          <a className="wordmark" href="#profile">
+            <span className="wordmark-mark"><Zap size={17} /></span>
+            <span>{profile.profileName}<small>PORTFOLIO</small></span>
+          </a>
+          <a className="topbar-contact-link" href="#contact">
+            <MessageCircle size={16} />
+            {portfolio.hero.contactButton || "Get in touch"}
+            <ArrowUpRight size={14} />
+          </a>
+        </div>
+        <div className="topbar-controls">
+          <div className="topbar-tools">
+            <label className="accent-theme-picker">
+              <Palette aria-hidden="true" size={14} />
+              <select
+                aria-label="Accent color theme"
+                onChange={(event) => {
+                  if (isAccentTheme(event.target.value)) setAccentTheme(event.target.value);
+                }}
+                value={accentTheme}
+              >
+                <option value="aurora">Aurora</option>
+                <option value="sunset">Sunset</option>
+                <option value="emerald">Emerald</option>
+                <option value="gold">Gold</option>
+              </select>
+            </label>
+            <button
+              aria-label={containerMode === "boxed" ? "Use compact container" : "Use boxed frame"}
+              aria-pressed={containerMode === "boxed"}
+              className="container-mode-switch"
+              onClick={() => setContainerMode((mode) => mode === "compact" ? "boxed" : "compact")}
+              title={containerMode === "boxed" ? "Use compact container" : "Use boxed frame"}
+              type="button"
+            >
+              <Layers3 aria-hidden="true" size={15} />
+              <span>{containerMode === "boxed" ? "Boxed" : "Compact"}</span>
+            </button>
+            <button
+              aria-label={darkMode ? "Switch to light mode" : "Switch to dark mode"}
+              className="theme-mode-switch"
+              onClick={() => setDarkMode((enabled) => !enabled)}
+              title={darkMode ? "Switch to light mode" : "Switch to dark mode"}
+              type="button"
+            >
+              {darkMode ? <Sun size={15} /> : <Moon size={15} />}
+            </button>
+          </div>
+        </div>
       </header>
 
       <section aria-label="Profile" className="profile" id="profile">
@@ -399,30 +473,9 @@ function App() {
                 {profile.profileName.slice(0, 1).toUpperCase()}
               </span>}
           </div>
-          <div className="profile-copy">
-            <p className="eyebrow">WELCOME TO MY PORTFOLIO</p>
-            <h1>{profileNameLead}{accentName && <> <span>{accentName}</span></>}</h1>
-            <p className="profile-role">{profile.profileRole}</p>
-            {profile.location && <p className="profile-location"><MapPin size={16} /> {profile.location}</p>}
-            <div className="profile-social-links">
-              {socials
-                .filter((social) => /github|linkedin/i.test(`${social.name} ${social.url}`))
-                .slice(0, 2)
-                .map((social) => {
-                  const icon = socialIconForUrl(social.url) ?? social.icon;
-                  return (
-                    <a aria-label={`Open ${social.name} profile`} href={social.url} key={`${social.name}-${social.url}`} rel="noopener noreferrer" target="_blank">
-                      <SocialBrandIcon name={icon} size={18} />
-                      <span>{social.name}</span>
-                    </a>
-                  );
-                })}
-            </div>
-            <div className="profile-actions">
-              <a className="hero-primary-action" href="#projects">{portfolio.hero.projectsButton || "View projects"} <ArrowUpRight size={15} /></a>
-              <a className="hero-secondary-action" href="#about"><UserRound size={15} /> About me</a>
-            </div>
-          </div>
+          {profile.location && (
+            <p className="profile-location"><MapPin size={13} /> {profile.location}</p>
+          )}
         </div>
       </section>
 
@@ -501,7 +554,7 @@ function App() {
                   <div className="project-links">
                   {project.liveUrl && (
                     <a href={project.liveUrl} rel="noopener noreferrer" target="_blank">
-                      <Globe2 size={16} /> Live project <ArrowUpRight size={14} />
+                      <Globe2 size={16} /> Live Demo <ArrowUpRight size={14} />
                     </a>
                   )}
                   {project.githubUrl && (
@@ -601,11 +654,16 @@ function App() {
               </article>
             )}
             {portfolio.contact.email && (
-              <a className="contact-email-card" href={`mailto:${portfolio.contact.email}`}>
+              <button
+                aria-label={`Copy email address ${portfolio.contact.email}`}
+                className="contact-email-card"
+                onClick={() => { void copyEmail(portfolio.contact.email); }}
+                type="button"
+              >
                 <span className="contact-icon"><Mail size={18} /></span>
-                <span><small>{portfolio.contact.emailLabel || "Email"}</small><strong>{portfolio.contact.email}</strong></span>
-                <ArrowUpRight size={16} />
-              </a>
+                <span><small>{portfolio.contact.emailLabel || "Click to copy"}</small><strong>{portfolio.contact.email}</strong></span>
+                <Copy aria-hidden="true" size={16} />
+              </button>
             )}
             {portfolio.contact.location && (
               <p className="contact-location"><MapPin size={16} /> {portfolio.contact.location}</p>
@@ -660,21 +718,11 @@ function App() {
         <a href="#profile"><Home size={14} /> Back to top</a>
       </footer>
 
-      <nav aria-label="Quick navigation" className="quick-nav">
-        <a href="#profile"><Home size={16} /><span>Home</span></a>
-        <a href="#about"><UserRound size={16} /><span>About</span></a>
-        <a href="#projects"><FolderKanban size={16} /><span>Projects</span></a>
-        <a href="#skills"><Code2 size={16} /><span>Skills</span></a>
-        <a href="#contact"><MessageCircle size={16} /><span>Contact</span></a>
-        <button
-          aria-label={darkMode ? "Switch to light mode" : "Switch to dark mode"}
-          onClick={() => setDarkMode((enabled) => !enabled)}
-          title={darkMode ? "Light mode" : "Dark mode"}
-          type="button"
-        >
-          {darkMode ? <Sun size={16} /> : <Moon size={16} />}
-          <span>{darkMode ? "Light" : "Dark"}</span>
-        </button>
+      <nav aria-label="Main navigation" className="quick-nav">
+        <a href="#about">About</a>
+        <a href="#skills">Skills</a>
+        <a href="#projects">Projects</a>
+        <a href="#contact">Contact</a>
       </nav>
 
       {toast && (
