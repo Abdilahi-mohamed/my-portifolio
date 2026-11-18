@@ -2,9 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import {
-  Award,
   ArrowUpRight,
-  BriefcaseBusiness,
   Check,
   Code2,
   ExternalLink,
@@ -353,8 +351,6 @@ function App() {
   const profile = portfolio.about;
   const projects = portfolio.projectsSection.projects.filter((project) => project.visible);
   const skills = portfolio.skillsSection.skills;
-  const experience = portfolio.experience;
-  const certificates = portfolio.certificates ?? [];
   const socials = portfolio.contact.socials;
 
   if (isProjectRoute) {
