@@ -1,9 +1,9 @@
+"use client";
+
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import {
   ArrowDownToLine,
   ArrowUpRight,
-  Award,
-  BriefcaseBusiness,
   Check,
   CircleHelp,
   Code2,
@@ -192,17 +192,6 @@ export function AdminDashboard({
   const [iconSearch, setIconSearch] = useState("");
   const [skillIconPickerOpen, setSkillIconPickerOpen] = useState(false);
   const [activity, setActivity] = useState<Activity[]>([]);
-  const coverDrag = useRef<{
-    pointerId: number;
-    startX: number;
-    startY: number;
-    positionX: number;
-    positionY: number;
-    width: number;
-    height: number;
-    zoom: number;
-  } | null>(null);
-
   useEffect(() => {
     loadAdminPortfolio()
       .then((snapshot) => {
@@ -294,16 +283,6 @@ export function AdminDashboard({
     contentRef.current = next;
     setContent(next);
     setSaved(false);
-  };
-
-  const updateCoverAdjustment = (
-    field: "coverPhotoZoom" | "coverPhotoX" | "coverPhotoY",
-    value: number,
-  ) => {
-    updateContent((current) => ({
-      ...current,
-      about: { ...current.about, [field]: value },
-    }));
   };
 
   const updateSectionLabel = (id: string, label: string) => {
@@ -766,7 +745,7 @@ export function AdminDashboard({
     });
   };
 
-  const uploadProfileImage = async (field: "photo" | "coverPhoto", file: File | undefined) => {
+  const uploadProfileImage = async (field: "photo", file: File | undefined) => {
     if (!file) return;
     if (!["image/jpeg", "image/png", "image/webp", "image/gif"].includes(file.type) || file.size > 8 * 1024 * 1024) {
       setNotice("Choose a PNG, JPEG, WebP, or GIF image up to 8 MB.");
@@ -780,10 +759,9 @@ export function AdminDashboard({
         about: {
           ...current.about,
           [field]: image,
-          ...(field === "coverPhoto" ? { coverPhotoZoom: 1, coverPhotoX: 50, coverPhotoY: 50 } : {}),
         },
       }));
-      setNotice(`${field === "photo" ? "Profile picture" : "Cover photo"} uploaded. Save changes to publish it.`);
+      setNotice("Profile picture uploaded. Save changes to publish it.");
     } catch (error) {
       setNotice(error instanceof Error ? error.message : "The profile image could not be uploaded.");
     } finally {
@@ -864,9 +842,6 @@ export function AdminDashboard({
   }
 
   const editorTitle = editor ? `${editor.index === null ? "Add" : "Edit"} ${editor.kind}` : "";
-  const coverZoom = content.about.coverPhotoZoom ?? 1;
-  const coverPositionX = content.about.coverPhotoX ?? 50;
-  const coverPositionY = content.about.coverPhotoY ?? 50;
   const sectionRows = [
     ...builtInSections.map(({ id, label }) => {
       const navigationItem = content.navigation.find((item) => item.id === id);
@@ -895,12 +870,10 @@ export function AdminDashboard({
           <span><strong>Studio / CMS</strong><small>PORTFOLIO WORKSPACE</small></span>
         </a>
         <nav className="cms-nav" aria-label="Admin sections">
-          <a href="#profile-picture"><UserRound size={16} /> Profile & cover</a>
+          <a href="#profile-picture"><UserRound size={16} /> Profile picture</a>
           <a href="#configuration"><Settings2 size={16} /> Profile details</a>
           <a href="#manifest"><FolderKanban size={16} /> Projects <span>{projects.length}</span></a>
           <a href="#skills"><Code2 size={16} /> Skills <span>{skills.length}</span></a>
-          <a href="#certificates"><Award size={16} /> Certificates <span>{certificates.length}</span></a>
-          <a href="#experience"><BriefcaseBusiness size={16} /> Experience</a>
           <a href="#contact-editor"><ExternalLink size={16} /> Social profiles</a>
           <a href="#sections"><LayoutDashboard size={16} /> Sections</a>
           <a href="/admin/analytics"><Eye size={16} /> Visitors</a>
@@ -955,39 +928,6 @@ export function AdminDashboard({
                 <div className="cms-skills-grid">{visibleSkills.map(({ skill, index }) => <article className="cms-skill-row" key={`${skill.name}-${index}`}><span className="cms-skill-symbol" style={{ color: programmingIconColor(skill.icon, skill.color), backgroundColor: programmingIconBackground(skill.icon) ?? "#F9F8F6" }}>{isProgrammingLanguageIcon(skill.icon) ? <ProgrammingLanguageIcon name={skill.icon} size={19} color={programmingIconColor(skill.icon, skill.color)} /> : <Code2 size={19} />}</span><div className="cms-skill-main"><div className="cms-skill-label"><strong>{skill.name}</strong><span>{skill.level}</span></div><div className="cms-meter"><i style={{ width: skill.level }} /></div><small>{skill.category ?? "Other"}</small></div><div className="cms-skill-actions"><button aria-label={`Edit ${skill.name}`} onClick={() => openEditor("skill", index)} type="button"><Settings2 size={14} /></button><button aria-label={`Delete ${skill.name}`} onClick={() => removeItem("skill", index)} type="button"><Trash2 size={14} /></button></div></article>)}<button className="cms-skill-add" onClick={() => openEditor("skill")} type="button"><Plus size={18} /><span>Add a skill</span></button></div>
               </section>
 
-              <section className="cms-panel" id="experience">
-                <div className="cms-panel-heading"><div><span className="cms-section-index">03 / TRACK RECORD</span><h2>Career timeline</h2><p>Experience that brings your work into focus.</p></div><button className="cms-add-link" onClick={() => openEditor("experience")} type="button"><Plus size={15} /> Add role</button></div>
-                <div className="cms-timeline">{experiences.map((item, index) => <article className="cms-experience" key={`${item.role}-${index}`}>{item.image ? <img alt={`${item.company || item.role} workplace preview`} className="cms-experience-image" src={item.image} /> : <span className="cms-company-mark">{(item.company || item.role).slice(0, 2).toUpperCase()}</span>}<div className="cms-experience-copy"><div className="cms-experience-title"><div><h3>{item.role}</h3><strong>{item.company || "Independent"}</strong></div><span>{item.year}</span></div><p>{item.desc}</p>{item.location && <small><MapPin size={12} /> {item.location}</small>}</div><div className="cms-experience-actions"><button aria-label={`Edit ${item.role}`} onClick={() => openEditor("experience", index)} type="button"><Settings2 size={14} /></button><button aria-label={`Delete ${item.role}`} onClick={() => removeItem("experience", index)} type="button"><Trash2 size={14} /></button></div></article>)}</div>
-              </section>
-
-              <section className="cms-panel" id="certificates">
-                <div className="cms-panel-heading">
-                  <div><span className="cms-section-index">04 / CERTIFICATIONS</span><h2>Certificates</h2><p>Upload a certificate image and add its details to your public profile.</p></div>
-                  <button className="cms-add-link" onClick={() => openEditor("certificate")} type="button"><Plus size={15} /> Add certificate</button>
-                </div>
-                {certificates.length > 0 ? (
-                  <div className="cms-certificate-list">
-                    {certificates.map((certificate, index) => (
-                      <article className="cms-certificate-row" key={`${certificate.title}-${index}`}>
-                        {certificate.image
-                          ? <img alt={`${certificate.title} certificate preview`} src={certificate.image} />
-                          : <span className="cms-certificate-placeholder"><Award size={19} /></span>}
-                        <div className="cms-certificate-copy">
-                          <strong>{certificate.title}</strong>
-                          <span>{[certificate.issuer, certificate.year].filter(Boolean).join(" · ")}</span>
-                          {certificate.description && <small>{certificate.description}</small>}
-                        </div>
-                        <div className="cms-certificate-actions">
-                          <button aria-label={`Edit ${certificate.title}`} onClick={() => openEditor("certificate", index)} type="button"><Settings2 size={14} /></button>
-                          <button aria-label={`Delete ${certificate.title}`} onClick={() => removeItem("certificate", index)} type="button"><Trash2 size={14} /></button>
-                        </div>
-                      </article>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="cms-empty">No certificates yet. Add one to show it on your public profile.</div>
-                )}
-              </section>
             </div>
 
             <aside className="cms-aside-column">
@@ -999,7 +939,7 @@ export function AdminDashboard({
               </section>
 
               <section className="cms-panel cms-profile-picture-panel" id="profile-picture">
-                <div className="cms-panel-heading"><div><span className="cms-section-index">PROFILE IMAGES</span><h2>Profile and cover photos</h2><p>Upload or replace the images shown on your public profile.</p></div></div>
+                <div className="cms-panel-heading"><div><span className="cms-section-index">PROFILE IMAGE</span><h2>Profile photo</h2><p>Upload or replace the image shown on your public profile.</p></div></div>
                 <div className="cms-profile-picture-preview">
                   {content.about.photo
                     ? <img alt="Current profile picture" src={content.about.photo} />
@@ -1009,75 +949,6 @@ export function AdminDashboard({
                 <small className="cms-upload-help">PNG, JPEG, WebP, or GIF · max 8 MB. Upload, then save your changes.</small>
                 <label className="cms-input-label">Image URL<input onChange={(event) => updateContent((current) => ({ ...current, about: { ...current.about, photo: event.target.value } }))} type="text" value={content.about.photo} /></label>
                 {content.about.photo && <button className="cms-quiet-btn cms-remove-photo" onClick={() => updateContent((current) => ({ ...current, about: { ...current.about, photo: "" } }))} type="button"><Trash2 size={13} /> Remove picture</button>}
-                <div
-                  className={`cms-cover-picture-preview${content.about.coverPhoto && coverZoom > 1 ? " is-draggable" : ""}`}
-                  onPointerDown={(event) => {
-                    if (!content.about.coverPhoto || coverZoom <= 1) return;
-                    const bounds = event.currentTarget.getBoundingClientRect();
-                    coverDrag.current = {
-                      pointerId: event.pointerId,
-                      startX: event.clientX,
-                      startY: event.clientY,
-                      positionX: coverPositionX,
-                      positionY: coverPositionY,
-                      width: bounds.width,
-                      height: bounds.height,
-                      zoom: coverZoom,
-                    };
-                    event.currentTarget.setPointerCapture(event.pointerId);
-                  }}
-                  onPointerMove={(event) => {
-                    const drag = coverDrag.current;
-                    if (!drag || drag.pointerId !== event.pointerId) return;
-                    updateCoverAdjustment(
-                      "coverPhotoX",
-                      Math.max(0, Math.min(100, drag.positionX -
-                        ((event.clientX - drag.startX) / (drag.width * (drag.zoom - 1))) * 100)),
-                    );
-                    updateCoverAdjustment(
-                      "coverPhotoY",
-                      Math.max(0, Math.min(100, drag.positionY -
-                        ((event.clientY - drag.startY) / (drag.height * (drag.zoom - 1))) * 100)),
-                    );
-                  }}
-                  onPointerUp={() => { coverDrag.current = null; }}
-                  onPointerCancel={() => { coverDrag.current = null; }}
-                >
-                  {content.about.coverPhoto
-                    ? <>
-                      <img alt="" aria-hidden="true" className="cms-cover-picture-backdrop" src={content.about.coverPhoto} />
-                      <img
-                        alt="Current cover photo"
-                        className="cms-cover-picture-image"
-                        src={content.about.coverPhoto}
-                        style={{
-                          left: `${(1 - coverZoom) * coverPositionX}%`,
-                          top: `${(1 - coverZoom) * coverPositionY}%`,
-                          transform: `scale(${coverZoom})`,
-                        }}
-                      />
-                    </>
-                    : <span>Cover photo preview</span>}
-                </div>
-                <small className="cms-upload-help">Drag the image to reposition it. Use zoom for a closer crop.</small>
-                <label className="cms-input-label cms-cover-adjustment">Zoom · {coverZoom.toFixed(2)}×<input aria-label="Cover photo zoom" max="3" min="1" onChange={(event) => updateCoverAdjustment("coverPhotoZoom", Number(event.target.value))} step="0.05" type="range" value={coverZoom} /></label>
-                <div className="cms-cover-position-controls">
-                  <label className="cms-input-label">Horizontal position<input aria-label="Cover photo horizontal position" disabled={coverZoom <= 1} max="100" min="0" onChange={(event) => updateCoverAdjustment("coverPhotoX", Number(event.target.value))} type="range" value={coverPositionX} /></label>
-                  <label className="cms-input-label">Vertical position<input aria-label="Cover photo vertical position" disabled={coverZoom <= 1} max="100" min="0" onChange={(event) => updateCoverAdjustment("coverPhotoY", Number(event.target.value))} type="range" value={coverPositionY} /></label>
-                </div>
-                <button
-                  className="cms-quiet-btn cms-remove-photo"
-                  onClick={() => {
-                    updateCoverAdjustment("coverPhotoZoom", 1);
-                    updateCoverAdjustment("coverPhotoX", 50);
-                    updateCoverAdjustment("coverPhotoY", 50);
-                  }}
-                  type="button"
-                >Reset crop</button>
-                <label className="cms-input-label">Cover photo<span className="cms-file-choice">Choose cover photo from files<input accept="image/png,image/jpeg,image/webp,image/gif" onChange={(event) => { void uploadProfileImage("coverPhoto", event.currentTarget.files?.[0]); event.currentTarget.value = ""; }} type="file" /></span></label>
-                <small className="cms-upload-help">Choose an image from your device (PNG, JPEG, WebP, or GIF, up to 8 MB). Upload, then save your changes.</small>
-                <label className="cms-input-label">Cover photo URL<input onChange={(event) => updateContent((current) => ({ ...current, about: { ...current.about, coverPhoto: event.target.value, coverPhotoZoom: 1, coverPhotoX: 50, coverPhotoY: 50 } }))} type="url" value={content.about.coverPhoto ?? ""} /></label>
-                {content.about.coverPhoto && <button className="cms-quiet-btn cms-remove-photo" onClick={() => updateContent((current) => ({ ...current, about: { ...current.about, coverPhoto: "" } }))} type="button"><Trash2 size={13} /> Remove cover photo</button>}
               </section>
 
               <section className="cms-panel cms-contact-editor" id="contact-editor">
@@ -1144,8 +1015,6 @@ export function AdminDashboard({
             <section aria-label="Portfolio summary" className="cms-kpis">
               <article><span className="cms-kpi-icon kpi-blue"><FolderKanban size={17} /></span><span className="cms-kpi-label">PROJECTS</span><strong>{projects.length.toString().padStart(2, "0")}</strong><small>Projects in your portfolio</small></article>
               <article><span className="cms-kpi-icon kpi-green"><Code2 size={17} /></span><span className="cms-kpi-label">TECH STACK & LANGUAGES</span><strong>{skills.length.toString().padStart(2, "0")}</strong><small>Frontend, Backend, Databases & Tools</small></article>
-              <article><span className="cms-kpi-icon kpi-amber"><Award size={17} /></span><span className="cms-kpi-label">CERTIFICATES</span><strong>{certificates.length.toString().padStart(2, "0")}</strong><small>Certificates in your profile</small></article>
-              <article><span className="cms-kpi-icon kpi-coral"><BriefcaseBusiness size={17} /></span><span className="cms-kpi-label">EXPERIENCE</span><strong>{experiences.length.toString().padStart(2, "0")}</strong><small>Workplaces in your timeline</small></article>
               <article><span className="cms-kpi-icon kpi-green"><ExternalLink size={17} /></span><span className="cms-kpi-label">SOCIAL PROFILES</span><strong>{content.contact.socials.length.toString().padStart(2, "0")}</strong><small>Profiles in your portfolio</small></article>
             </section>
           </div>

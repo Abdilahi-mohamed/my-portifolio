@@ -1,3 +1,5 @@
+"use client";
+
 import { useCallback, useEffect, useState } from "react";
 import { ArrowLeft, ExternalLink, Eye, LogOut } from "lucide-react";
 import { adminLogout, loadAdminVisitorAnalytics, type AdminVisitorAnalytics } from "./adminApi";

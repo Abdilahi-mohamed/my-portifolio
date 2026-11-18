@@ -1,5 +1,24 @@
 # Abdilahi Portfolio
 
+## Next.js migration
+
+The repository now includes the unified Next.js App Router application at the repository root.
+It preserves the existing MongoDB collections and object-storage keys and exposes the same
+portfolio, admin, analytics, contact, upload, and media functionality through Next route handlers.
+
+```sh
+npm install
+npm run dev
+npm run build
+npm start
+```
+
+Configure `.env.local` from `.env.example`. For this repository, the existing Backblaze B2
+configuration is loaded from `backend/.env` during local development; Cloudflare R2 variables are
+also supported for deployments that use R2. MongoDB credentials and object-storage secrets remain
+server-side. Keep the legacy `frontend/` and `backend/` directories available during staged
+verification; they are not required by the Next.js build or runtime.
+
 A responsive React and TypeScript portfolio with a Node.js API. MongoDB stores portfolio content, admin credentials/sessions, and contact submissions. Uploaded media is stored in Backblaze B2 using its S3-compatible API.
 
 ## Project layout

@@ -1,0 +1,246 @@
+export type IconName =
+  | "ArrowUpRight"
+  | "Check"
+  | "Code2"
+  | "Javascript"
+  | "Typescript"
+  | "React"
+  | "Nextjs"
+  | "Firebase"
+  | "Supabase"
+  | "Tailwindcss"
+  | "Express"
+  | "Git"
+  | "Docker"
+  | "Nodejs"
+  | "Mongodb"
+  | "Mysql"
+  | "Postgresql"
+  | "Sqlite"
+  | "Redis"
+  | "Python"
+  | "Java"
+  | "C"
+  | "Cplusplus"
+  | "Csharp"
+  | "Go"
+  | "Rust"
+  | "Php"
+  | "Ruby"
+  | "Kotlin"
+  | "Swift"
+  | "Dart"
+  | "Lua"
+  | "R"
+  | "Scala"
+  | "Haskell"
+  | "Elixir"
+  | "Clojure"
+  | "Erlang"
+  | "Fsharp"
+  | "Fortran"
+  | "Julia"
+  | "Perl"
+  | "Gnubash"
+  | "Zsh"
+  | "Solidity"
+  | "Html5"
+  | "Css3"
+  | "Assemblyscript"
+  | "Webassembly"
+  | "V"
+  | "Zig"
+  | "Nim"
+  | "Crystal"
+  | "Ocaml"
+  | "Elm"
+  | "Coffeescript"
+  | "Groovy"
+  | "Purescript"
+  | "Racket"
+  | "D"
+  | "ExternalLink"
+  | "Figma"
+  | "Facebook"
+  | "Discord"
+  | "Tiktok"
+  | "Threads"
+  | "Youtube"
+  | "Whatsapp"
+  | "Telegram"
+  | "Reddit"
+  | "Twitch"
+  | "Pinterest"
+  | "Snapchat"
+  | "Gitlab"
+  | "Behance"
+  | "Dribbble"
+  | "Medium"
+  | "Devto"
+  | "Messenger"
+  | "Spotify"
+  | "Soundcloud"
+  | "Patreon"
+  | "Substack"
+  | "Tumblr"
+  | "Vimeo"
+  | "Wordpress"
+  | "Slack"
+  | "Wechat"
+  | "Mastodon"
+  | "Bluesky"
+  | "Linktree"
+  | "Stackoverflow"
+  | "Producthunt"
+  | "Quora"
+  | "Kickstarter"
+  | "Buymeacoffee"
+  | "Flickr"
+  | "Hashnode"
+  | "Line"
+  | "Weibo"
+  | "Github"
+  | "Globe2"
+  | "Layers3"
+  | "Linkedin"
+  | "MapPin"
+  | "MessageCircle"
+  | "Monitor"
+  | "Instagram"
+  | "Palette"
+  | "Send"
+  | "Terminal"
+  | "X"
+  | "Zap";
+
+export type ProjectTechnology = {
+  name: string;
+  id: string;
+  icon: IconName;
+};
+
+export type PortfolioContent = {
+  navigation: { id: string; label: string }[];
+  customSections: {
+    id: string;
+    label: string;
+    title: string;
+    description: string;
+    tinted: boolean;
+    cards: {
+      title: string;
+      description: string;
+      image: string;
+      tags: string[];
+      link: string;
+    }[];
+  }[];
+  hero: {
+    brand: string;
+    badge: string;
+    title: string;
+    titleAccent: string;
+    description: string;
+    projectsButton: string;
+    contactButton: string;
+    headerButton: string;
+    scrollText: string;
+    stats: { value: string; label: string; icon: IconName }[];
+  };
+  about: {
+    label: string;
+    title: string;
+    profileName: string;
+    profileRole: string;
+    location: string;
+    photo: string;
+    coverPhoto?: string;
+    coverPhotoZoom?: number;
+    coverPhotoX?: number;
+    coverPhotoY?: number;
+    profileDescription: string;
+    bioTitle: string;
+    bio: string;
+    values: { icon: IconName; title: string; description: string }[];
+  };
+  projectsSection: {
+    label: string;
+    title: string;
+    description: string;
+    projects: {
+      id: string;
+      category: string;
+      title: string;
+      ownershipLabel?: string;
+      description: string;
+      fullDescription: string;
+      image: string;
+      gallery: string[];
+      projectDescription?: string;
+      problemStatement?: string;
+      solution?: string;
+      howItWorks?: string;
+      technologies?: ProjectTechnology[];
+      media?: { type: "image" | "video"; url: string }[];
+      tags: string[];
+      liveUrl: string;
+      githubUrl: string;
+      linkedinUrl: string;
+      featured: boolean;
+      visible: boolean;
+    }[];
+  };
+  skillsSection: {
+    label: string;
+    title: string;
+    description: string;
+    skills: {
+      name: string;
+      level: string;
+      icon: IconName;
+      color: string;
+      category?: string;
+    }[];
+  };
+  experience: {
+    role: string;
+    desc: string;
+    year: string;
+    company?: string;
+    location?: string;
+    image?: string;
+  }[];
+  certificates: {
+    title: string;
+    issuer: string;
+    year: string;
+    description: string;
+    image: string;
+  }[];
+  contact: {
+    label: string;
+    title: string;
+    description: string;
+    formTitle: string;
+    formDescription: string;
+    nameLabel: string;
+    emailFieldLabel: string;
+    subjectLabel: string;
+    messageLabel: string;
+    namePlaceholder: string;
+    emailPlaceholder: string;
+    subjectPlaceholder: string;
+    messagePlaceholder: string;
+    sendButton: string;
+    emailLabel: string;
+    locationLabel: string;
+    contactInfoTitle: string;
+    socialTitle: string;
+    availabilityTitle: string;
+    availabilityDescription: string;
+    email: string;
+    location: string;
+    socials: { name: string; url: string; icon: IconName }[];
+  };
+  footer: { copyright: string };
+};
