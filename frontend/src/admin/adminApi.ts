@@ -61,7 +61,9 @@ async function requirePersistentStorage(): Promise<void> {
       "The connected API does not confirm MongoDB persistence. Admin editing is blocked to protect your data. Redeploy the latest backend commit to Render, then reopen the dashboard.",
     );
   }
-  if (import.meta.env.PROD && body.storage !== "backblaze-b2") {
+  if (process.env.NODE_ENV === "production" &&
+    body.storage !== "backblaze-b2" &&
+    body.storage !== "cloudflare-r2") {
     throw new Error(
       "The connected API does not confirm persistent image storage. Admin editing is blocked to protect your uploads. Configure Backblaze B2 on Render and redeploy the backend.",
     );

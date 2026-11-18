@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, type FormEvent } from "react";
 import { ArrowRight, Eye, EyeOff, KeyRound, ShieldCheck, UserRound } from "lucide-react";
 import { adminLogin } from "./adminApi";

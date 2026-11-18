@@ -1,8 +1,8 @@
+"use client";
+
 import { useEffect, useState, type FormEvent } from "react";
 import {
-  Award,
   ArrowUpRight,
-  BriefcaseBusiness,
   Check,
   Code2,
   ExternalLink,
@@ -351,8 +351,6 @@ function App() {
   const profile = portfolio.about;
   const projects = portfolio.projectsSection.projects.filter((project) => project.visible);
   const skills = portfolio.skillsSection.skills;
-  const experience = portfolio.experience;
-  const certificates = portfolio.certificates ?? [];
   const socials = portfolio.contact.socials;
 
   if (isProjectRoute) {
@@ -400,31 +398,11 @@ function App() {
         <nav aria-label="Portfolio sections" className="topbar-actions">
           <a className="topbar-nav-link" href="#projects">Projects</a>
           <a className="topbar-nav-link" href="#skills">Skills</a>
-          <a className="topbar-nav-link" href="#credentials">Certificates & experience</a>
           <a className="topbar-nav-link" href="#socials">Social profiles</a>
         </nav>
       </header>
 
       <section aria-label="Profile" className="profile" id="profile">
-        <div
-          className={`cover-photo${profile.coverPhoto ? " has-cover" : ""}`}
-        >
-          {profile.coverPhoto
-            ? <>
-              <img alt="" aria-hidden="true" className="cover-image-backdrop" src={profile.coverPhoto} />
-              <img
-                alt="Cover photo"
-                className="cover-image"
-                src={profile.coverPhoto}
-                style={{
-                  left: `${(1 - (profile.coverPhotoZoom ?? 1)) * (profile.coverPhotoX ?? 50)}%`,
-                  top: `${(1 - (profile.coverPhotoZoom ?? 1)) * (profile.coverPhotoY ?? 50)}%`,
-                  transform: `scale(${profile.coverPhotoZoom ?? 1})`,
-                }}
-              />
-            </>
-            : <span className="cover-decoration" />}
-        </div>
         <div className="profile-content">
           <div className="profile-avatar-frame">
             {profile.photo
@@ -459,18 +437,6 @@ function App() {
             <span className="summary-label">Programming Languages</span>
             <strong>{skills.length.toString().padStart(2, "0")}</strong>
             <small>Frontend, Backend, Databases & Tools</small>
-          </article>
-          <article className="summary-card">
-            <span className="summary-icon"><Award size={19} /></span>
-            <span className="summary-label">Certificates</span>
-            <strong>{certificates.length.toString().padStart(2, "0")}</strong>
-            <small>Certificates in my profile</small>
-          </article>
-          <article className="summary-card">
-            <span className="summary-icon"><BriefcaseBusiness size={19} /></span>
-            <span className="summary-label">Experience</span>
-            <strong>{experience.length.toString().padStart(2, "0")}</strong>
-            <small>Workplaces in my timeline</small>
           </article>
           <article className="summary-card">
             <span className="summary-icon"><ExternalLink size={19} /></span>
@@ -586,71 +552,6 @@ function App() {
         ) : (
           <p className="section-empty">Skills will appear here when added.</p>
         )}
-      </section>
-
-      <section aria-labelledby="credentials-title" className="credentials-section" id="credentials">
-        <div className="section-heading">
-          <div>
-            <p className="eyebrow">THE JOURNEY</p>
-            <h2 id="credentials-title">Certificates & experience</h2>
-            <p className="section-description">Professional milestones and certifications earned along the way.</p>
-          </div>
-        </div>
-        <div className="credentials-grid">
-          <section aria-labelledby="certificates-title" className="credential-panel">
-            <div className="credential-panel-heading">
-              <span className="credential-kicker">LEARNING & RECOGNITION</span>
-              <h3 id="certificates-title">Certificates</h3>
-            </div>
-            {certificates.length ? (
-              <div className="certificate-list">
-                {certificates.map((certificate, index) => (
-                  <article className={`certificate-card${certificate.image ? " has-image" : ""}`} key={`${certificate.title}-${index}`}>
-                    {certificate.image && (
-                      <a className="certificate-image-wrap" href={certificate.image} rel="noopener noreferrer" target="_blank">
-                        <img alt={`${certificate.title} certificate`} loading="lazy" src={certificate.image} />
-                      </a>
-                    )}
-                    <div className="certificate-copy">
-                      <span className="certificate-year">{certificate.year}</span>
-                      <h4>{certificate.title}</h4>
-                      {certificate.issuer && <p className="certificate-issuer">{certificate.issuer}</p>}
-                      {certificate.description && <p className="certificate-description">{certificate.description}</p>}
-                    </div>
-                  </article>
-                ))}
-              </div>
-            ) : (
-              <p className="credential-empty">Certificates you add will appear here.</p>
-            )}
-          </section>
-          <section aria-labelledby="experience-title" className="credential-panel">
-            <div className="credential-panel-heading">
-              <span className="credential-kicker">CAREER PATH</span>
-              <h3 id="experience-title">Experience</h3>
-            </div>
-            {experience.length ? (
-              <div className="experience-list">
-                {experience.map((item, index) => (
-                  <article className={`experience-card${item.image ? " has-image" : ""}`} key={`${item.role}-${item.company ?? ""}-${index}`}>
-                    <span aria-hidden="true" className="experience-marker" />
-                    {item.image && <a className="experience-image-link" href={item.image} rel="noopener noreferrer" target="_blank"><img alt={`${item.company || item.role} workplace`} loading="lazy" src={item.image} /></a>}
-                    <div className="experience-copy">
-                      <span className="experience-year">{item.year}</span>
-                      <h4>{item.role}</h4>
-                      {item.company && <p className="experience-company">{item.company}</p>}
-                      {item.location && <p className="experience-location">{item.location}</p>}
-                      {item.desc && <p className="experience-description">{item.desc}</p>}
-                    </div>
-                  </article>
-                ))}
-              </div>
-            ) : (
-              <p className="credential-empty">Experience you add will appear here.</p>
-            )}
-          </section>
-        </div>
-        <a className="credentials-edit-link" href="/admin#certificates"><Pencil size={14} /> Add certificates or edit experience</a>
       </section>
 
       <section aria-labelledby="socials-title" className="socials-section" id="socials">
