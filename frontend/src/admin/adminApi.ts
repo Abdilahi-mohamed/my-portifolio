@@ -71,7 +71,10 @@ async function requirePersistentStorage(): Promise<void> {
 }
 
 export async function checkAdminSession(): Promise<SessionResponse> {
-  const response = await fetch(apiUrl("/api/admin/session"), { credentials: "include" });
+  const response = await fetch(apiUrl("/api/admin/session"), {
+    credentials: "include",
+    cache: "no-store",
+  });
   const body = await parseJson<SessionResponse & MessageResponse>(response);
   if (!response.ok) {
     throw new Error(body.message ?? "Could not verify admin session.");

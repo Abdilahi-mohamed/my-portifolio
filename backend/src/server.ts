@@ -636,16 +636,8 @@ async function clearAdminSessions(): Promise<void> {
   await getMongoCollection("adminSessions").deleteMany({});
 }
 
-function localAdminBypassEnabled(request: IncomingMessage): boolean {
-  const address = request.socket.remoteAddress;
-  const isLoopback = address === "127.0.0.1" || address === "::1" || address === "::ffff:127.0.0.1";
-  return process.env.ADMIN_AUTH_DISABLED === "true" &&
-    process.env.NODE_ENV !== "production" &&
-    isLoopback;
-}
-
 async function isAdminAuthenticated(request: IncomingMessage): Promise<boolean> {
-  return localAdminBypassEnabled(request) || await hasAdminSession(request);
+  return hasAdminSession(request);
 }
 
 function passwordMatches(received: string): boolean {
@@ -1014,7 +1006,7 @@ async function handleRequest(
       respond(response, 200, {
         authenticated: await isAdminAuthenticated(request) ? "true" : "false",
         configured: adminUsername && adminPasswordRecord ? "true" : "false",
-        authDisabled: localAdminBypassEnabled(request) ? "true" : "false",
+        authDisabled: "false",
       });
       return;
     }

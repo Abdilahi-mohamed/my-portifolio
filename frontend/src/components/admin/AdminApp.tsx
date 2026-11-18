@@ -17,6 +17,15 @@ export function AdminApp() {
   const isAnalyticsPage = window.location.pathname.replace(/\/+$/, "") === "/admin/analytics";
   const handleSignedOut = useCallback(() => setGate("login"), []);
   const handleUnauthorized = useCallback(() => setGate("login"), []);
+  const handleLoginSuccess = useCallback(async () => {
+    const session = await checkAdminSession();
+    if (session.authenticated !== "true") {
+      throw new Error("Sign-in was accepted, but the admin session could not be verified. Check that cookies are enabled and try again.");
+    }
+    setConfigured(session.configured === "true");
+    setAuthDisabled(session.authDisabled === "true");
+    setGate("dashboard");
+  }, []);
 
   useEffect(() => {
     document.title = "Portfolio CMS";
@@ -36,7 +45,7 @@ export function AdminApp() {
         if (controller.signal.aborted) return;
         setConfigured(session.configured === "true");
         setAuthDisabled(session.authDisabled === "true");
-        setGate(session.authenticated === "true" || session.authDisabled === "true" ? "dashboard" : "login");
+        setGate(session.authenticated === "true" ? "dashboard" : "login");
       })
       .catch((cause: unknown) => {
         if (controller.signal.aborted) return;
@@ -66,7 +75,7 @@ export function AdminApp() {
     return (
       <AdminLogin
         configured={configured}
-        onSuccess={() => setGate("dashboard")}
+        onSuccess={handleLoginSuccess}
       />
     );
   }

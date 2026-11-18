@@ -5,7 +5,7 @@ import { ArrowRight, Eye, EyeOff, KeyRound, ShieldCheck, UserRound } from "lucid
 import { adminLogin } from "./adminApi";
 
 type AdminLoginProps = {
-  onSuccess: () => void;
+  onSuccess: () => Promise<void>;
   configured: boolean;
 };
 
@@ -23,7 +23,7 @@ export function AdminLogin({ onSuccess, configured }: AdminLoginProps) {
     setError("");
     try {
       await adminLogin(username, password);
-      onSuccess();
+      await onSuccess();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Sign-in failed.");
     } finally {
