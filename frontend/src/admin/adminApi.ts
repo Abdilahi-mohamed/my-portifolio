@@ -17,6 +17,25 @@ export type AdminVisitorAnalytics = {
   sessionsLast7Days: number;
 };
 
+const adminRequestTimeoutMs = 60_000;
+const adminRequestTimeoutMessage =
+  "The portfolio API did not respond within 60 seconds. Check the backend service and network. If this happened while saving, reload the dashboard before retrying to verify whether the changes were saved.";
+
+async function fetchAdminWithTimeout(url: string, init: RequestInit = {}): Promise<Response> {
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), adminRequestTimeoutMs);
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } catch (error) {
+    if (controller.signal.aborted) {
+      throw new Error(adminRequestTimeoutMessage);
+    }
+    throw error;
+  } finally {
+    window.clearTimeout(timeout);
+  }
+}
+
 function portfolioRevision(response: Response): string {
   const match = /^"([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})"$/i.exec(
     response.headers.get("ETag") ?? "",
@@ -32,7 +51,7 @@ async function parseJson<T>(response: Response): Promise<T> {
 }
 
 async function requirePersistentStorage(): Promise<void> {
-  const response = await fetch(apiUrl("/api/health"), { cache: "no-store" });
+  const response = await fetchAdminWithTimeout(apiUrl("/api/health"), { cache: "no-store" });
   const body = await parseJson<StorageHealthResponse>(response);
   if (!response.ok) {
     throw new Error(body.message ?? "The portfolio storage service is unavailable.");
@@ -128,7 +147,7 @@ export async function saveAdminPortfolio(
   revision: string,
 ): Promise<{ message: string; revision: string }> {
   await requirePersistentStorage();
-  const response = await fetch(apiUrl("/api/admin/portfolio"), {
+  const response = await fetchAdminWithTimeout(apiUrl("/api/admin/portfolio"), {
     method: "PUT",
     credentials: "include",
     headers: { "Content-Type": "application/json", "If-Match": `"${revision}"` },

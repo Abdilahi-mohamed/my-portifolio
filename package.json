@@ -5,8 +5,27 @@
     "node": ">=20.19.0"
   },
   "scripts": {
-    "dev": "npm run dev --prefix backend",
-    "web": "npm run web --prefix frontend",
-    "build": "npm run build --prefix frontend && npm run build --prefix backend"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "legacy:dev": "npm run dev --prefix backend",
+    "legacy:web": "npm run web --prefix frontend",
+    "legacy:build": "npm run build --prefix frontend && npm run build --prefix backend"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.1158.0",
+    "@icons-pack/react-simple-icons": "^13.15.1",
+    "dotenv": "^18.0.10",
+    "lucide-react": "^0.468.0",
+    "mongodb": "^7.7.0",
+    "next": "^16.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "typescript": "^5.7.2"
   }
 }
