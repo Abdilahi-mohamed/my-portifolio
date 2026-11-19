@@ -380,10 +380,6 @@ function App() {
     <main className="portfolio-page portfolio-home">
       <header className="topbar">
         <div className="topbar-main">
-          <a className="wordmark" href="#profile">
-            <span className="wordmark-mark"><img alt="" height={32} src="/favicon.png" width={32} /></span>
-            <span>{profile.profileName}<small>PORTFOLIO</small></span>
-          </a>
           <a className="topbar-contact-link" href="#contact">
             <MessageCircle size={16} />
             {portfolio.hero.contactButton || "Get in touch"}
@@ -443,6 +439,10 @@ function App() {
           {profile.location && (
             <p className="profile-location"><MapPin size={13} /> {profile.location}</p>
           )}
+          <div className="profile-name">
+            <h1>{profile.profileName}</h1>
+            {profile.title && <p>{profile.title}</p>}
+          </div>
         </div>
       </section>
 

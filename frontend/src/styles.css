@@ -2636,6 +2636,27 @@ html[data-portfolio-theme="dark"] body {
 
 .portfolio-home .profile-avatar-fallback { color: #e2e8f0; background: #0f172a; font-size: 44px; }
 
+.portfolio-home .profile-name {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.portfolio-home .profile-name h1 {
+  margin: 0;
+  color: var(--home-copy);
+  font-size: clamp(24px, 4vw, 38px);
+  line-height: 1.05;
+}
+
+.portfolio-home .profile-name p {
+  margin: 0;
+  color: var(--home-muted);
+  font-size: 14px;
+  font-weight: 650;
+}
+
 @keyframes profile-ring-rotate {
   to { transform: rotate(360deg); }
 }
