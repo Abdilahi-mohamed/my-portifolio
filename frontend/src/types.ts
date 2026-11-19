@@ -150,6 +150,11 @@ export type PortfolioContent = {
   about: {
     label: string;
     title: string;
+    snapshotLabel?: string;
+    snapshotTitle?: string;
+    projectCountLabel?: string;
+    skillCountLabel?: string;
+    socialCountLabel?: string;
     profileName: string;
     profileRole: string;
     location: string;

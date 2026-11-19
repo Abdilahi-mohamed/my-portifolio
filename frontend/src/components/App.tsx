@@ -378,55 +378,6 @@ function App() {
 
   return (
     <main className="portfolio-page portfolio-home">
-      <header className="topbar">
-        <div className="topbar-main">
-          <a className="topbar-contact-link" href="#contact">
-            <MessageCircle size={16} />
-            {portfolio.hero.contactButton || "Get in touch"}
-            <ArrowUpRight size={14} />
-          </a>
-        </div>
-        <div className="topbar-controls">
-          <div className="topbar-tools">
-            <label className="accent-theme-picker">
-              <Palette aria-hidden="true" size={14} />
-              <select
-                aria-label="Accent color theme"
-                onChange={(event) => {
-                  if (isAccentTheme(event.target.value)) setAccentTheme(event.target.value);
-                }}
-                value={accentTheme}
-              >
-                <option value="aurora">Aurora</option>
-                <option value="sunset">Sunset</option>
-                <option value="emerald">Emerald</option>
-                <option value="gold">Gold</option>
-              </select>
-            </label>
-            <button
-              aria-label={containerMode === "boxed" ? "Use compact container" : "Use boxed frame"}
-              aria-pressed={containerMode === "boxed"}
-              className="container-mode-switch"
-              onClick={() => setContainerMode((mode) => mode === "compact" ? "boxed" : "compact")}
-              title={containerMode === "boxed" ? "Use compact container" : "Use boxed frame"}
-              type="button"
-            >
-              <Layers3 aria-hidden="true" size={15} />
-              <span>{containerMode === "boxed" ? "Boxed" : "Compact"}</span>
-            </button>
-            <button
-              aria-label={darkMode ? "Switch to light mode" : "Switch to dark mode"}
-              className="theme-mode-switch"
-              onClick={() => setDarkMode((enabled) => !enabled)}
-              title={darkMode ? "Switch to light mode" : "Switch to dark mode"}
-              type="button"
-            >
-              {darkMode ? <Sun size={15} /> : <Moon size={15} />}
-            </button>
-          </div>
-        </div>
-      </header>
-
       <section aria-label="Profile" className="profile" id="profile">
         <div className="profile-content">
           <div className="profile-avatar-frame">
@@ -440,16 +391,32 @@ function App() {
             <p className="profile-location"><MapPin size={13} /> {profile.location}</p>
           )}
           <div className="profile-name">
-            <h1>{profile.profileName}</h1>
+            <div className="profile-name-row">
+              <h1>{profile.profileName}</h1>
+              <label className="profile-accent-picker" title="Choose profile color">
+                <Palette aria-hidden="true" size={14} />
+                <select
+                  aria-label="Profile accent color"
+                  onChange={(event) => {
+                    if (isAccentTheme(event.target.value)) setAccentTheme(event.target.value);
+                  }}
+                  value={accentTheme}
+                >
+                  <option value="aurora">Aurora</option>
+                  <option value="sunset">Sunset</option>
+                  <option value="emerald">Emerald</option>
+                  <option value="gold">Gold</option>
+                </select>
+              </label>
+            </div>
             {profile.title && <p>{profile.title}</p>}
           </div>
         </div>
       </section>
 
       <div className="portfolio-intro-grid">
-        <section aria-labelledby="about-title" className="about-panel" id="about">
+        <section aria-label="About" className="about-panel" id="about">
           <p className="eyebrow">{profile.label || "A LITTLE ABOUT ME"}</p>
-          <h2 id="about-title">{profile.bioTitle || profile.title || "About Me"}</h2>
           <p>{profile.bio || profile.profileDescription}</p>
           {profile.values.length > 0 && (
             <div className="about-values">
@@ -460,23 +427,23 @@ function App() {
 
         <section aria-labelledby="summary-title" className="summary-section">
           <div className="summary-heading">
-            <p className="eyebrow">PORTFOLIO SNAPSHOT</p>
-            <h2 id="summary-title">At a glance</h2>
+            <p className="eyebrow">{profile.snapshotLabel || "PORTFOLIO SNAPSHOT"}</p>
+            <h2 id="summary-title">{profile.snapshotTitle || "At a glance"}</h2>
           </div>
           <div className="summary-grid">
             <article className="summary-card">
               <span className="summary-icon"><FolderKanban size={18} /></span>
-              <span className="summary-label">Projects</span>
+              <span className="summary-label">{profile.projectCountLabel || "Projects"}</span>
               <strong>{projects.length.toString().padStart(2, "0")}</strong>
             </article>
             <article className="summary-card">
               <span className="summary-icon"><Code2 size={18} /></span>
-              <span className="summary-label">Skills</span>
+              <span className="summary-label">{profile.skillCountLabel || "Skills"}</span>
               <strong>{skills.length.toString().padStart(2, "0")}</strong>
             </article>
             <article className="summary-card">
               <span className="summary-icon"><ExternalLink size={18} /></span>
-              <span className="summary-label">Social links</span>
+              <span className="summary-label">{profile.socialCountLabel || "Social links"}</span>
               <strong>{socials.length.toString().padStart(2, "0")}</strong>
             </article>
           </div>
@@ -671,6 +638,25 @@ function App() {
         <a href="#skills">Skills</a>
         <a href="#projects">Projects</a>
         <a href="#contact">Contact</a>
+        <button
+          aria-label={darkMode ? "Switch to light mode" : "Switch to dark mode"}
+          onClick={() => setDarkMode((enabled) => !enabled)}
+          title={darkMode ? "Switch to light mode" : "Switch to dark mode"}
+          type="button"
+        >
+          {darkMode ? <Sun size={14} /> : <Moon size={14} />}
+          <span>{darkMode ? "Light" : "Dark"}</span>
+        </button>
+        <button
+          aria-label={containerMode === "boxed" ? "Use compact container" : "Use boxed frame"}
+          aria-pressed={containerMode === "boxed"}
+          onClick={() => setContainerMode((mode) => mode === "compact" ? "boxed" : "compact")}
+          title={containerMode === "boxed" ? "Use compact container" : "Use boxed frame"}
+          type="button"
+        >
+          <Layers3 size={14} />
+          <span>{containerMode === "boxed" ? "Boxed" : "Compact"}</span>
+        </button>
       </nav>
 
       {toast && (

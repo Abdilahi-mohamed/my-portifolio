@@ -925,6 +925,13 @@ export function AdminDashboard({
                 <label className="cms-input-label">Professional title<input onChange={(event) => updateContent((current) => ({ ...current, about: { ...current.about, profileRole: event.target.value } }))} value={content.about.profileRole} /></label>
                 <label className="cms-input-label">Location<input onChange={(event) => updateContent((current) => ({ ...current, about: { ...current.about, location: event.target.value }, contact: { ...current.contact, location: event.target.value } }))} value={content.about.location} /></label>
                 <label className="cms-input-label">Short About me text<textarea maxLength={300} onChange={(event) => updateContent((current) => ({ ...current, about: { ...current.about, bio: event.target.value, profileDescription: event.target.value } }))} rows={4} value={content.about.bio} /><small className="cms-char-count">{content.about.bio.length} / 300</small></label>
+                <div className="cms-form-row">
+                  <label className="cms-input-label">Snapshot label<input onChange={(event) => updateContent((current) => ({ ...current, about: { ...current.about, snapshotLabel: event.target.value } }))} value={content.about.snapshotLabel ?? ""} /></label>
+                  <label className="cms-input-label">Snapshot title<input onChange={(event) => updateContent((current) => ({ ...current, about: { ...current.about, snapshotTitle: event.target.value } }))} value={content.about.snapshotTitle ?? ""} /></label>
+                </div>
+                <label className="cms-input-label">Projects summary label<input onChange={(event) => updateContent((current) => ({ ...current, about: { ...current.about, projectCountLabel: event.target.value } }))} value={content.about.projectCountLabel ?? ""} /></label>
+                <label className="cms-input-label">Skills summary label<input onChange={(event) => updateContent((current) => ({ ...current, about: { ...current.about, skillCountLabel: event.target.value } }))} value={content.about.skillCountLabel ?? ""} /></label>
+                <label className="cms-input-label">Social summary label<input onChange={(event) => updateContent((current) => ({ ...current, about: { ...current.about, socialCountLabel: event.target.value } }))} value={content.about.socialCountLabel ?? ""} /></label>
               </section>
 
               <section className="cms-panel cms-profile-picture-panel" id="profile-picture">
@@ -985,6 +992,7 @@ export function AdminDashboard({
             <section className="cms-panel cms-contact-editor cms-social-profiles-panel" id="contact-editor">
               <div className="cms-panel-heading"><div><span className="cms-section-index">PUBLIC SOCIAL PROFILES</span><h2>Social profiles</h2><p>Manage the links displayed on your portfolio. This section contains social profiles only.</p></div></div>
               <label className="cms-input-label">Social profiles heading<input onChange={(event) => updateContact("socialTitle", event.target.value)} value={content.contact.socialTitle} /></label>
+              <label className="cms-input-label">Email address<input onChange={(event) => updateContact("email", event.target.value)} placeholder="you@example.com" type="email" value={content.contact.email} /><small>Shown on the public portfolio and used by the copy-email card.</small></label>
               <div className="cms-social-editor-heading"><span><strong>Social profiles</strong><small>Names and valid HTTP(S) URLs are required. LinkedIn URL is optional.</small></span><button className="cms-add-link" onClick={addSocial} type="button"><Plus size={14} /> Add profile</button></div>
               {content.contact.socials.map((social, index) => {
                 const icon = socialIconForUrl(typeof social.url === "string" ? social.url : "") ?? social.icon;
