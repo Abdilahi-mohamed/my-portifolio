@@ -381,7 +381,7 @@ function App() {
       <header className="topbar">
         <div className="topbar-main">
           <a className="wordmark" href="#profile">
-            <span className="wordmark-mark"><Zap size={17} /></span>
+            <span className="wordmark-mark"><img alt="" height={32} src="/favicon.png" width={32} /></span>
             <span>{profile.profileName}<small>PORTFOLIO</small></span>
           </a>
           <a className="topbar-contact-link" href="#contact">

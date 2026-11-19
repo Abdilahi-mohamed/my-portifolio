@@ -1733,6 +1733,14 @@ html[data-portfolio-theme="dark"] .project-detail-media video {
   background: #14251b;
 }
 
+.wordmark-mark img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  object-fit: contain;
+}
+
 .portfolio-home .wordmark small {
   display: block;
   margin-top: 2px;

@@ -5,6 +5,10 @@ import "../frontend/src/admin.css";
 export const metadata: Metadata = {
   title: "ABdilahi Portfolio",
   description: "Full-stack developer portfolio.",
+  icons: {
+    icon: "/favicon.png",
+    apple: "/favicon.png",
+  },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
