@@ -27,6 +27,11 @@
   "about": {
     "label": "About me",
     "title": "Architecting digital excellence from code to interface.",
+    "snapshotLabel": "PORTFOLIO SNAPSHOT",
+    "snapshotTitle": "At a glance",
+    "projectCountLabel": "Projects",
+    "skillCountLabel": "Skills",
+    "socialCountLabel": "Social links",
     "profileName": "ABdilahi",
     "profileRole": "Full-stack Developer",
     "location": "Mogadishu / Remote",

@@ -2657,6 +2657,36 @@ html[data-portfolio-theme="dark"] body {
   font-weight: 650;
 }
 
+.portfolio-home .profile-name-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.profile-accent-picker {
+  display: inline-flex;
+  height: 30px;
+  align-items: center;
+  gap: 5px;
+  padding: 0 7px;
+  border: 1px solid var(--home-border);
+  border-radius: 9px;
+  color: var(--accent-one);
+  background: var(--home-panel);
+}
+
+.profile-accent-picker select {
+  max-width: 78px;
+  border: 0;
+  outline: 0;
+  color: inherit;
+  background: transparent;
+  font-size: 10px;
+  font-weight: 750;
+  cursor: pointer;
+}
+
 @keyframes profile-ring-rotate {
   to { transform: rotate(360deg); }
 }
@@ -3072,6 +3102,23 @@ html[data-portfolio-theme="dark"] .portfolio-home .social-card {
 .portfolio-home .quick-nav a:focus-visible {
   color: #facc15;
   background: rgb(148 163 184 / 10%);
+}
+.portfolio-home .quick-nav button {
+  min-width: 62px;
+  min-height: 38px;
+  display: inline-flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 4px 8px;
+  border: 1px solid var(--home-border);
+  border-radius: 8px;
+  color: #facc15;
+  background: var(--home-panel);
+  font-size: 9px;
+  cursor: pointer;
 }
 html[data-portfolio-theme="light"] .portfolio-home .quick-nav a { color: #a16207; }
 html[data-portfolio-theme="light"] .portfolio-home .quick-nav a:hover,
