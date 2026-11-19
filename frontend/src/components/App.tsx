@@ -288,19 +288,6 @@ function App() {
     return () => window.clearTimeout(timeout);
   }, [toast]);
 
-  async function copyEmail(email: string) {
-    try {
-      if (!navigator.clipboard) throw new Error("Clipboard access is unavailable in this browser.");
-      await navigator.clipboard.writeText(email);
-      setToast({ title: "Email copied", detail: email });
-    } catch (error) {
-      setToast({
-        title: "Email could not be copied",
-        detail: error instanceof Error ? error.message : "Clipboard permission was denied.",
-      });
-    }
-  }
-
   const projectRouteId = /^\/projects\/([a-z0-9][a-z0-9-]{0,99})\/?$/.exec(window.location.pathname)?.[1];
   const isProjectRoute = window.location.pathname.startsWith("/projects/");
   const routeProject = portfolio && projectRouteId
@@ -588,16 +575,17 @@ function App() {
               </article>
             )}
             {portfolio.contact.email && (
-              <button
-                aria-label={`Copy email address ${portfolio.contact.email}`}
+              <a
+                aria-label={`Send email to ${portfolio.contact.email}`}
                 className="contact-email-card"
-                onClick={() => { void copyEmail(portfolio.contact.email); }}
-                type="button"
+                href={`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(portfolio.contact.email)}`}
+                rel="noopener noreferrer"
+                target="_blank"
               >
                 <span className="contact-icon"><Mail size={18} /></span>
-                <span><small>{portfolio.contact.emailLabel || "Click to copy"}</small><strong>{portfolio.contact.email}</strong></span>
+                <span><small>{portfolio.contact.emailLabel || "Send email"}</small><strong>{portfolio.contact.email}</strong></span>
                 <Copy aria-hidden="true" size={16} />
-              </button>
+              </a>
             )}
             {portfolio.contact.location && (
               <p className="contact-location"><MapPin size={16} /> {portfolio.contact.location}</p>
