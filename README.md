@@ -107,8 +107,14 @@ npm run build
 ## Deploy the full-stack app to Vercel
 
 Import the repository into Vercel and set **Root Directory** to the repository root
-(not `frontend/` or `backend/`). The root `vercel.json` selects Next.js and Vercel
-uses `npm run build`. Use Node.js 20.19 or newer.
+(not `frontend/` or `backend/`). The root `vercel.json` selects the existing Next.js
+production app while installing the separate Vite frontend package as well. Use
+Node.js 20.19 or newer.
+
+Set Vercel's **Install Command** to `npm install && npm install --prefix frontend`
+and **Build Command** to `npm run build`. The root Next.js TypeScript project
+excludes `frontend/vite.config.ts`; the frontend has its own `tsconfig.json` and
+build command (`npm run build --prefix frontend`).
 
 Add these server-side environment variables in the Vercel project settings for each
 deployment environment:
