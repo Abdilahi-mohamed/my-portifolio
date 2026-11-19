@@ -1,12 +1,5 @@
-"use client";
-
-import dynamic from "next/dynamic";
-
-const AdminApp = dynamic(
-  () => import("@/frontend/src/components/admin/AdminApp").then((module) => module.AdminApp),
-  { ssr: false },
-);
+import { redirect } from "next/navigation";
 
 export default function AdminAnalyticsPage() {
-  return <AdminApp />;
+  redirect("/admin");
 }

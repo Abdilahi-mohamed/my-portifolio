@@ -2,20 +2,16 @@
 
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import {
-  ArrowDownToLine,
   ArrowUpRight,
   Check,
-  CircleHelp,
   Code2,
   ExternalLink,
   Eye,
   EyeOff,
   FileJson2,
   FolderKanban,
-  KeyRound,
   LayoutDashboard,
   LogOut,
-  MapPin,
   MoveDown,
   MoveUp,
   Plus,
@@ -29,6 +25,7 @@ import {
   X,
 } from "lucide-react";
 import type { PortfolioContent, ProjectTechnology } from "../types";
+import { isPortfolioContent } from "../../../../backend/src/lib/portfolioValidation";
 import {
   isLinkedInProfile,
   isValidLinkedInUrl,
@@ -46,7 +43,6 @@ import {
 } from "../programmingIcons";
 import {
   adminLogout,
-  changeAdminPassword,
   loadAdminPortfolio,
   saveAdminPortfolio,
   uploadImage,
@@ -61,7 +57,6 @@ type Experience = PortfolioContent["experience"][number];
 type Certificate = PortfolioContent["certificates"][number];
 type EditorKind = "project" | "skill" | "experience" | "certificate";
 type EditorState = { kind: EditorKind; index: number | null };
-type Activity = { id: number; label: string; time: string };
 type GalleryItem = { url: string; file?: File };
 type ProjectMediaItem = { type: "image" | "video"; url: string; file?: File };
 
@@ -76,41 +71,12 @@ function dashboardPortfolio(snapshot: AdminPortfolioSnapshot): PortfolioContent 
 
 const skillGroups = ["Frontend", "Backend", "Databases", "Tools"] as const;
 const builtInSections = [
-  { id: "about", label: "About", title: "About me" },
+  { id: "about", label: "About me", title: "About me" },
   { id: "home", label: "Home", title: "Welcome" },
   { id: "projects", label: "Projects", title: "Projects" },
   { id: "languages", label: "Tech stack", title: "Skills" },
   { id: "contacts", label: "Social profiles", title: "Social profiles" },
 ] as const;
-
-const portfolioSchema = {
-  $schema: "http://json-schema.org/draft-07/schema#",
-  title: "PortfolioCMSManifest",
-  type: "object",
-  properties: {
-    navigation: { type: "array", items: { type: "object", properties: { id: { type: "string" }, label: { type: "string" } }, required: ["id", "label"] } },
-    customSections: { type: "array", items: { type: "object" } },
-    hero: { type: "object", properties: { brand: { type: "string" }, badge: { type: "string" }, title: { type: "string" }, titleAccent: { type: "string" }, description: { type: "string" }, stats: { type: "array" } }, required: ["brand", "title", "description"] },
-    about: { type: "object", properties: { profileName: { type: "string" }, profileRole: { type: "string" }, location: { type: "string" }, bio: { type: "string" }, photo: { type: "string", format: "uri" }, coverPhoto: { type: "string" }, coverPhotoZoom: { type: "number", minimum: 1, maximum: 3 }, coverPhotoX: { type: "number", minimum: 0, maximum: 100 }, coverPhotoY: { type: "number", minimum: 0, maximum: 100 } }, required: ["profileName", "profileRole", "location", "bio"] },
-    projectsSection: { type: "object", properties: { label: { type: "string" }, title: { type: "string" }, description: { type: "string" }, projects: { type: "array", items: { type: "object", properties: { category: { type: "string" }, title: { type: "string" }, ownershipLabel: { type: "string", maxLength: 80 }, description: { type: "string" }, image: { type: "string" }, tags: { type: "array", items: { type: "string" } }, liveUrl: { type: "string" }, githubUrl: { type: "string" }, technologies: { type: "array", items: { type: "object", properties: { name: { type: "string" }, id: { type: "string" }, icon: { type: "string" } }, required: ["name", "id", "icon"] } } }, required: ["category", "title", "description"] } } }, required: ["projects"] },
-    skillsSection: { type: "object", properties: { label: { type: "string" }, title: { type: "string" }, description: { type: "string" }, skills: { type: "array", items: { type: "object", properties: { name: { type: "string" }, level: { type: "string", pattern: "^(100|[1-9]?\\d)%$" }, icon: { type: "string" }, color: { type: "string", pattern: "^#[\\da-fA-F]{6}$" }, category: { type: "string" } }, required: ["name", "level", "icon", "color"] } } }, required: ["skills"] },
-    experience: { type: "array", items: { type: "object", properties: { role: { type: "string" }, company: { type: "string" }, desc: { type: "string" }, year: { type: "string" }, location: { type: "string" }, image: { type: "string" } }, required: ["role", "desc", "year"] } },
-    certificates: { type: "array", items: { type: "object", properties: { title: { type: "string" }, issuer: { type: "string" }, year: { type: "string" }, description: { type: "string" }, image: { type: "string" } }, required: ["title", "issuer", "year", "description", "image"] } },
-    contact: { type: "object", properties: { email: { type: "string", format: "email" }, location: { type: "string" }, availabilityTitle: { type: "string" }, availabilityDescription: { type: "string" } } },
-    footer: { type: "object", properties: { copyright: { type: "string" } } },
-  },
-  required: ["hero", "about", "projectsSection", "skillsSection", "experience", "certificates"],
-};
-
-function downloadJson(filename: string, value: unknown) {
-  const blob = new Blob([JSON.stringify(value, null, 2)], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
-  anchor.href = url;
-  anchor.download = filename;
-  anchor.click();
-  URL.revokeObjectURL(url);
-}
 
 function makeDraft(kind: EditorKind, item?: Project | Skill | Experience | Certificate): Record<string, string> {
   if (kind === "project") {
@@ -183,12 +149,6 @@ export function AdminDashboard({
   const [saved, setSaved] = useState(true);
   const [notice, setNotice] = useState("");
   const [query, setQuery] = useState("");
-  const [passwordOpen, setPasswordOpen] = useState(false);
-  const [passwordBusy, setPasswordBusy] = useState(false);
-  const [passwordError, setPasswordError] = useState("");
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [projectFilter, setProjectFilter] = useState("All");
   const [skillFilter, setSkillFilter] = useState("All");
   const [editor, setEditor] = useState<EditorState | null>(null);
@@ -205,7 +165,9 @@ export function AdminDashboard({
   const [iconPickerIndex, setIconPickerIndex] = useState<number | null>(null);
   const [iconSearch, setIconSearch] = useState("");
   const [skillIconPickerOpen, setSkillIconPickerOpen] = useState(false);
-  const [activity, setActivity] = useState<Activity[]>([]);
+  const [jsonEditorOpen, setJsonEditorOpen] = useState(false);
+  const [jsonDraft, setJsonDraft] = useState("");
+  const [jsonEditorError, setJsonEditorError] = useState("");
   useEffect(() => {
     loadAdminPortfolio()
       .then((snapshot) => {
@@ -299,6 +261,33 @@ export function AdminDashboard({
     setSaved(false);
   };
 
+  const openJsonEditor = () => {
+    if (!content) return;
+    setJsonDraft(JSON.stringify(content, null, 2));
+    setJsonEditorError("");
+    setJsonEditorOpen(true);
+  };
+
+  const applyJsonChanges = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    let updatedContent: PortfolioContent;
+    try {
+      updatedContent = JSON.parse(jsonDraft) as PortfolioContent;
+    } catch (error) {
+      if (!(error instanceof SyntaxError)) throw error;
+      setJsonEditorError("The JSON is invalid. Fix its syntax and try again.");
+      return;
+    }
+    if (!isPortfolioContent(updatedContent)) {
+      setJsonEditorError("The JSON does not match the portfolio format. Export the schema for the supported fields and values.");
+      return;
+    }
+    updateContent(() => updatedContent);
+    setJsonEditorOpen(false);
+    setJsonEditorError("");
+    setNotice("All portfolio data is ready to save. Select Save changes to publish it.");
+  };
+
   const updateSectionLabel = (id: string, label: string) => {
     updateContent((current) => ({
       ...current,
@@ -318,7 +307,7 @@ export function AdminDashboard({
         };
       }
       if (field === "title") {
-        if (id === "about") return { ...current, about: { ...current.about, title: value } };
+        if (id === "about") return { ...current, about: { ...current.about, title: value, bioTitle: value } };
         if (id === "home") return { ...current, hero: { ...current.hero, title: value } };
         if (id === "projects") return { ...current, projectsSection: { ...current.projectsSection, title: value } };
         if (id === "languages") return { ...current, skillsSection: { ...current.skillsSection, title: value } };
@@ -450,7 +439,6 @@ export function AdminDashboard({
       setNotice(allChangesSaved
         ? result.message
         : "The submitted changes were saved. Newer edits made during the save are still unsaved.");
-      setActivity((items) => [{ id: Date.now(), label: "Portfolio changes published", time: "Just now" }, ...items].slice(0, 5));
     } catch (error) {
       const message = error instanceof Error ? error.message : "Could not save changes.";
       setNotice(message.includes("changed after it was loaded")
@@ -559,7 +547,6 @@ export function AdminDashboard({
         else next[index] = project;
         return { ...current, projectsSection: { ...current.projectsSection, projects: next } };
       });
-      setActivity((items) => [{ id: Date.now(), label: `${index === null ? "Added" : "Updated"} project`, time: "Just now" }, ...items].slice(0, 5));
       setNotice("Project updated. Save changes to publish it.");
       closeEditor();
       } catch (error) {
@@ -602,7 +589,6 @@ export function AdminDashboard({
           return { ...current, certificates: next };
         });
         const label = index === null ? "Added" : "Updated";
-        setActivity((items) => [{ id: Date.now(), label: `${label} certificate`, time: "Just now" }, ...items].slice(0, 5));
         setNotice(`${label} certificate. Save to publish your changes.`);
         closeEditor();
       } catch (error) {
@@ -632,7 +618,6 @@ export function AdminDashboard({
           return { ...current, experience: next };
         });
         const label = index === null ? "Added" : "Updated";
-        setActivity((items) => [{ id: Date.now(), label: `${label} experience`, time: "Just now" }, ...items].slice(0, 5));
         setNotice(`${label} experience. Save to publish your changes.`);
         closeEditor();
       } catch (error) {
@@ -643,7 +628,6 @@ export function AdminDashboard({
       return;
     }
     const label = index === null ? "Added" : "Updated";
-    setActivity((items) => [{ id: Date.now(), label: `${label} ${kind}`, time: "Just now" }, ...items].slice(0, 5));
     setNotice(`${label} ${kind}. Save to publish your changes.`);
     setEditor(null);
   };
@@ -846,39 +830,12 @@ export function AdminDashboard({
       if (kind === "certificate") return { ...current, certificates: current.certificates.filter((_, itemIndex) => itemIndex !== index) };
       return { ...current, experience: current.experience.filter((_, itemIndex) => itemIndex !== index) };
     });
-    setActivity((items) => [{ id: Date.now(), label: `Removed ${kind}`, time: "Just now" }, ...items].slice(0, 5));
     setNotice(`Removed ${kind}. Save to publish your changes.`);
   };
 
   const signOut = async () => {
     await adminLogout();
     onSignedOut();
-  };
-
-  const submitPasswordChange = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setPasswordError("");
-    if (newPassword.length < 7) {
-      setPasswordError("Use at least 7 characters for the new password.");
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      setPasswordError("The new passwords do not match.");
-      return;
-    }
-    setPasswordBusy(true);
-    try {
-      const message = await changeAdminPassword(currentPassword, newPassword);
-      setNotice(message);
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
-      setPasswordOpen(false);
-    } catch (error) {
-      setPasswordError(error instanceof Error ? error.message : "Could not change the admin password.");
-    } finally {
-      setPasswordBusy(false);
-    }
   };
 
   if (!content) {
@@ -890,7 +847,7 @@ export function AdminDashboard({
     ...builtInSections.map(({ id, label }) => {
       const navigationItem = content.navigation.find((item) => item.id === id);
       const custom = content.customSections.find((section) => section.id === id);
-      const sectionTitle = id === "about" ? content.about.title
+      const sectionTitle = id === "about" ? content.about.bioTitle || content.about.title
         : id === "home" ? content.hero.title
           : id === "projects" ? content.projectsSection.title
             : id === "languages" ? content.skillsSection.title
@@ -915,16 +872,14 @@ export function AdminDashboard({
         </a>
         <nav className="cms-nav" aria-label="Admin sections">
           <a href="#profile-picture"><UserRound size={16} /> Profile picture</a>
-          <a href="#configuration"><Settings2 size={16} /> Profile details</a>
+          <a href="#configuration"><Settings2 size={16} /> About me</a>
           <a href="#manifest"><FolderKanban size={16} /> Projects <span>{projects.length}</span></a>
           <a href="#skills"><Code2 size={16} /> Skills <span>{skills.length}</span></a>
           <a href="#contact-editor"><ExternalLink size={16} /> Social profiles</a>
           <a href="#sections"><LayoutDashboard size={16} /> Sections</a>
-          <a href="/admin/analytics"><Eye size={16} /> Visitors</a>
         </nav>
         <div className="cms-global-actions">
           <a className="cms-top-site-link" href="/"><ExternalLink size={15} /> View portfolio</a>
-          {!authDisabled && <button aria-label="Change password" className="cms-icon-button" onClick={() => { setPasswordError(""); setPasswordOpen(true); }} title="Change password" type="button"><KeyRound size={16} /></button>}
           {!authDisabled && <button aria-label="Sign out" className="cms-icon-button" onClick={signOut} title="Sign out" type="button"><LogOut size={16} /></button>}
         </div>
       </header>
@@ -934,25 +889,12 @@ export function AdminDashboard({
           <label className="cms-search"><Search size={17} /><input aria-label="Search projects and skills" onChange={(event) => setQuery(event.target.value)} placeholder="Search projects, skills..." value={query} />{query && <button aria-label="Clear search" onClick={() => setQuery("")} type="button"><X size={14} /></button>}<kbd>⌘ K</kbd></label>
           <div className="cms-top-actions">
             <span className={`cms-sync ${saved ? "is-saved" : "is-unsaved"}`}><i />{saved ? "All changes saved" : "Unsaved changes"}</span>
-            <button className="cms-icon-button cms-help" aria-label="Help" title="Portfolio CMS" type="button"><CircleHelp size={17} /></button>
-            <button className="cms-outline-btn" onClick={() => downloadJson("portfolio-manifest.json", content)} type="button"><ArrowDownToLine size={15} /> Export JSON</button>
+            <button className="cms-outline-btn" onClick={openJsonEditor} type="button"><FileJson2 size={15} /> Edit all data</button>
             <button className="cms-save-btn" disabled={saved || busy} onClick={save} type="button">{busy ? "Saving..." : saved ? <><Check size={15} /> Saved</> : "Save changes"}</button>
           </div>
         </header>
 
         <div className="cms-content">
-          <section className="cms-welcome">
-            <div>
-              <div className="cms-eyebrow"><span /> CONTENT CONTROL CENTER</div>
-              <h1>Good to see you, {content.about.profileName.split(" ")[0]}<span>.</span></h1>
-              <p>Shape your portfolio, keep your story current, and publish when it feels right.</p>
-            </div>
-            <div className="cms-welcome-actions">
-              <button className="cms-quiet-btn" onClick={() => downloadJson("portfolio-schema.json", portfolioSchema)} type="button"><FileJson2 size={16} /> Export schema</button>
-              <button className="cms-primary-btn" onClick={() => openEditor("project")} type="button"><Plus size={16} /> New project</button>
-            </div>
-          </section>
-
           <div className="cms-dashboard-grid">
             <div className="cms-primary-column">
               <section className="cms-panel" id="manifest">
@@ -976,11 +918,13 @@ export function AdminDashboard({
             </div>
 
             <aside className="cms-aside-column">
-              <section className="cms-panel cms-config-panel" id="configuration"><div className="cms-aside-heading"><span className="cms-section-index">CONFIGURATION</span><button className="cms-icon-button" aria-label="Save profile" disabled={saved || busy} onClick={save} title="Save changes" type="button"><Check size={16} /></button></div><h2>Profile identity</h2><p>Edit the name, title, and short bio shown on your public profile.</p>
+              <section className="cms-panel cms-config-panel" id="configuration"><div className="cms-aside-heading"><span className="cms-section-index">PORTFOLIO PROFILE</span><button className="cms-icon-button" aria-label="Save profile" disabled={saved || busy} onClick={save} title="Save changes" type="button"><Check size={16} /></button></div><h2>About me</h2><p>Edit the About section and profile details shown on your portfolio.</p>
+                <label className="cms-input-label">About section label<input onChange={(event) => updateContent((current) => ({ ...current, about: { ...current.about, label: event.target.value } }))} value={content.about.label} /></label>
+                <label className="cms-input-label">About me heading<input onChange={(event) => updateContent((current) => ({ ...current, about: { ...current.about, title: event.target.value, bioTitle: event.target.value } }))} value={content.about.bioTitle || content.about.title} /></label>
                 <label className="cms-input-label">Display name<input onChange={(event) => updateContent((current) => ({ ...current, about: { ...current.about, profileName: event.target.value }, hero: { ...current.hero, brand: `${event.target.value} Portfolio` } }))} value={content.about.profileName} /></label>
                 <label className="cms-input-label">Professional title<input onChange={(event) => updateContent((current) => ({ ...current, about: { ...current.about, profileRole: event.target.value } }))} value={content.about.profileRole} /></label>
                 <label className="cms-input-label">Location<input onChange={(event) => updateContent((current) => ({ ...current, about: { ...current.about, location: event.target.value }, contact: { ...current.contact, location: event.target.value } }))} value={content.about.location} /></label>
-                <label className="cms-input-label">Public profile bio<textarea maxLength={300} onChange={(event) => updateContent((current) => ({ ...current, about: { ...current.about, bio: event.target.value, profileDescription: event.target.value }, hero: { ...current.hero, description: event.target.value } }))} rows={4} value={content.about.bio} /><small className="cms-char-count">{content.about.bio.length} / 300</small></label>
+                <label className="cms-input-label">Short About me text<textarea maxLength={300} onChange={(event) => updateContent((current) => ({ ...current, about: { ...current.about, bio: event.target.value, profileDescription: event.target.value } }))} rows={4} value={content.about.bio} /><small className="cms-char-count">{content.about.bio.length} / 300</small></label>
               </section>
 
               <section className="cms-panel cms-profile-picture-panel" id="profile-picture">
@@ -1037,15 +981,7 @@ export function AdminDashboard({
                 </form>
               </section>
 
-              <section className="cms-preview-panel"><div className="cms-aside-heading"><span className="cms-section-index">LIVE VISITOR PREVIEW</span><span className="cms-preview-live"><i /> LIVE</span></div><div className="cms-preview-card"><div className="cms-preview-top"><span className="cms-preview-avatar">{content.about.profileName.slice(0, 1).toUpperCase()}</span><span className="cms-preview-online"><i /> Portfolio profile</span></div><h3>{content.about.profileName || "Your name"}</h3><strong>{content.about.profileRole || "Your professional title"}</strong><p>{content.about.bio || "Your bio will appear here as you write."}</p><span className="cms-preview-location"><MapPin size={12} /> {content.about.location}</span><div className="cms-preview-rule" /><span className="cms-preview-hint">PORTFOLIO PROFILE <ArrowUpRight size={12} /></span></div></section>
-
-              <section className="cms-panel cms-activity-panel"><div className="cms-aside-heading"><span className="cms-section-index">RECENT CMS ACTIVITY</span><span className="cms-activity-count">{activity.length.toString().padStart(2, "0")}</span></div><div className="cms-activity-list">{activity.length ? activity.map((item) => <div className="cms-activity-item" key={item.id}><span className="cms-activity-mark"><Check size={12} /></span><span><strong>{item.label}</strong><small>{item.time}</small></span></div>) : <div className="cms-activity-item"><span className="cms-activity-mark"><Sparkles size={12} /></span><span><strong>Workspace is ready</strong><small>Your recent edits will appear here.</small></span></div>}</div></section>
             </aside>
-            <section aria-label="Portfolio summary" className="cms-kpis">
-              <article><span className="cms-kpi-icon kpi-blue"><FolderKanban size={17} /></span><span className="cms-kpi-label">PROJECTS</span><strong>{projects.length.toString().padStart(2, "0")}</strong><small>Projects in your portfolio</small></article>
-              <article><span className="cms-kpi-icon kpi-green"><Code2 size={17} /></span><span className="cms-kpi-label">TECH STACK & LANGUAGES</span><strong>{skills.length.toString().padStart(2, "0")}</strong><small>Frontend, Backend, Databases & Tools</small></article>
-              <article><span className="cms-kpi-icon kpi-green"><ExternalLink size={17} /></span><span className="cms-kpi-label">SOCIAL PROFILES</span><strong>{content.contact.socials.length.toString().padStart(2, "0")}</strong><small>Profiles in your portfolio</small></article>
-            </section>
             <section className="cms-panel cms-contact-editor cms-social-profiles-panel" id="contact-editor">
               <div className="cms-panel-heading"><div><span className="cms-section-index">PUBLIC SOCIAL PROFILES</span><h2>Social profiles</h2><p>Manage the links displayed on your portfolio. This section contains social profiles only.</p></div></div>
               <label className="cms-input-label">Social profiles heading<input onChange={(event) => updateContact("socialTitle", event.target.value)} value={content.contact.socialTitle} /></label>
@@ -1063,13 +999,12 @@ export function AdminDashboard({
             </section>
           </div>
 
-          <footer className="cms-footer"><span>Portfolio CMS <span>·</span> Private workspace</span><a href="/">View live site <ExternalLink size={13} /></a></footer>
         </div>
       </main>
 
       {notice && <div className="cms-toast" role="status"><Check size={16} /> {notice}<button aria-label="Dismiss" onClick={() => setNotice("")} type="button"><X size={15} /></button></div>}
 
-      {passwordOpen && <div className="cms-modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget && !passwordBusy) setPasswordOpen(false); }}><section aria-labelledby="cms-password-title" aria-modal="true" className="cms-modal" role="dialog"><div className="cms-modal-heading"><div><span className="cms-section-index">ADMIN ACCOUNT</span><h2 id="cms-password-title">Change password</h2></div><button aria-label="Close change password" className="cms-icon-button" disabled={passwordBusy} onClick={() => setPasswordOpen(false)} type="button"><X size={18} /></button></div><form onSubmit={(event) => { void submitPasswordChange(event); }}><label className="cms-input-label">Current password<input autoFocus autoComplete="current-password" onChange={(event) => setCurrentPassword(event.target.value)} required type="password" value={currentPassword} /></label><label className="cms-input-label">New password<input autoComplete="new-password" minLength={7} onChange={(event) => setNewPassword(event.target.value)} required type="password" value={newPassword} /></label><label className="cms-input-label">Confirm new password<input autoComplete="new-password" onChange={(event) => setConfirmPassword(event.target.value)} required type="password" value={confirmPassword} /></label>{passwordError && <p className="cms-error" role="alert">{passwordError}</p>}<div className="cms-modal-actions"><button className="cms-quiet-btn" disabled={passwordBusy} onClick={() => setPasswordOpen(false)} type="button">Cancel</button><button className="cms-primary-btn" disabled={passwordBusy} type="submit">{passwordBusy ? "Changing..." : "Change password"}</button></div></form></section></div>}
+      {jsonEditorOpen && <div className="cms-modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setJsonEditorOpen(false); }}><section aria-labelledby="cms-json-editor-title" aria-modal="true" className="cms-modal cms-json-modal" role="dialog"><div className="cms-modal-heading"><div><span className="cms-section-index">COMPLETE PORTFOLIO DATA</span><h2 id="cms-json-editor-title">Edit all data</h2></div><button aria-label="Close JSON editor" className="cms-icon-button" onClick={() => setJsonEditorOpen(false)} type="button"><X size={18} /></button></div><form onSubmit={applyJsonChanges}><label className="cms-input-label">Portfolio JSON<textarea aria-label="Portfolio JSON data" className="cms-json-editor" onChange={(event) => { setJsonDraft(event.target.value); setJsonEditorError(""); }} spellCheck={false} value={jsonDraft} /></label>{jsonEditorError && <p className="cms-json-error" role="alert">{jsonEditorError}</p>}<p className="cms-json-help">This includes every saved portfolio field. Applying validates the data; use Save changes to publish it.</p><div className="cms-modal-actions"><button className="cms-quiet-btn" onClick={() => setJsonEditorOpen(false)} type="button">Cancel</button><button className="cms-primary-btn" type="submit">Apply changes</button></div></form></section></div>}
 
       {editor && <div className="cms-modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) closeEditor(); }}><section aria-labelledby="cms-modal-title" aria-modal="true" className="cms-modal" role="dialog"><div className="cms-modal-heading"><div><span className="cms-section-index">CONTENT EDITOR</span><h2 id="cms-modal-title">{editorTitle}</h2></div><button aria-label="Close editor" className="cms-icon-button" onClick={closeEditor} type="button"><X size={18} /></button></div><form onSubmit={submitEditor}>
         {editor.kind === "project" && <>

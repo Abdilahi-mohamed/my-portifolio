@@ -1,6 +1,6 @@
 # Abdilahi Portfolio
 
-## Next.js migration
+## Next.js application
 
 The repository now includes the unified Next.js App Router application at the repository root.
 It preserves the existing MongoDB collections and object-storage keys and exposes the same
@@ -13,18 +13,17 @@ npm run build
 npm start
 ```
 
-Configure `.env.local` from `.env.example`. For this repository, the existing Backblaze B2
-configuration is loaded from `backend/.env` during local development; Cloudflare R2 variables are
-also supported for deployments that use R2. MongoDB credentials and object-storage secrets remain
-server-side. Keep the legacy `frontend/` and `backend/` directories available during staged
-verification; they are not required by the Next.js build or runtime.
+Configure `.env.local` from `.env.example`. MongoDB credentials and object-storage secrets remain
+server-side. The portfolio and admin interface are served by the root Next.js app; the `frontend/`
+and `backend/` directories provide UI modules and existing persistence/auth helpers.
 
 A responsive React and TypeScript portfolio with a Node.js API. MongoDB stores portfolio content, admin credentials/sessions, and contact submissions. Uploaded media is stored in Backblaze B2 using its S3-compatible API.
 
 ## Project layout
 
-- `frontend/` — React, Vite, TypeScript, and the public portfolio/admin UI.
-- `backend/src/` — Node.js API, MongoDB persistence, admin authentication, and B2 integration.
+- `app/` — Next.js pages and API route handlers.
+- `frontend/src/` — React portfolio and admin UI components.
+- `backend/src/lib/` — MongoDB persistence, admin authentication, and object-storage helpers.
 - `backend/scripts/migrate-mongodb-to-files.mjs` — Read-only export utility for older MongoDB installations.
 - `backend/data/` — Legacy JSON and uploaded media retained for migration (ignored by Git).
 - `backend/.env.example` — Backend environment variable template.
@@ -32,16 +31,20 @@ A responsive React and TypeScript portfolio with a Node.js API. MongoDB stores p
 
 ## First-time setup
 
-Install dependencies:
+Install the root Next.js application's dependencies:
 
 ```sh
-npm install --prefix backend
-npm install --prefix frontend
+npm install
 ```
 
-Copy `backend/.env.example` to `backend/.env`. Configure `MONGODB_URI` (and optionally `MONGODB_DB`), `ADMIN_USERNAME`, a private `ADMIN_PASSWORD`, and `FRONTEND_ORIGIN`. Create a Backblaze B2 bucket and a bucket-scoped application key, then set `B2_ENDPOINT`, `B2_REGION`, `B2_BUCKET_NAME`, `B2_ACCESS_KEY_ID`, and `B2_APPLICATION_KEY`. The endpoint and region must match the bucket's Backblaze region. Never put database or B2 credentials in frontend environment variables or commit `.env`. The backend requires Node.js 20.19 or newer.
+Copy `.env.example` to `.env.local` and set `MONGODB_URI`, `MONGODB_DB`,
+`ADMIN_USERNAME`, and a private `ADMIN_PASSWORD`. Configure either Backblaze B2
+(`B2_*`) or Cloudflare R2 (`R2_*`) for persistent portfolio media. Never commit
+`.env.local` or expose database/storage credentials to browser-side variables.
 
-`MONGODB_URI` is required in development and production; the backend never serves an editable file-backed portfolio. Production also requires a fully configured B2 bucket. If the MongoDB portfolio collection is empty, the backend imports an existing `portfolio.json` instead of overwriting records. Starter content is seeded only when explicitly enabled with `PORTFOLIO_INIT_DEFAULTS=true`. Existing admin account, active sessions, and contact messages are imported only when their corresponding MongoDB collections are empty. Once configured, startup copies supported legacy images and videos from `backend/data/uploads/` to B2 without changing their `/api/media/<filename>` URLs; production media reads come from B2, not the server filesystem.
+MongoDB is required for portfolio editing and production. Persistent object storage
+is required for uploads; text and portfolio changes are stored in MongoDB. Existing
+MongoDB collections and media keys are preserved.
 
 If backend startup reports `querySrv ECONNREFUSED` for a `mongodb+srv://` URI, the configured system DNS resolver is refusing the MongoDB SRV lookup. Configure `MONGODB_DNS_SERVERS` with one or more comma-separated, trusted DNS resolver IP addresses in `backend/.env`; this optional setting applies to DNS lookups made by the backend process.
 
@@ -53,41 +56,36 @@ The backend uses the MongoDB collections `portfolio` (`_id: "primary"`), `adminA
 node backend/scripts/migrate-mongodb-to-files.mjs
 ```
 
-This optional utility exports portfolio/account/session/contact data and supported legacy GridFS images. It does not alter MongoDB. The application itself fails startup on a database connection error and never falls back to empty/default content in production.
+This optional utility exports portfolio/account/session/contact data and supported legacy GridFS images. It does not alter MongoDB. Production API routes return explicit database errors and never fall back to empty/default content.
 
-## Run the application
+## Run locally
 
-Start the backend API:
+Run the full-stack app, including the admin UI and API routes, on one origin:
 
 ```sh
 npm run dev
 ```
 
-In another terminal, start the frontend:
-
-```sh
-npm run dev --prefix frontend
-```
-
-`npm run web` starts only the React frontend and opens the public site in Chrome on Windows (or the default browser on macOS/Linux). Run it from the repository root.
+Open `http://localhost:3000` for the portfolio or `http://localhost:3000/admin`
+for the CMS. The CMS includes an **Edit all data** JSON editor for portfolio fields
+that are not covered by the individual section editors.
 
 ## Persistence, migration, and deployment
 
 - Portfolio content is stored in MongoDB as one validated `portfolio` document; saves update its content and revision metadata atomically. The dashboard loads the current record before editing; a failed database read or write is reported as an error and does not initialize defaults.
 - Admin reads include a MongoDB-backed revision, and saves use `If-Match` so stale dashboards receive `409 Conflict` instead of overwriting newer edits. Successful saves notify other open portfolio and admin tabs to reload the committed database content; unsaved admin edits are preserved.
-- Deploy the backend before the frontend when rolling out revision-checked saves. The updated dashboard intentionally blocks edits if the API does not provide revision ETags.
+- The root Next.js app hosts both the admin UI and API. Admin saves use MongoDB-backed revision ETags to prevent overwriting newer edits.
 - Admin password hashes, sessions, and contact submissions use `adminAccounts`, `adminSessions`, and `contactMessages`. Passwords remain salted scrypt hashes. MongoDB data is independent of source code, builds, and deployments.
 - `DATA_DIRECTORY` identifies legacy JSON for one-time imports. Keep the old directory until MongoDB content is verified; do not delete the MongoDB database or its collections.
 - B2 object keys back profile photos, cover photos, project screenshots, certificate images, and experience images. The database stores stable `/api/media/<key>` references, and the backend serves those objects without exposing B2 credentials to the browser.
 - Project case-study fields (description, problem statement, solution, workflow) and up to 30 additional media items are saved alongside each project in the MongoDB portfolio document. Project media supports images up to 8 MB and MP4/WebM videos up to 50 MB each; existing project records remain valid without these optional fields.
-- Do not use a Render ephemeral filesystem for portfolio data or uploads. Back up MongoDB and B2 independently using their provider-supported backup/versioning facilities.
-- B2 private bucket objects are served through the backend media route, so the frontend never receives storage credentials. Use an application key scoped to the portfolio bucket and grant only the read, write, and delete capabilities needed by this API.
+- Vercel's filesystem is not persistent. Configure B2 or R2 for uploads and keep storage credentials server-side. Back up MongoDB and object storage independently.
 
 ## API reference
 
 | Method | Path | Purpose |
 | --- | --- | --- |
-| `GET` | `/api/health` | MongoDB readiness and current database/media storage modes. Admin editing is blocked unless this endpoint reports `database: "mongodb"`; production uploads also require `storage: "backblaze-b2"`. |
+| `GET` | `/api/health` | MongoDB readiness and current database/media storage modes. Admin editing requires `database: "mongodb"`; uploads require persistent B2 or R2 storage. |
 | `GET` | `/api/health/storage` | Storage-mode health check. |
 | `GET` | `/api/portfolio` | Public portfolio content. |
 | `GET` | `/api/media/:filename` | Retrieve uploaded images or videos from B2 (or a legacy local file). |
@@ -106,30 +104,23 @@ npm run dev --prefix frontend
 npm run build
 ```
 
-## Deploy to Render
+## Deploy the full-stack app to Vercel
 
-The backend can serve the built frontend as well as the API. For a single Render **Web Service**, set the repository root directory to the repository root, not `backend/`:
+Import the repository into Vercel and set **Root Directory** to the repository root
+(not `frontend/` or `backend/`). The root `vercel.json` selects Next.js and Vercel
+uses `npm run build`. Use Node.js 20.19 or newer.
 
-**Build Command**
+Add these server-side environment variables in the Vercel project settings for each
+deployment environment:
 
-```sh
-npm ci --prefix backend && npm ci --prefix frontend && npm run build
-```
+- `MONGODB_URI` and `MONGODB_DB`
+- `ADMIN_USERNAME` and `ADMIN_PASSWORD`
+- Either the complete `B2_ENDPOINT`, `B2_REGION`, `B2_BUCKET_NAME`,
+  `B2_ACCESS_KEY_ID`, `B2_APPLICATION_KEY` set, or the complete `R2_ENDPOINT`,
+  `R2_REGION`, `R2_BUCKET_NAME`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY` set
 
-**Start Command**
-
-```sh
-npm start --prefix backend
-```
-
-The server serves the frontend for `/`, `/admin`, and other client-side routes, while keeping `/api/*` on the API. It binds to `0.0.0.0` and uses Render's assigned `PORT`; do not set a localhost bind address or hardcode the production port. Configure `MONGODB_URI`, optional `MONGODB_DB`, `ADMIN_USERNAME`, `ADMIN_PASSWORD`, `FRONTEND_ORIGIN`, and all `B2_*` values in Render's environment settings. Admin routes always require a valid session created with the configured admin username and password. Use Node.js 20.19 or newer, as required by the package engine and MongoDB driver. Set Render's health check path to `/api/health`; it returns success only after MongoDB responds to a ping. Do not rely on a Render disk for active portfolio data or uploads; `DATA_DIRECTORY` can point to an existing legacy JSON volume for the one-time import. In production, the frontend sends API requests directly to `https://my-portifolio-3fo7.onrender.com`; no Vercel API proxy or `VITE_API_URL` setting is required.
-
-For Atlas connectivity, copy the Node.js driver connection string from the existing Atlas cluster and set it as Render's `MONGODB_URI`. Preserve its existing database name; this application does not need a new database. Percent-encode reserved characters in the database username or password. In MongoDB Atlas **Network Access**, allow the outbound IP ranges shown for this Render service under **Connect → Outbound** (include every listed range for its Render region) and permit outbound TCP port `27017`. Do not use `0.0.0.0/0` as a production allowlist. MongoDB's `mongodb+srv://` URI enables TLS by default; do not add `tlsInsecure`, disable certificate verification, or switch to an insecure connection. Leave `MONGODB_DNS_SERVERS` unset on Render unless its logs specifically show SRV DNS failures and you have selected trusted resolvers.
-
-At startup the API validates `MONGODB_URI`, establishes and pings MongoDB before opening its HTTP listener, and retries transient connection failures three times. If it still cannot connect, inspect the Render service's region and **Connect → Outbound** IP ranges against Atlas Network Access, then verify the Atlas cluster is running and the Render `MONGODB_URI` credentials/database name match the existing cluster. After deployment, `/api/health` must return both `"database":"mongodb"` and `"storage":"backblaze-b2"`; an older response missing the `database` field means the updated backend has not been deployed.
-
-If deploying the frontend as a separate Render **Static Site**, configure a dashboard rewrite rule with source `/*`, destination `/index.html`, and action **Rewrite** so direct visits and refreshes on `/admin` load the React app. Set `FRONTEND_ORIGIN` on the backend to the static site's exact origin.
-
-For a Vercel frontend, set the project's root directory to `frontend/` and set the frontend build environment variable `VITE_API_URL=https://my-portifolio-3fo7.onrender.com`. Vite embeds this public API base URL into the frontend build; it is not a secret. The frontend also defaults to this Render URL in production if the variable is omitted. The included `frontend/vercel.json` only rewrites frontend routes such as `/admin` to the SPA entry point; API calls go directly from the user's browser to Render and are not proxied by Vercel. The production origin `https://my-portifolio-sigma-sooty.vercel.app` is allowed by default. For any other deployed Vercel domain, set `FRONTEND_ORIGIN` in Render to the exact frontend origin (comma-separated if multiple domains are used), so the backend permits direct browser requests with credentials. Redeploy the backend after changing its origin allowlist or environment settings. Do not put B2 keys or other backend secrets in Vercel.
-
-For separate frontend/backend deployments, when the admin UI and API use separate HTTPS domains, the session cookie uses cross-site `SameSite=None; Secure` settings.
+Use the MongoDB Atlas connection string for the existing database and configure
+Atlas network access for the Vercel deployment. Do not disable TLS or use a
+wide-open database access rule. Keep all credentials out of `NEXT_PUBLIC_*` and
+`VITE_*` variables. The portfolio, admin pages, and `/api/*` routes are deployed
+together; no separate frontend or backend deployment is needed.
