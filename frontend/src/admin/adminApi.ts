@@ -37,11 +37,15 @@ async function fetchAdminWithTimeout(url: string, init: RequestInit = {}): Promi
 }
 
 function portfolioRevision(response: Response): string {
+  const revision = response.headers.get("X-Portfolio-Revision");
+  if (revision && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(revision)) {
+    return revision;
+  }
   const match = /^"([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})"$/i.exec(
     response.headers.get("ETag") ?? "",
   );
   if (!match) {
-    throw new Error("The API did not return a portfolio revision. Reload the latest backend before editing.");
+    throw new Error("The portfolio API did not return a valid revision. Redeploy the latest Vercel build before editing.");
   }
   return match[1];
 }

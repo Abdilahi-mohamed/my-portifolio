@@ -15,7 +15,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ message: "Portfolio content could not be loaded." }, { status: 500 });
     }
     return NextResponse.json(record.content, {
-      headers: { "Cache-Control": "no-store", ETag: `"${record._revision}"` },
+      headers: {
+        "Cache-Control": "no-store",
+        ETag: `"${record._revision}"`,
+        "X-Portfolio-Revision": record._revision,
+      },
     });
   } catch (error) {
     console.error("Unable to load admin portfolio:", error);
@@ -78,7 +82,11 @@ export async function PUT(request: NextRequest) {
     }
 
     return NextResponse.json({ message: "Portfolio changes saved." }, {
-      headers: { "Cache-Control": "no-store", ETag: `"${revision}"` },
+      headers: {
+        "Cache-Control": "no-store",
+        ETag: `"${revision}"`,
+        "X-Portfolio-Revision": revision,
+      },
     });
   } catch (error) {
     if (error instanceof SyntaxError) {
