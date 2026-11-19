@@ -1,17 +1,12 @@
 import type { PortfolioContent } from "./types";
 
-const deployedApiUrl = "https://my-portifolio-3fo7.onrender.com";
 const portfolioCacheKey = "portfolio-content-cache";
-const configuredApiUrl = import.meta.env.VITE_API_URL?.trim();
-const apiBaseUrl = (
-  configuredApiUrl || (import.meta.env.PROD ? deployedApiUrl : "")
-).replace(/\/+$/, "");
 const portfolioUpdateChannel = typeof BroadcastChannel === "undefined"
   ? null
   : new BroadcastChannel("portfolio-content");
 
 export function apiUrl(path: string): string {
-  return `${apiBaseUrl}${path.startsWith("/") ? path : `/${path}`}`;
+  return path.startsWith("/") ? path : `/${path}`;
 }
 
 export function subscribeToPortfolioUpdates(listener: () => void): () => void {

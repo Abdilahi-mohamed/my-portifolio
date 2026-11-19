@@ -28,6 +28,7 @@ import {
   X,
 } from "lucide-react";
 import type { PortfolioContent, ProjectTechnology } from "../types";
+import { isPortfolioContent } from "../../../backend/src/lib/portfolioValidation";
 import {
   isLinkedInProfile,
   isValidLinkedInUrl,
@@ -198,6 +199,9 @@ export function AdminDashboard({
   const [iconSearch, setIconSearch] = useState("");
   const [skillIconPickerOpen, setSkillIconPickerOpen] = useState(false);
   const [activity, setActivity] = useState<Activity[]>([]);
+  const [jsonEditorOpen, setJsonEditorOpen] = useState(false);
+  const [jsonDraft, setJsonDraft] = useState("");
+  const [jsonEditorError, setJsonEditorError] = useState("");
   useEffect(() => {
     loadAdminPortfolio()
       .then((snapshot) => {
@@ -289,6 +293,33 @@ export function AdminDashboard({
     contentRef.current = next;
     setContent(next);
     setSaved(false);
+  };
+
+  const openJsonEditor = () => {
+    if (!content) return;
+    setJsonDraft(JSON.stringify(content, null, 2));
+    setJsonEditorError("");
+    setJsonEditorOpen(true);
+  };
+
+  const applyJsonChanges = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    let updatedContent: PortfolioContent;
+    try {
+      updatedContent = JSON.parse(jsonDraft) as PortfolioContent;
+    } catch (error) {
+      if (!(error instanceof SyntaxError)) throw error;
+      setJsonEditorError("The JSON is invalid. Fix its syntax and try again.");
+      return;
+    }
+    if (!isPortfolioContent(updatedContent)) {
+      setJsonEditorError("The JSON does not match the portfolio format. Export the schema for the supported fields and values.");
+      return;
+    }
+    updateContent(() => updatedContent);
+    setJsonEditorOpen(false);
+    setJsonEditorError("");
+    setNotice("All portfolio data is ready to save. Select Save changes to publish it.");
   };
 
   const updateSectionLabel = (id: string, label: string) => {
@@ -900,6 +931,7 @@ export function AdminDashboard({
           <div className="cms-top-actions">
             <span className={`cms-sync ${saved ? "is-saved" : "is-unsaved"}`}><i />{saved ? "All changes saved" : "Unsaved changes"}</span>
             <button className="cms-icon-button cms-help" aria-label="Help" title="Portfolio CMS" type="button"><CircleHelp size={17} /></button>
+            <button className="cms-outline-btn" onClick={openJsonEditor} type="button"><FileJson2 size={15} /> Edit all data</button>
             <button className="cms-outline-btn" onClick={() => downloadJson("portfolio-manifest.json", content)} type="button"><ArrowDownToLine size={15} /> Export JSON</button>
             <button className="cms-save-btn" disabled={saved || busy} onClick={save} type="button">{busy ? "Saving..." : saved ? <><Check size={15} /> Saved</> : "Save changes"}</button>
           </div>
@@ -1034,6 +1066,8 @@ export function AdminDashboard({
       </main>
 
       {notice && <div className="cms-toast" role="status"><Check size={16} /> {notice}<button aria-label="Dismiss" onClick={() => setNotice("")} type="button"><X size={15} /></button></div>}
+
+      {jsonEditorOpen && <div className="cms-modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setJsonEditorOpen(false); }}><section aria-labelledby="cms-json-editor-title" aria-modal="true" className="cms-modal cms-json-modal" role="dialog"><div className="cms-modal-heading"><div><span className="cms-section-index">COMPLETE PORTFOLIO DATA</span><h2 id="cms-json-editor-title">Edit all data</h2></div><button aria-label="Close JSON editor" className="cms-icon-button" onClick={() => setJsonEditorOpen(false)} type="button"><X size={18} /></button></div><form onSubmit={applyJsonChanges}><label className="cms-input-label">Portfolio JSON<textarea aria-label="Portfolio JSON data" className="cms-json-editor" onChange={(event) => { setJsonDraft(event.target.value); setJsonEditorError(""); }} spellCheck={false} value={jsonDraft} /></label>{jsonEditorError && <p className="cms-json-error" role="alert">{jsonEditorError}</p>}<p className="cms-json-help">This includes every saved portfolio field. Applying validates the data; use Save changes to publish it.</p><div className="cms-modal-actions"><button className="cms-quiet-btn" onClick={() => setJsonEditorOpen(false)} type="button">Cancel</button><button className="cms-primary-btn" type="submit">Apply changes</button></div></form></section></div>}
 
       {editor && <div className="cms-modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) closeEditor(); }}><section aria-labelledby="cms-modal-title" aria-modal="true" className="cms-modal" role="dialog"><div className="cms-modal-heading"><div><span className="cms-section-index">CONTENT EDITOR</span><h2 id="cms-modal-title">{editorTitle}</h2></div><button aria-label="Close editor" className="cms-icon-button" onClick={closeEditor} type="button"><X size={18} /></button></div><form onSubmit={submitEditor}>
         {editor.kind === "project" && <>

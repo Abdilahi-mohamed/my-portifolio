@@ -19,7 +19,7 @@ export type AdminVisitorAnalytics = {
 
 const adminRequestTimeoutMs = 60_000;
 const adminRequestTimeoutMessage =
-  "The portfolio API did not respond within 60 seconds. Check the backend service and network. If this happened while saving, reload the dashboard before retrying to verify whether the changes were saved.";
+  "The portfolio API did not respond within 60 seconds. Check the network and Vercel deployment. If this happened while saving, reload the dashboard before retrying to verify whether the changes were saved.";
 
 async function fetchAdminWithTimeout(url: string, init: RequestInit = {}): Promise<Response> {
   const controller = new AbortController();
@@ -50,28 +50,43 @@ async function parseJson<T>(response: Response): Promise<T> {
   return (await response.json()) as T;
 }
 
-async function requirePersistentStorage(): Promise<void> {
+async function loadStorageHealth(): Promise<StorageHealthResponse> {
   const response = await fetchAdminWithTimeout(apiUrl("/api/health"), { cache: "no-store" });
   const body = await parseJson<StorageHealthResponse>(response);
   if (!response.ok) {
     throw new Error(body.message ?? "The portfolio storage service is unavailable.");
   }
+  return body;
+}
+
+async function requirePersistentDatabase(): Promise<void> {
+  const body = await loadStorageHealth();
   if (body.database !== "mongodb") {
     throw new Error(
-      "The connected API does not confirm MongoDB persistence. Admin editing is blocked to protect your data. Redeploy the latest backend commit to Render, then reopen the dashboard.",
+      "MongoDB persistence is unavailable. Configure MONGODB_URI in the Vercel project settings before editing portfolio content.",
     );
   }
-  if (import.meta.env.PROD &&
-    body.storage !== "backblaze-b2" &&
-    body.storage !== "cloudflare-r2") {
+}
+
+async function requirePersistentMediaStorage(): Promise<void> {
+  const body = await loadStorageHealth();
+  if (body.database !== "mongodb") {
     throw new Error(
-      "The connected API does not confirm persistent image storage. Admin editing is blocked to protect your uploads. Configure Backblaze B2 on Render and redeploy the backend.",
+      "MongoDB persistence is unavailable. Configure MONGODB_URI in the Vercel project settings before uploading media.",
+    );
+  }
+  if (body.storage !== "backblaze-b2" && body.storage !== "cloudflare-r2") {
+    throw new Error(
+      "Persistent media storage is not configured. Add the Backblaze B2 or Cloudflare R2 credentials to the Vercel project settings before uploading media.",
     );
   }
 }
 
 export async function checkAdminSession(): Promise<SessionResponse> {
-  const response = await fetch(apiUrl("/api/admin/session"), { credentials: "include" });
+  const response = await fetch(apiUrl("/api/admin/session"), {
+    credentials: "include",
+    cache: "no-store",
+  });
   const body = await parseJson<SessionResponse & MessageResponse>(response);
   if (!response.ok) {
     throw new Error(body.message ?? "Could not verify admin session.");
@@ -117,7 +132,7 @@ export async function adminLogout(): Promise<void> {
 }
 
 export async function loadAdminPortfolio(): Promise<AdminPortfolioSnapshot> {
-  await requirePersistentStorage();
+  await requirePersistentDatabase();
   const response = await fetch(apiUrl("/api/admin/portfolio"), { credentials: "include" });
   const body = await parseJson<PortfolioContent & MessageResponse>(response);
   if (!response.ok || !("hero" in body)) {
@@ -148,7 +163,7 @@ export async function saveAdminPortfolio(
   content: PortfolioContent,
   revision: string,
 ): Promise<{ message: string; revision: string }> {
-  await requirePersistentStorage();
+  await requirePersistentDatabase();
   const response = await fetchAdminWithTimeout(apiUrl("/api/admin/portfolio"), {
     method: "PUT",
     credentials: "include",
@@ -166,7 +181,7 @@ export async function saveAdminPortfolio(
 }
 
 async function uploadMedia(file: File): Promise<string> {
-  await requirePersistentStorage();
+  await requirePersistentMediaStorage();
   const response = await fetch(apiUrl("/api/admin/uploads"), {
     method: "POST",
     credentials: "include",
