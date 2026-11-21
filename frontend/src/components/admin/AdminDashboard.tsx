@@ -108,7 +108,7 @@ function makeDraft(kind: EditorKind, item?: Project | Skill | Experience | Certi
       name: skill?.name ?? "",
       level: skill?.level.replace("%", "") ?? "85",
       category: skill?.category ?? "Frontend",
-      color: skill?.color ?? "#2563eb",
+      color: skill?.color ?? "#D4AF37",
       icon: skill?.icon ?? "Code2",
     };
   }
@@ -561,7 +561,7 @@ export function AdminDashboard({
         name: draft.name.trim(),
         level: `${Math.min(100, Math.max(0, Number(draft.level) || 0))}%`,
         category: skillGroups.includes(draft.category as typeof skillGroups[number]) ? draft.category : "Frontend",
-        color: /^#[\da-fA-F]{6}$/.test(draft.color) ? draft.color : "#2563eb",
+        color: /^#[\da-fA-F]{6}$/.test(draft.color) ? draft.color : "#D4AF37",
         icon: programmingIconOptions.find((option) => option.name === draft.icon)?.name ?? "Code2",
       };
       updateContent((current) => {
@@ -1052,7 +1052,7 @@ export function AdminDashboard({
               {selectedTechnologies.length > 0 && <div aria-label="Selected technologies" className="cms-project-technology-selected">
                 {selectedTechnologies.map((technology) => <span className="cms-project-technology-chip" key={technology.id}>
                   {isProgrammingLanguageIcon(technology.icon)
-                    ? <ProgrammingLanguageIcon color={programmingIconColor(technology.icon, "#56665c")} name={technology.icon} size={16} />
+                    ? <ProgrammingLanguageIcon color={programmingIconColor(technology.icon, "#D4AF37")} name={technology.icon} size={16} />
                     : <Code2 aria-hidden="true" size={16} />}
                   {technology.name}
                   <button aria-label={`Remove ${technology.name}`} onClick={() => setSelectedTechnologies((items) => items.filter((item) => item.id !== technology.id))} type="button"><X size={13} /></button>
@@ -1066,7 +1066,7 @@ export function AdminDashboard({
                     ? items.filter((item) => item.id !== technology.id)
                     : [...items, technology])} type="button">
                     {isProgrammingLanguageIcon(technology.icon)
-                      ? <ProgrammingLanguageIcon color={programmingIconColor(technology.icon, "#56665c")} name={technology.icon} size={18} />
+                      ? <ProgrammingLanguageIcon color={programmingIconColor(technology.icon, "#D4AF37")} name={technology.icon} size={18} />
                       : <Code2 aria-hidden="true" size={18} />}
                     <span>{technology.name}</span>
                     {selected && <Check aria-hidden="true" size={14} />}

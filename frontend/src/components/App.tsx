@@ -53,11 +53,11 @@ import { sanitizeRichTextHtml } from "./RichTextEditor";
 
 type ToastMessage = { title: string; detail?: string };
 type Project = PortfolioContent["projectsSection"]["projects"][number];
-type AccentTheme = "aurora" | "sunset" | "emerald" | "gold";
+type AccentTheme = "aurora" | "emerald" | "gold";
 type ContainerMode = "compact" | "boxed";
 
 function isAccentTheme(value: string | null): value is AccentTheme {
-  return value === "aurora" || value === "sunset" || value === "emerald" || value === "gold";
+  return value === "aurora" || value === "emerald" || value === "gold";
 }
 
 function isContainerMode(value: string | null): value is ContainerMode {
@@ -142,7 +142,7 @@ function ProjectDetailsPage({ project, profileName }: { project: Project; profil
                   {technologies.map((technology) => (
                     <span className="project-detail-technology" key={technology.id}>
                       {isProgrammingLanguageIcon(technology.icon)
-                        ? <ProgrammingLanguageIcon color={programmingIconColor(technology.icon, "#56665c")} name={technology.icon} size={19} />
+                        ? <ProgrammingLanguageIcon color={programmingIconColor(technology.icon, "#D4AF37")} name={technology.icon} size={19} />
                         : <Code2 aria-hidden="true" size={19} />}
                       {technology.name}
                     </span>
@@ -391,7 +391,6 @@ function App() {
                   value={accentTheme}
                 >
                   <option value="aurora">Aurora</option>
-                  <option value="sunset">Sunset</option>
                   <option value="emerald">Emerald</option>
                   <option value="gold">Gold</option>
                 </select>
@@ -528,7 +527,7 @@ function App() {
                         <article className="skill-card" key={skill.name}>
                           <div className="skill-icon" style={{
                             color: iconColor,
-                            backgroundColor: programmingIconBackground(skill.icon) ?? "#EFE9E3",
+                            backgroundColor: programmingIconBackground(skill.icon) ?? "#292524",
                           }}>
                               {isProgrammingLanguageIcon(skill.icon)
                                 ? <ProgrammingLanguageIcon name={skill.icon} size={21} color={iconColor} />
