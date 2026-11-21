@@ -23,7 +23,19 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function validText(value: unknown, maxLength = 10_000): value is string {
+function richTextWordCount(value: unknown): number {
+  if (typeof value !== "string") return 0;
+  const text = value
+    .replace(/<style[\s\S]*?>[\s\S]*?<\/style>/gi, " ")
+    .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, " ")
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .trim();
+  return text ? text.split(/\s+/).length : 0;
+}
+
+function validText(value: unknown, maxLength = 30_000): value is string {
   return typeof value === "string" && value.length <= maxLength;
 }
 
@@ -215,6 +227,8 @@ export function isPortfolioContent(value: unknown): boolean {
       "label", "title", "profileName", "profileRole", "location", "photo",
       "profileDescription", "bioTitle", "bio",
     ]) &&
+    richTextWordCount(about.bio) <= 1000 &&
+    richTextWordCount(about.profileDescription) <= 1000 &&
     (about.photo === "" || isSafeImageReference(about.photo)) &&
     (about.coverPhoto === undefined ||
       (validText(about.coverPhoto) && (about.coverPhoto === "" || isSafeImageReference(about.coverPhoto)))) &&

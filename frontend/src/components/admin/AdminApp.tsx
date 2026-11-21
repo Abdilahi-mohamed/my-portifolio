@@ -7,36 +7,15 @@ import { checkAdminSession } from "./adminApi";
 import "./admin.css";
 
 type GateState = "checking" | "login" | "dashboard";
-const LOGIN_MARKER = "portfolio-admin-session-active";
-
-function hasLoginMarker(): boolean {
-  try {
-    return window.sessionStorage.getItem(LOGIN_MARKER) === "true";
-  } catch {
-    return false;
-  }
-}
-
-function setLoginMarker(active: boolean): void {
-  try {
-    if (active) window.sessionStorage.setItem(LOGIN_MARKER, "true");
-    else window.sessionStorage.removeItem(LOGIN_MARKER);
-  } catch {
-    // Session state is an optional UX guard; the server session still controls access.
-  }
-}
-
 export function AdminApp() {
   const [gate, setGate] = useState<GateState>("checking");
   const [configured, setConfigured] = useState(true);
   const [authDisabled, setAuthDisabled] = useState(false);
   const [error, setError] = useState("");
   const handleSignedOut = useCallback(() => {
-    setLoginMarker(false);
     setGate("login");
   }, []);
   const handleUnauthorized = useCallback(() => {
-    setLoginMarker(false);
     setGate("login");
   }, []);
   const handleLoginSuccess = useCallback(async () => {
@@ -44,7 +23,6 @@ export function AdminApp() {
     if (session.authenticated !== "true") {
       throw new Error("Sign-in was accepted, but the admin session could not be verified. Check that cookies are enabled and try again.");
     }
-    setLoginMarker(true);
     setConfigured(session.configured === "true");
     setAuthDisabled(session.authDisabled === "true");
     setGate("dashboard");
@@ -68,17 +46,11 @@ export function AdminApp() {
         if (controller.signal.aborted) return;
         setConfigured(session.configured === "true");
         setAuthDisabled(session.authDisabled === "true");
-        if (hasLoginMarker() && session.authenticated === "true") {
-          setLoginMarker(true);
-          setGate("dashboard");
-        } else {
-          setLoginMarker(false);
-          setGate("login");
-        }
+        setGate("login");
       })
-      .catch((cause: unknown) => {
+      .catch(() => {
         if (controller.signal.aborted) return;
-        setError(cause instanceof Error ? cause.message : "Could not connect to the API.");
+        setError("");
         setGate("login");
       });
     return () => controller.abort();
