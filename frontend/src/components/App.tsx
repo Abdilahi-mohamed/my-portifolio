@@ -254,6 +254,29 @@ function ExperienceDetailsPage({ experience }: { experience: Experience }) {
   );
 }
 
+function ExperiencePostDescription({ text }: { text: string }) {
+  const [expanded, setExpanded] = useState(false);
+  const canToggle = text.length > 180;
+
+  return (
+    <div className="experience-post-copy">
+      <p className={expanded ? "experience-post-description is-expanded" : "experience-post-description"}>
+        {text}
+      </p>
+      {canToggle && (
+        <button
+          aria-expanded={expanded}
+          className="experience-post-toggle"
+          onClick={() => setExpanded((value) => !value)}
+          type="button"
+        >
+          {expanded ? "See less" : "See more"}
+        </button>
+      )}
+    </div>
+  );
+}
+
 function App() {
   const [portfolio, setPortfolio] = useState<PortfolioContent | null>(getCachedPortfolio);
   const [portfolioLoadError, setPortfolioLoadError] = useState("");
@@ -656,23 +679,25 @@ function App() {
           </div>
         </div>
         {portfolio.experience.length > 0 ? (
-          <div className="experience-grid">
+          <div className="experience-post-feed">
             {portfolio.experience.map((experience, index) => (
-              <article className="project-card" key={`${experience.role}-${experience.company}-${experience.year}`}>
-                <a aria-label={`View ${experience.role} experience details`} className="project-card-main" href={`/experiences/${index}`}>
-                  <div className="project-image-wrap">
-                    {experience.image
-                      ? <img alt={`${experience.role} experience`} className="project-image" loading="lazy" src={experience.image} />
-                      : <div aria-label="Experience image not added" className="project-image-placeholder" role="img"><span>Experience</span></div>}
+              <article className="experience-post-card" key={`${experience.role}-${experience.company}-${experience.year}`}>
+                <header className="experience-post-header">
+                  <span aria-hidden="true" className="experience-post-icon"><Briefcase size={20} /></span>
+                  <div className="experience-post-heading">
+                    <h3>{experience.role}</h3>
+                    {experience.company && <p className="experience-post-company">{experience.company}</p>}
+                    {[experience.year, experience.location].filter(Boolean).length > 0 && (
+                      <p className="experience-post-meta">{[experience.year, experience.location].filter(Boolean).join(" · ")}</p>
+                    )}
                   </div>
-                  <div className="project-content">
-                    <div className="project-title-row">
-                      <div><h3>{experience.role}</h3></div>
-                      <ArrowUpRight size={17} />
-                    </div>
-                    {experience.company && <p className="project-description">{experience.company}</p>}
-                    {experience.year && <div className="project-tags"><span>{experience.year}</span></div>}
-                  </div>
+                </header>
+                {experience.desc && <ExperiencePostDescription text={experience.desc} />}
+                {experience.image && (
+                  <img alt={`${experience.role} experience`} className="experience-post-image" loading="lazy" src={experience.image} />
+                )}
+                <a aria-label={`View ${experience.role} experience details`} className="experience-post-link" href={`/experiences/${index}`}>
+                  View experience details <ArrowUpRight size={15} />
                 </a>
               </article>
             ))}
@@ -698,30 +723,22 @@ function App() {
               return (
                 <section aria-label={`${group} skills`} className="skill-group" key={group}>
                   <h3 className="skill-group-title">{group}</h3>
-                  <div className="skills-grid">
+                  <div className="skills-chip-list">
                     {groupedSkills.map((skill) => {
                       const Icon = icons[skill.icon] ?? ExternalLink;
                       const iconColor = programmingIconColor(skill.icon, skill.color);
                       return (
-                        <article className="skill-card" key={skill.name}>
-                          <div className="skill-icon" style={{
+                        <span className="skill-chip" key={skill.name}>
+                          <span aria-hidden="true" className="skill-chip-icon" style={{
                             color: iconColor,
                             backgroundColor: programmingIconBackground(skill.icon) ?? "#292524",
                           }}>
                               {isProgrammingLanguageIcon(skill.icon)
-                                ? <ProgrammingLanguageIcon name={skill.icon} size={21} color={iconColor} />
-                                : <Icon size={21} strokeWidth={1.8} />}
-                          </div>
-                          <div className="skill-card-copy">
-                            <div className="skill-card-heading">
-                              <h3>{skill.name}</h3>
-                              <span className="skill-level">{skill.level}</span>
-                            </div>
-                            <div aria-label={`${skill.name} ${skill.level}`} className="skill-meter" role="img">
-                            <span style={{ width: skill.level, backgroundColor: skill.color }} />
-                            </div>
-                          </div>
-                        </article>
+                                ? <ProgrammingLanguageIcon name={skill.icon} size={16} color={iconColor} />
+                                : <Icon size={16} strokeWidth={1.8} />}
+                          </span>
+                          <span>{skill.name}</span>
+                        </span>
                       );
                     })}
                   </div>
