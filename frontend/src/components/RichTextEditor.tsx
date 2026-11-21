@@ -34,6 +34,7 @@ const FontSize = Mark.create({
 });
 
 export function stripRichTextHtml(html: string): string {
+  html = normalizeRichTextHtml(html);
   if (typeof document === "undefined") {
     return html.replace(/<[^>]*>/g, " ").replace(/&nbsp;/g, " ");
   }
@@ -42,7 +43,33 @@ export function stripRichTextHtml(html: string): string {
   return template.content.textContent || "";
 }
 
+export function normalizeRichTextHtml(html: string): string {
+  if (!html) return "";
+  let normalized = html;
+  for (let index = 0; index < 3; index += 1) {
+    if (!/(?:&lt;|&amp;lt;)/i.test(normalized)) break;
+    if (typeof document !== "undefined") {
+      const textarea = document.createElement("textarea");
+      textarea.innerHTML = normalized;
+      const decoded = textarea.value;
+      if (decoded === normalized) break;
+      normalized = decoded;
+    } else {
+      const decoded = normalized
+        .replace(/&lt;/gi, "<")
+        .replace(/&gt;/gi, ">")
+        .replace(/&quot;/gi, '"')
+        .replace(/&#39;|&apos;/gi, "'")
+        .replace(/&amp;/gi, "&");
+      if (decoded === normalized) break;
+      normalized = decoded;
+    }
+  }
+  return normalized;
+}
+
 export function sanitizeRichTextHtml(html: string): string {
+  html = normalizeRichTextHtml(html);
   if (!html) return "";
   if (typeof document === "undefined") {
     return html
@@ -94,7 +121,7 @@ export default function RichTextEditor({
       Highlight.configure({ multicolor: true }),
       TextAlign.configure({ types: ["heading", "paragraph"] }),
     ],
-    content: value,
+    content: normalizeRichTextHtml(value),
     immediatelyRender: false,
     editorProps: {
       attributes: {
@@ -120,7 +147,9 @@ export default function RichTextEditor({
 
   useEffect(() => {
     if (!editor) return;
-    if (value !== editor.getHTML()) editor.commands.setContent(value, false);
+    if (normalizeRichTextHtml(value) !== editor.getHTML()) {
+      editor.commands.setContent(normalizeRichTextHtml(value), false);
+    }
   }, [editor, value]);
 
   if (!editor) return null;
