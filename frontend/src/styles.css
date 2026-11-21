@@ -3135,13 +3135,15 @@ html[data-portfolio-theme="light"] .portfolio-home > .quick-nav {
 
 .portfolio-home .experience-post-feed {
   display: grid;
-  width: min(100%, 780px);
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 380px));
-  justify-content: start;
-  gap: 10px;
+  width: 100%;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
 }
 
 .experience-post-card {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
   overflow: hidden;
   padding: 13px;
   border: 1px solid var(--home-border);
@@ -3178,12 +3180,8 @@ html[data-portfolio-theme="light"] .portfolio-home > .quick-nav {
 .experience-post-toggle:hover { text-decoration: underline; }
 .experience-post-toggle:focus-visible { outline: 2px solid var(--accent-one); outline-offset: 3px; }
 .experience-post-image { display: block; width: 100%; max-height: 220px; border: 1px solid var(--home-border); border-radius: 8px; object-fit: cover; }
-.experience-post-link { display: inline-flex; align-items: center; gap: 5px; margin-top: 9px; color: var(--accent-one); font-size: 10px; font-weight: 700; text-decoration: none; }
-.experience-post-link:hover { text-decoration: underline; }
-.experience-post-link:focus-visible { outline: 2px solid var(--accent-one); outline-offset: 3px; }
-
 @media (max-width: 620px) {
-  .portfolio-home .experience-post-feed { width: min(100%, 300px); }
+  .portfolio-home .experience-post-feed { grid-template-columns: 1fr; gap: 12px; }
   .experience-post-card { padding: 10px; }
 }
 

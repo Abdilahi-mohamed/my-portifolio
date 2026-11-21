@@ -677,6 +677,7 @@ function App() {
             <p className="eyebrow">EXPERIENCE</p>
             <h2 id="experience-title">Experiences</h2>
           </div>
+          <span className="project-count">{portfolio.experience.length.toString().padStart(2, "0")}</span>
         </div>
         {portfolio.experience.length > 0 ? (
           <div className="experience-post-feed">
@@ -696,9 +697,6 @@ function App() {
                 {experience.image && (
                   <img alt={`${experience.role} experience`} className="experience-post-image" loading="lazy" src={experience.image} />
                 )}
-                <a aria-label={`View ${experience.role} experience details`} className="experience-post-link" href={`/experiences/${index}`}>
-                  View experience details <ArrowUpRight size={15} />
-                </a>
               </article>
             ))}
           </div>
