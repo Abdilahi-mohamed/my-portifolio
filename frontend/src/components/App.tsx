@@ -381,20 +381,6 @@ function App() {
           <div className="profile-name">
             <div className="profile-name-row">
               <h1>{profile.profileName}</h1>
-              <label className="profile-accent-picker" title="Choose profile color">
-                <Palette aria-hidden="true" size={14} />
-                <select
-                  aria-label="Profile accent color"
-                  onChange={(event) => {
-                    if (isAccentTheme(event.target.value)) setAccentTheme(event.target.value);
-                  }}
-                  value={accentTheme}
-                >
-                  <option value="aurora">Aurora</option>
-                  <option value="emerald">Emerald</option>
-                  <option value="gold">Gold</option>
-                </select>
-              </label>
             </div>
             {profile.title && <p>{profile.title}</p>}
           </div>
@@ -456,18 +442,14 @@ function App() {
                     {project.image
                       ? <img alt={`${project.title} preview`} className="project-image" loading="lazy" src={project.image} />
                       : <div aria-label="Project preview not added" className="project-image-placeholder" role="img"><span>Project preview</span></div>}
-                    <span className="project-category">{project.category}</span>
-                    {project.featured && <span className="project-featured">Featured</span>}
                   </div>
                   <div className="project-content">
                     <div className="project-title-row">
                       <div>
                         <h3>{project.title}</h3>
-                        <p className="project-ownership">{project.ownershipLabel?.trim() || "Personal Project"}</p>
                       </div>
                       <ArrowUpRight size={17} />
                     </div>
-                    {project.description && <p className="project-description">{project.description}</p>}
                     {project.tags.length > 0 && <div className="project-tags">{project.tags.map((tag) => <span key={tag}>{tag}</span>)}</div>}
                   </div>
                 </a>

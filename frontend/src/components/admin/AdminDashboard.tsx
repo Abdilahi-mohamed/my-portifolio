@@ -1020,7 +1020,6 @@ export function AdminDashboard({
         {editor.kind === "project" && <>
           <label className="cms-input-label">Project title<input autoFocus onChange={(event) => setDraft({ ...draft, title: event.target.value })} required value={draft.title} /></label>
           <label className="cms-input-label">Ownership label <small>Shown below the title on your project card. Leave blank to use “Personal Project”.</small><input maxLength={80} onChange={(event) => setDraft({ ...draft, ownershipLabel: event.target.value })} placeholder="Personal Project" value={draft.ownershipLabel} /></label>
-          <label className="cms-input-label">Short description<textarea onChange={(event) => setDraft({ ...draft, description: event.target.value })} required rows={2} value={draft.description} /></label>
           <div className="cms-gallery-upload">
             <span><strong>System screenshots</strong><br />Add at least one image for a new project. Select several at once, or add and replace images later. PNG, JPEG, WebP, or GIF · up to 8 MB each · 30 images per project.</span>
             <label className="cms-file-choice">Add project images<input accept="image/png,image/jpeg,image/webp,image/gif" multiple onChange={(event) => { addGalleryFiles(event.currentTarget.files); event.currentTarget.value = ""; }} type="file" /></label>
@@ -1034,7 +1033,7 @@ export function AdminDashboard({
           </div>}
           <label className="cms-input-label">Live project URL <small>Optional. Add the public website URL if the project is online.</small><input onChange={(event) => setDraft({ ...draft, liveUrl: event.target.value })} placeholder="https://example.com" type="url" value={draft.liveUrl} /></label>
           <label className="cms-input-label">GitHub repository URL<input onChange={(event) => setDraft({ ...draft, githubUrl: event.target.value })} type="url" value={draft.githubUrl} /></label>
-          <label className="cms-input-label">LinkedIn post or project URL<input onChange={(event) => setDraft({ ...draft, linkedinUrl: event.target.value })} type="url" value={draft.linkedinUrl} /></label>
+          <label className="cms-input-label">LinkedIn post or project URL (optional)<input onChange={(event) => setDraft({ ...draft, linkedinUrl: event.target.value })} type="url" value={draft.linkedinUrl} /></label>
           <section aria-label="Project details" className="cms-project-details-fields">
             <div className="cms-project-details-heading">
               <span className="cms-section-index">PROJECT CASE STUDY</span>
