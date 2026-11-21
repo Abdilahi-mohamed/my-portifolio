@@ -2597,27 +2597,6 @@ html[data-portfolio-theme="dark"] body {
   isolation: isolate;
 }
 
-.portfolio-home .profile-avatar-frame::before,
-.portfolio-home .profile-avatar-frame::after {
-  position: absolute;
-  z-index: -1;
-  border-radius: inherit;
-  content: "";
-}
-
-.portfolio-home .profile-avatar-frame::before {
-  inset: 0;
-  background: conic-gradient(var(--accent-one), var(--accent-two), var(--accent-three), var(--accent-one));
-  animation: profile-ring-rotate 8s linear infinite;
-}
-
-.portfolio-home .profile-avatar-frame::after {
-  inset: -8px;
-  background: var(--accent-gradient);
-  filter: blur(16px);
-  opacity: .3;
-}
-
 .portfolio-home .profile-avatar,
 .portfolio-home .profile-avatar-fallback {
   display: grid;
@@ -2688,10 +2667,6 @@ html[data-portfolio-theme="dark"] body {
   font-size: 10px;
   font-weight: 750;
   cursor: pointer;
-}
-
-@keyframes profile-ring-rotate {
-  to { transform: rotate(360deg); }
 }
 
 .profile-status {
@@ -2969,7 +2944,6 @@ html[data-container-mode="boxed"] .portfolio-home .profile-content { padding-blo
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .portfolio-home .profile-avatar-frame::before { animation: none; }
   html { scroll-behavior: auto; }
 }
 
