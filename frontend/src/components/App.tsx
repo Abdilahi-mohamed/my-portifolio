@@ -277,6 +277,53 @@ function ExperiencePostDescription({ text }: { text: string }) {
   );
 }
 
+function PortfolioLoadingSkeleton() {
+  return (
+    <main aria-busy="true" className="portfolio-page portfolio-home portfolio-loading">
+      <div aria-label="Loading portfolio" className="portfolio-loading-content" role="status">
+        <div aria-hidden="true">
+          <section className="portfolio-skeleton-profile">
+            <span className="portfolio-skeleton-block portfolio-skeleton-avatar" />
+            <span className="portfolio-skeleton-block portfolio-skeleton-name" />
+            <span className="portfolio-skeleton-block portfolio-skeleton-role" />
+          </section>
+          <div className="portfolio-skeleton-intro">
+            <section className="portfolio-skeleton-panel">
+              <span className="portfolio-skeleton-block portfolio-skeleton-label" />
+              <span className="portfolio-skeleton-block portfolio-skeleton-line" />
+              <span className="portfolio-skeleton-block portfolio-skeleton-line" />
+              <span className="portfolio-skeleton-block portfolio-skeleton-line portfolio-skeleton-line-short" />
+            </section>
+            <section className="portfolio-skeleton-summary">
+              <span className="portfolio-skeleton-block portfolio-skeleton-label" />
+              <div className="portfolio-skeleton-summary-grid">
+                {Array.from({ length: 5 }, (_, index) => (
+                  <span className="portfolio-skeleton-block portfolio-skeleton-summary-card" key={index} />
+                ))}
+              </div>
+            </section>
+          </div>
+          <section className="portfolio-skeleton-projects">
+            <div className="portfolio-skeleton-heading">
+              <span className="portfolio-skeleton-block portfolio-skeleton-label" />
+              <span className="portfolio-skeleton-block portfolio-skeleton-title" />
+            </div>
+            <div className="portfolio-skeleton-project-grid">
+              {Array.from({ length: 2 }, (_, index) => (
+                <article className="portfolio-skeleton-project-card" key={index}>
+                  <span className="portfolio-skeleton-block portfolio-skeleton-project-image" />
+                  <span className="portfolio-skeleton-block portfolio-skeleton-project-name" />
+                  <span className="portfolio-skeleton-block portfolio-skeleton-project-meta" />
+                </article>
+              ))}
+            </div>
+          </section>
+        </div>
+      </div>
+    </main>
+  );
+}
+
 function App() {
   const [portfolio, setPortfolio] = useState<PortfolioContent | null>(getCachedPortfolio);
   const [portfolioLoadError, setPortfolioLoadError] = useState("");
@@ -433,22 +480,15 @@ function App() {
   }, [portfolio, routeCertificate, routeExperience, routeProject]);
 
   if (!portfolio) {
+    if (!portfolioLoadError) return <PortfolioLoadingSkeleton />;
     return (
       <main className="portfolio-page">
-        <section
-          aria-live="polite"
-          className="portfolio-load-state"
-          role={portfolioLoadError ? "alert" : "status"}
-        >
-          <h1>{portfolioLoadError ? "Portfolio unavailable" : "Loading portfolio..."}</h1>
-          {portfolioLoadError && (
-            <>
-              <p>{portfolioLoadError}</p>
-              <button onClick={() => setPortfolioRetry((attempt) => attempt + 1)} type="button">
-                Try again
-              </button>
-            </>
-          )}
+        <section aria-live="assertive" className="portfolio-load-state" role="alert">
+          <h1>Portfolio unavailable</h1>
+          <p>{portfolioLoadError}</p>
+          <button onClick={() => setPortfolioRetry((attempt) => attempt + 1)} type="button">
+            Try again
+          </button>
         </section>
       </main>
     );
