@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import {
   ArrowUpRight,
+  Award,
+  Briefcase,
   Check,
   Code2,
   Copy,
@@ -53,6 +55,8 @@ import { sanitizeRichTextHtml } from "./RichTextEditor";
 
 type ToastMessage = { title: string; detail?: string };
 type Project = PortfolioContent["projectsSection"]["projects"][number];
+type Certificate = PortfolioContent["certificates"][number];
+type Experience = PortfolioContent["experience"][number];
 type AccentTheme = "aurora" | "emerald" | "gold";
 type ContainerMode = "compact" | "boxed";
 
@@ -180,6 +184,76 @@ function ProjectDetailsPage({ project, profileName }: { project: Project; profil
   );
 }
 
+function CertificateDetailsPage({ certificate }: { certificate: Certificate }) {
+  return (
+    <main className="portfolio-page project-page">
+      <article aria-labelledby="certificate-detail-title" className="project-detail-page">
+        <a className="project-detail-back" href="/#certificates">← Back to certificates</a>
+        <p className="eyebrow">CERTIFICATE</p>
+        <h1 id="certificate-detail-title">{certificate.title}</h1>
+        <p className="project-detail-owner">
+          {[certificate.issuer, certificate.year].filter(Boolean).join(" · ")}
+        </p>
+        <div className="project-detail-sections">
+          <section>
+            <span>01</span>
+            <div>
+              <h2>About this certificate</h2>
+              <p>{certificate.description || "No information has been added yet."}</p>
+            </div>
+          </section>
+          <section className="project-detail-media-section">
+            <span>02</span>
+            <div>
+              <h2>Certificate image</h2>
+              {certificate.image
+                ? <div className="project-detail-media">
+                  <img alt={`${certificate.title} certificate`} src={certificate.image} />
+                </div>
+                : <p>No certificate image has been added yet.</p>}
+            </div>
+          </section>
+        </div>
+      </article>
+    </main>
+  );
+}
+
+function ExperienceDetailsPage({ experience }: { experience: Experience }) {
+  const details = [experience.company, experience.location, experience.year].filter(Boolean);
+
+  return (
+    <main className="portfolio-page project-page">
+      <article aria-labelledby="experience-detail-title" className="project-detail-page">
+        <a className="project-detail-back" href="/#experience">← Back to experiences</a>
+        <p className="eyebrow">EXPERIENCE</p>
+        <h1 id="experience-detail-title">{experience.role}</h1>
+        {details.length > 0 && <p className="project-detail-owner">{details.join(" · ")}</p>}
+        <div className="project-detail-sections">
+          <section>
+            <span>01</span>
+            <div>
+              <h2>Experience details</h2>
+              <p>{experience.desc || "No information has been added yet."}</p>
+            </div>
+          </section>
+          <section className="project-detail-media-section">
+            <span>02</span>
+            <div>
+              <h2>Experience image</h2>
+              {experience.image
+                ? <div className="project-detail-media">
+                  <img alt={`${experience.role} experience`} src={experience.image} />
+                </div>
+                : <p>No experience image has been added yet.</p>}
+            </div>
+          </section>
+        </div>
+      </article>
+    </main>
+  );
+}
+
 function App() {
   const [portfolio, setPortfolio] = useState<PortfolioContent | null>(getCachedPortfolio);
   const [portfolioLoadError, setPortfolioLoadError] = useState("");
@@ -290,19 +364,34 @@ function App() {
   }, [toast]);
 
   const projectRouteId = /^\/projects\/([a-z0-9][a-z0-9-]{0,99})\/?$/.exec(window.location.pathname)?.[1];
+  const certificateRouteIndex = /^\/certificates\/(\d+)\/?$/.exec(window.location.pathname)?.[1];
+  const experienceRouteIndex = /^\/experiences\/(\d+)\/?$/.exec(window.location.pathname)?.[1];
   const isProjectRoute = window.location.pathname.startsWith("/projects/");
+  const isCertificateRoute = window.location.pathname.startsWith("/certificates/");
+  const isExperienceRoute = window.location.pathname.startsWith("/experiences/");
   const routeProject = portfolio && projectRouteId
     ? portfolio.projectsSection.projects.find((project) => project.id === projectRouteId && project.visible)
+    : undefined;
+  const routeCertificate = portfolio && certificateRouteIndex !== undefined
+    ? portfolio.certificates[Number(certificateRouteIndex)]
+    : undefined;
+  const routeExperience = portfolio && experienceRouteIndex !== undefined
+    ? portfolio.experience[Number(experienceRouteIndex)]
     : undefined;
 
   useEffect(() => {
     if (!portfolio) return;
     const profile = portfolio.about;
-    const pageTitle = routeProject
-      ? `${routeProject.title} — ${profile.profileName} — Portfolio`
+    const detailTitle = routeProject?.title ?? routeCertificate?.title ?? routeExperience?.role;
+    const pageTitle = detailTitle
+      ? `${detailTitle} — ${profile.profileName} — Portfolio`
       : `${profile.profileName} — Portfolio`;
     const pageDescription = routeProject
       ? routeProject.projectDescription || routeProject.fullDescription || routeProject.description
+      : routeCertificate
+      ? routeCertificate.description
+      : routeExperience
+      ? routeExperience.desc
       : profile.profileDescription ||
       `Explore ${profile.profileName}'s portfolio, projects, skills, and professional experience.`;
     const imageUrl = new URL("/abdilahi-portfolio.png", window.location.origin).href;
@@ -318,7 +407,7 @@ function App() {
     document.querySelector('meta[name="twitter:title"]')?.setAttribute("content", pageTitle);
     document.querySelector('meta[name="twitter:description"]')?.setAttribute("content", pageDescription);
     document.querySelector('meta[name="twitter:image"]')?.setAttribute("content", imageUrl);
-  }, [portfolio, routeProject]);
+  }, [portfolio, routeCertificate, routeExperience, routeProject]);
 
   if (!portfolio) {
     return (
@@ -362,6 +451,36 @@ function App() {
       );
     }
     return <ProjectDetailsPage profileName={profile.profileName} project={routeProject} />;
+  }
+
+  if (isCertificateRoute) {
+    if (!routeCertificate) {
+      return (
+        <main className="portfolio-page project-page">
+          <section className="project-detail-page project-not-found">
+            <h1>Certificate not found</h1>
+            <p>This certificate may have been removed or is no longer available.</p>
+            <a className="project-detail-back" href="/#certificates">Back to certificates</a>
+          </section>
+        </main>
+      );
+    }
+    return <CertificateDetailsPage certificate={routeCertificate} />;
+  }
+
+  if (isExperienceRoute) {
+    if (!routeExperience) {
+      return (
+        <main className="portfolio-page project-page">
+          <section className="project-detail-page project-not-found">
+            <h1>Experience not found</h1>
+            <p>This experience may have been removed or is no longer available.</p>
+            <a className="project-detail-back" href="/#experience">Back to experiences</a>
+          </section>
+        </main>
+      );
+    }
+    return <ExperienceDetailsPage experience={routeExperience} />;
   }
 
   return (
@@ -418,6 +537,16 @@ function App() {
               <span className="summary-icon"><ExternalLink size={18} /></span>
               <span className="summary-label">{profile.socialCountLabel || "Social links"}</span>
               <strong>{socials.length.toString().padStart(2, "0")}</strong>
+            </article>
+            <article className="summary-card">
+              <span className="summary-icon"><Award size={18} /></span>
+              <span className="summary-label">Certificates</span>
+              <strong>{portfolio.certificates.length.toString().padStart(2, "0")}</strong>
+            </article>
+            <article className="summary-card">
+              <span className="summary-icon"><Briefcase size={18} /></span>
+              <span className="summary-label">Experiences</span>
+              <strong>{portfolio.experience.length.toString().padStart(2, "0")}</strong>
             </article>
           </div>
         </section>
@@ -482,6 +611,74 @@ function App() {
             <p>Add a project preview, short description, and repository or LinkedIn link.</p>
             <a className="empty-action" href="/admin">Add your first project <ArrowUpRight size={15} /></a>
           </div>
+        )}
+      </section>
+
+      <section aria-labelledby="certificates-title" className="projects-section" id="certificates">
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">CERTIFICATES</p>
+            <h2 id="certificates-title">Certificates</h2>
+          </div>
+        </div>
+        {portfolio.certificates.length > 0 ? (
+          <div className="project-grid">
+            {portfolio.certificates.map((certificate, index) => (
+              <article className="project-card" key={`${certificate.title}-${certificate.issuer}-${certificate.year}`}>
+                <a aria-label={`View ${certificate.title} certificate details`} className="project-card-main" href={`/certificates/${index}`}>
+                  <div className="project-image-wrap">
+                    {certificate.image
+                      ? <img alt={`${certificate.title} certificate`} className="project-image" loading="lazy" src={certificate.image} />
+                      : <div aria-label="Certificate image not added" className="project-image-placeholder" role="img"><span>Certificate</span></div>}
+                  </div>
+                  <div className="project-content">
+                    <div className="project-title-row">
+                      <div><h3>{certificate.title}</h3></div>
+                      <ArrowUpRight size={17} />
+                    </div>
+                    {certificate.issuer && <p className="project-description">{certificate.issuer}</p>}
+                    {certificate.year && <div className="project-tags"><span>{certificate.year}</span></div>}
+                  </div>
+                </a>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <p className="section-empty">Certificates will appear here when added.</p>
+        )}
+      </section>
+
+      <section aria-labelledby="experience-title" className="projects-section" id="experience">
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">EXPERIENCE</p>
+            <h2 id="experience-title">Experiences</h2>
+          </div>
+        </div>
+        {portfolio.experience.length > 0 ? (
+          <div className="experience-grid">
+            {portfolio.experience.map((experience, index) => (
+              <article className="project-card" key={`${experience.role}-${experience.company}-${experience.year}`}>
+                <a aria-label={`View ${experience.role} experience details`} className="project-card-main" href={`/experiences/${index}`}>
+                  <div className="project-image-wrap">
+                    {experience.image
+                      ? <img alt={`${experience.role} experience`} className="project-image" loading="lazy" src={experience.image} />
+                      : <div aria-label="Experience image not added" className="project-image-placeholder" role="img"><span>Experience</span></div>}
+                  </div>
+                  <div className="project-content">
+                    <div className="project-title-row">
+                      <div><h3>{experience.role}</h3></div>
+                      <ArrowUpRight size={17} />
+                    </div>
+                    {experience.company && <p className="project-description">{experience.company}</p>}
+                    {experience.year && <div className="project-tags"><span>{experience.year}</span></div>}
+                  </div>
+                </a>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <p className="section-empty">Experiences will appear here when added.</p>
         )}
       </section>
 
@@ -605,8 +802,10 @@ function App() {
 
       <nav aria-label="Main navigation" className="quick-nav">
         <a href="#about">About</a>
-        <a href="#skills">Skills</a>
         <a href="#projects">Projects</a>
+        <a href="#certificates">Certificates</a>
+        <a href="#experience">Experiences</a>
+        <a href="#skills">Skills</a>
         <a href="#contact">Contact</a>
         <button
           aria-label={darkMode ? "Switch to light mode" : "Switch to dark mode"}
