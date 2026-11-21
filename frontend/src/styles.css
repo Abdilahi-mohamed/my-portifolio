@@ -2663,6 +2663,14 @@ html[data-portfolio-theme="dark"] body {
   justify-content: center;
   gap: 8px;
 }
+.portfolio-home .profile-name-row h1,
+.portfolio-home .profile-name { text-align: center; }
+.rich-section-description,
+.about-rich-text,
+.profile-bio { overflow-wrap: anywhere; }
+.rich-section-description p,
+.about-rich-text p,
+.profile-bio p { margin-block: 0 8px; }
 
 .profile-accent-picker {
   display: inline-flex;

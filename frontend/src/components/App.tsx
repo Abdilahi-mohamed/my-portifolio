@@ -49,6 +49,7 @@ import {
   programmingIconColor,
 } from "./programmingIcons";
 import type { IconName, PortfolioContent } from "./types";
+import { sanitizeRichTextHtml } from "./RichTextEditor";
 
 type ToastMessage = { title: string; detail?: string };
 type Project = PortfolioContent["projectsSection"]["projects"][number];
@@ -404,7 +405,7 @@ function App() {
       <div className="portfolio-intro-grid">
         <section aria-label="About" className="about-panel" id="about">
           <p className="eyebrow">{profile.label || "A LITTLE ABOUT ME"}</p>
-          <p>{profile.bio || profile.profileDescription}</p>
+          <div className="about-rich-text" dangerouslySetInnerHTML={{ __html: sanitizeRichTextHtml(profile.bio || profile.profileDescription) }} />
           {profile.values.length > 0 && (
             <div className="about-values">
               {profile.values.map((value) => <span key={value.title}>{value.title}</span>)}
@@ -442,7 +443,7 @@ function App() {
           <div>
             <p className="eyebrow">{portfolio.projectsSection.label}</p>
             <h2 id="projects-title">{portfolio.projectsSection.title}</h2>
-            {portfolio.projectsSection.description && <p className="section-description">{portfolio.projectsSection.description}</p>}
+            {portfolio.projectsSection.description && <div className="section-description rich-section-description" dangerouslySetInnerHTML={{ __html: sanitizeRichTextHtml(portfolio.projectsSection.description) }} />}
           </div>
           <span className="project-count">{projects.length.toString().padStart(2, "0")}</span>
         </div>
@@ -508,7 +509,7 @@ function App() {
           <div>
             <p className="eyebrow">{portfolio.skillsSection.label}</p>
             <h2 id="skills-title">{portfolio.skillsSection.title}</h2>
-            {portfolio.skillsSection.description && <p className="section-description">{portfolio.skillsSection.description}</p>}
+            {portfolio.skillsSection.description && <div className="section-description rich-section-description" dangerouslySetInnerHTML={{ __html: sanitizeRichTextHtml(portfolio.skillsSection.description) }} />}
           </div>
         </div>
         {skills.length > 0 ? (
@@ -560,7 +561,7 @@ function App() {
           <div>
             <p className="eyebrow">{portfolio.contact.label || "CONNECT"}</p>
             <h2 id="contact-title">{portfolio.contact.title || portfolio.contact.socialTitle}</h2>
-            {portfolio.contact.description && <p className="section-description">{portfolio.contact.description}</p>}
+            {portfolio.contact.description && <div className="section-description rich-section-description" dangerouslySetInnerHTML={{ __html: sanitizeRichTextHtml(portfolio.contact.description) }} />}
           </div>
         </div>
         <div className="contact-grid">

@@ -25,6 +25,7 @@ import {
   X,
 } from "lucide-react";
 import type { PortfolioContent, ProjectTechnology } from "../types";
+import RichTextEditor, { countRichTextWords } from "../RichTextEditor";
 import { isPortfolioContent } from "../../../../backend/src/lib/portfolioValidation";
 import {
   isLinkedInProfile,
@@ -919,12 +920,13 @@ export function AdminDashboard({
 
             <aside className="cms-aside-column">
               <section className="cms-panel cms-config-panel" id="configuration"><div className="cms-aside-heading"><span className="cms-section-index">PORTFOLIO PROFILE</span><button className="cms-icon-button" aria-label="Save profile" disabled={saved || busy} onClick={save} title="Save changes" type="button"><Check size={16} /></button></div><h2>About me</h2><p>Edit the About section and profile details shown on your portfolio.</p>
+                <label className="cms-input-label">Section description<RichTextEditor label="Section description" value={content.projectsSection.description} onChange={(html) => updateContent((current) => ({ ...current, projectsSection: { ...current.projectsSection, description: html } }))} /></label>
+                <label className="cms-input-label">Short About me text<RichTextEditor label="Short About me text" wordLimit={1000} value={content.about.bio} onChange={(html) => updateContent((current) => ({ ...current, about: { ...current.about, bio: html, profileDescription: html } }))} /><small className="cms-char-count cms-rich-word-count">{countRichTextWords(content.about.bio)} / 1000 words</small></label>
                 <label className="cms-input-label">About section label<input onChange={(event) => updateContent((current) => ({ ...current, about: { ...current.about, label: event.target.value } }))} value={content.about.label} /></label>
                 <label className="cms-input-label">About me heading<input onChange={(event) => updateContent((current) => ({ ...current, about: { ...current.about, title: event.target.value, bioTitle: event.target.value } }))} value={content.about.bioTitle || content.about.title} /></label>
                 <label className="cms-input-label">Display name<input onChange={(event) => updateContent((current) => ({ ...current, about: { ...current.about, profileName: event.target.value }, hero: { ...current.hero, brand: `${event.target.value} Portfolio` } }))} value={content.about.profileName} /></label>
                 <label className="cms-input-label">Professional title<input onChange={(event) => updateContent((current) => ({ ...current, about: { ...current.about, profileRole: event.target.value } }))} value={content.about.profileRole} /></label>
                 <label className="cms-input-label">Location<input onChange={(event) => updateContent((current) => ({ ...current, about: { ...current.about, location: event.target.value }, contact: { ...current.contact, location: event.target.value } }))} value={content.about.location} /></label>
-                <label className="cms-input-label">Short About me text<textarea maxLength={300} onChange={(event) => updateContent((current) => ({ ...current, about: { ...current.about, bio: event.target.value, profileDescription: event.target.value } }))} rows={4} value={content.about.bio} /><small className="cms-char-count">{content.about.bio.length} / 300</small></label>
                 <div className="cms-form-row">
                   <label className="cms-input-label">Snapshot label<input onChange={(event) => updateContent((current) => ({ ...current, about: { ...current.about, snapshotLabel: event.target.value } }))} value={content.about.snapshotLabel ?? ""} /></label>
                   <label className="cms-input-label">Snapshot title<input onChange={(event) => updateContent((current) => ({ ...current, about: { ...current.about, snapshotTitle: event.target.value } }))} value={content.about.snapshotTitle ?? ""} /></label>
@@ -964,7 +966,7 @@ export function AdminDashboard({
                       </div>
                       <label className="cms-input-label">Navigation label<input onChange={(event) => updateSectionLabel(section.id, event.target.value)} value={section.label} /></label>
                       <label className="cms-input-label">Section title<input onChange={(event) => updateSectionText(section.id, "title", event.target.value)} value={section.title} /></label>
-                      {(section.description || ["home", "projects", "languages", "contacts"].includes(section.id)) && <label className="cms-input-label">Section description<textarea maxLength={240} onChange={(event) => updateSectionText(section.id, "description", event.target.value)} rows={2} value={section.description} /><small className="cms-char-count">{section.description.length} / 240</small></label>}
+                      {(section.description || ["home", "languages", "contacts"].includes(section.id)) && <label className="cms-input-label">Section description<RichTextEditor label={`Section description: ${section.label}`} value={section.description} onChange={(html) => updateSectionText(section.id, "description", html)} /></label>}
                       {section.customSection && <div className="cms-custom-cards">
                         <div className="cms-managed-cards-heading"><strong>Section cards</strong><button className="cms-add-link" onClick={() => addCustomCard(section.id)} type="button"><Plus size={13} /> Add card</button></div>
                         {section.customSection.cards.map((card, cardIndex) => <div className="cms-managed-card" key={`${section.id}-${cardIndex}`}>

@@ -162,6 +162,19 @@
 .cms-input-label { position: relative; display: block; margin: 0 0 11px; color: #627087; font-size: 9px; font-weight: 700; }
 .cms-input-label > input, .cms-input-label > textarea, .cms-input-label > select { display: block; width: 100%; min-height: 34px; margin-top: 5px; padding: 8px 9px; border: 1px solid #e4e9f0; border-radius: 4px; outline: none; color: #344057; background: #fff; font-size: 10px; font-weight: 500; }
 .cms-input-label > textarea { min-height: 78px; resize: vertical; line-height: 1.55; }
+.cms-rich-editor { margin-top: 6px; border: 1px solid #e4e9f0; border-radius: 6px; background: #fff; overflow: hidden; }
+.cms-rich-toolbar { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; padding: 6px; border-bottom: 1px solid #edf0f4; background: #f8fafb; }
+.cms-rich-toolbar button, .cms-rich-toolbar select, .cms-toolbar-color { min-width: 28px; height: 28px; border: 1px solid #dfe5ec; border-radius: 4px; color: #536075; background: #fff; font-size: 11px; }
+.cms-rich-toolbar button { display: inline-grid; place-items: center; padding: 0 6px; cursor: pointer; }
+.cms-rich-toolbar button.is-active { border-color: #8bb6a2; color: #236047; background: #e8f3ec; }
+.cms-rich-toolbar select { padding: 0 5px; }
+.cms-toolbar-color { position: relative; display: inline-grid; min-width: 34px; place-items: center; overflow: hidden; cursor: pointer; }
+.cms-toolbar-color input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+.cms-toolbar-highlight span { text-decoration: underline; text-decoration-color: #fff06a; text-decoration-thickness: 6px; }
+.cms-rich-editor-content { min-height: 110px; max-height: 320px; overflow: auto; padding: 10px 12px; outline: none; color: #344057; font-size: 12px; line-height: 1.65; }
+.cms-rich-editor-content p:first-child { margin-top: 0; }
+.cms-rich-editor-content p:last-child { margin-bottom: 0; }
+.cms-rich-word-count { position: static !important; display: block; margin-top: 6px; text-align: right; }
 .cms-input-label > input:focus, .cms-input-label > textarea:focus, .cms-input-label > select:focus { border-color: #8ba8e6; box-shadow: 0 0 0 2px #edf3ff; }
 .cms-input-label > select { appearance: none; }
 .cms-select-chevron { position: absolute; right: 10px; bottom: 10px; color: #8692a5; pointer-events: none; }
