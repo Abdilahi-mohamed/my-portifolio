@@ -168,11 +168,11 @@ export default function RichTextEditor({
         <button type="button" title="Underline" className={editor.isActive("underline") ? "is-active" : ""} onClick={() => editor.chain().focus().toggleUnderline().run()}><u>U</u></button>
         <label title="Text color" className="cms-toolbar-color">
           <span>A</span>
-          <input type="color" defaultValue="#56665c" onInput={(event) => editor.chain().focus().setColor(event.currentTarget.value).run()} />
+          <input type="color" defaultValue="#D4AF37" onInput={(event) => editor.chain().focus().setColor(event.currentTarget.value).run()} />
         </label>
         <label title="Highlight color" className="cms-toolbar-color cms-toolbar-highlight">
           <span>H</span>
-          <input type="color" defaultValue="#fff06a" onInput={(event) => editor.chain().focus().toggleHighlight({ color: event.currentTarget.value }).run()} />
+          <input type="color" defaultValue="#F3E5AB" onInput={(event) => editor.chain().focus().toggleHighlight({ color: event.currentTarget.value }).run()} />
         </label>
         <select aria-label="Font size" defaultValue="" onChange={(event) => { if (event.target.value) applyFontSize(event.target.value); }}>
           <option value="">Size</option>
