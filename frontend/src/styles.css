@@ -3137,7 +3137,7 @@ html[data-portfolio-theme="light"] .portfolio-home > .quick-nav {
   display: grid;
   width: 100%;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 24px;
+  gap: 18px;
 }
 
 .experience-post-card {
@@ -3145,7 +3145,7 @@ html[data-portfolio-theme="light"] .portfolio-home > .quick-nav {
   min-width: 0;
   flex-direction: column;
   overflow: hidden;
-  padding: 13px;
+  padding: 11px;
   border: 1px solid var(--home-border);
   border-radius: 12px;
   background: var(--home-panel);
@@ -3160,9 +3160,9 @@ html[data-portfolio-theme="light"] .portfolio-home > .quick-nav {
 
 .experience-post-icon {
   display: grid;
-  width: 36px;
-  height: 36px;
-  flex: 0 0 36px;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
   place-items: center;
   border: 1px solid var(--home-border);
   border-radius: 50%;
@@ -3174,12 +3174,12 @@ html[data-portfolio-theme="light"] .portfolio-home > .quick-nav {
 .experience-post-heading h3 { margin: 0; color: var(--home-copy); font-size: 13px; line-height: 1.4; }
 .experience-post-company { margin: 2px 0 0; color: var(--home-copy); font-size: 11px; font-weight: 650; }
 .experience-post-meta { margin: 2px 0 0; color: var(--home-muted); font-size: 10px; }
-.experience-post-description { display: -webkit-box; overflow: hidden; margin: 10px 0 3px; color: var(--home-copy); font-size: 11px; line-height: 1.6; white-space: pre-wrap; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
+.experience-post-description { display: -webkit-box; overflow: hidden; margin: 8px 0 3px; color: var(--home-copy); font-size: 11px; line-height: 1.6; white-space: pre-wrap; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
 .experience-post-description.is-expanded { display: block; overflow: visible; }
 .experience-post-toggle { padding: 0; border: 0; color: var(--accent-one); background: transparent; font: inherit; font-size: 10px; font-weight: 700; cursor: pointer; }
 .experience-post-toggle:hover { text-decoration: underline; }
 .experience-post-toggle:focus-visible { outline: 2px solid var(--accent-one); outline-offset: 3px; }
-.experience-post-image { display: block; width: 100%; max-height: 220px; border: 1px solid var(--home-border); border-radius: 8px; object-fit: cover; }
+.experience-post-image { display: block; width: 100%; max-height: 190px; border: 1px solid var(--home-border); border-radius: 8px; object-fit: cover; }
 @media (max-width: 620px) {
   .portfolio-home .experience-post-feed { grid-template-columns: 1fr; gap: 12px; }
   .experience-post-card { padding: 10px; }

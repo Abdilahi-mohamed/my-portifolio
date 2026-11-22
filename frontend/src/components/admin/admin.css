@@ -1114,8 +1114,8 @@
 .cms-login-input { border-color: #78716C; color: #FFFBEB; background: #171717; }
 .cms-login-input:focus-within { border-color: #78716C; box-shadow: 0 0 0 4px rgb(23 23 23 / 0.12); }
 .cms-login-card .cms-login-input input { color: #FFFBEB; }
-.cms-login-submit { color: #FFFBEB; background: #292524; }
-.cms-login-submit:hover:not(:disabled) { background: #292524; }
+.cms-login-submit { color: #FFFBEB; background: #16A34A; }
+.cms-login-submit:hover:not(:disabled) { background: #15803D; }
 .cms-analytics-metrics article { border-color: #78716C; background: #171717; }
 .cms-analytics-metrics article > span,
 .cms-analytics-metrics article > small,
