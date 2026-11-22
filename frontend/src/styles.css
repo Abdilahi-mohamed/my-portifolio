@@ -2312,7 +2312,7 @@ html[data-portfolio-theme="light"] .quick-nav button { border-color: #D4AF37; }
 
 html[data-portfolio-theme="light"] .portfolio-home {
   border-color: #D4AF37;
-  background: #FFFFFF;
+  background: #FFFBEB;
   box-shadow: 0 24px 72px rgb(23 23 23 / 0.12);
 }
 
@@ -2953,13 +2953,11 @@ html[data-portfolio-theme="light"] {
 }
 
 html[data-portfolio-theme="light"] body {
-  background:
-    radial-gradient(ellipse at 12% 0%, rgb(229 199 107 / 0.09), transparent 30rem),
-    radial-gradient(ellipse at 90% 17%, rgb(229 199 107 / 0.08), transparent 32rem),
-    #FFFBEB;
+  background: #FFFBEB;
 }
 
 html[data-portfolio-theme="light"] .portfolio-home {
+  background: #FFFBEB;
   --home-panel: #FFFFFF;
   --home-raised: #FFFBEB;
   --home-border: #E5C76B;
@@ -3010,7 +3008,7 @@ html[data-portfolio-theme="light"] .portfolio-home .contact-section {
 html[data-portfolio-theme="light"] .portfolio-home .hero-secondary-action { border-color: var(--home-border); color: #171717; background: #FFFFFF; }
 html[data-portfolio-theme="light"] .portfolio-home .toast { border-color: var(--home-border); color: #171717; background: #FFFFFF; }
 
-html[data-container-mode="boxed"][data-portfolio-theme="light"] .portfolio-home { background: rgb(255 255 255 / 0.8); }
+html[data-container-mode="boxed"][data-portfolio-theme="light"] .portfolio-home { background: #FFFBEB; }
 
 html[data-portfolio-theme="dark"] .portfolio-home .profile,
 html[data-portfolio-theme="light"] .portfolio-home .profile {
