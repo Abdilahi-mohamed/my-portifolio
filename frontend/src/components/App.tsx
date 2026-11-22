@@ -162,27 +162,53 @@ function GitHubActivity() {
   const [activity, setActivity] = useState<GitHubActivityData | null>(null);
 
   useEffect(() => {
-    const controller = new AbortController();
-    fetch("https://github-contributions-api.jogruber.de/v4/Abdilahi-mohamed?y=last", { signal: controller.signal })
-      .then(async (response) => {
-        if (!response.ok) throw new Error(`GitHub contributions request failed (${response.status}).`);
-        const data: unknown = await response.json();
-        if (!isGitHubContributionsResponse(data)) {
-          throw new Error("GitHub contributions response was invalid.");
-        }
-        setActivity({
-          total: data.total.lastYear,
-          weeks: groupGitHubContributionsByWeek(data.contributions),
-        });
-        setGraphState("loaded");
-      })
-      .catch((cause: unknown) => {
-        if (controller.signal.aborted) return;
-        console.error("Could not load GitHub contribution activity.", cause);
-        setGraphState("unavailable");
-      });
+    let activeController: AbortController | null = null;
+    let hasLoadedActivity = false;
 
-    return () => controller.abort();
+    const loadActivity = () => {
+      activeController?.abort();
+      const controller = new AbortController();
+      activeController = controller;
+
+      fetch("https://github-contributions-api.jogruber.de/v4/Abdilahi-mohamed?y=last", {
+        signal: controller.signal,
+        cache: "no-store",
+      })
+        .then(async (response) => {
+          if (!response.ok) throw new Error(`GitHub contributions request failed (${response.status}).`);
+          const data: unknown = await response.json();
+          if (!isGitHubContributionsResponse(data)) {
+            throw new Error("GitHub contributions response was invalid.");
+          }
+          setActivity({
+            total: data.total.lastYear,
+            weeks: groupGitHubContributionsByWeek(data.contributions),
+          });
+          hasLoadedActivity = true;
+          setGraphState("loaded");
+        })
+        .catch((cause: unknown) => {
+          if (controller.signal.aborted) return;
+          console.error("Could not load GitHub contribution activity.", cause);
+          if (!hasLoadedActivity) setGraphState("unavailable");
+        });
+    };
+
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === "visible") loadActivity();
+    };
+    const refreshInterval = window.setInterval(() => {
+      if (document.visibilityState === "visible") loadActivity();
+    }, 5 * 60 * 1000);
+
+    document.addEventListener("visibilitychange", refreshWhenVisible);
+    loadActivity();
+
+    return () => {
+      activeController?.abort();
+      window.clearInterval(refreshInterval);
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
+    };
   }, []);
 
   return (
