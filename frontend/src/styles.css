@@ -3522,3 +3522,104 @@ html[data-portfolio-theme="light"] .github-activity-fallback { color: #171717; }
   gap: 0;
   padding: 0;
 }
+
+html[data-portfolio-theme="light"] .portfolio-page :is(
+  .profile,
+  .summary-card,
+  .project-card,
+  .skill-card,
+  .credential-panel,
+  .certificate-card,
+  .experience-post-card,
+  .social-card,
+  .availability-card,
+  .contact-email-card,
+  .github-activity-graph-frame,
+  .about-panel,
+  .contact-section,
+  .project-detail-page,
+  .project-detail-dialog,
+  .portfolio-skeleton-profile,
+  .portfolio-skeleton-summary-card,
+  .portfolio-skeleton-project-card,
+  .portfolio-menu-items,
+  .password-dialog,
+  .empty-projects,
+  .section-empty,
+  .skill-chip,
+  .project-tags span,
+  .project-detail-tags span,
+  .project-detail-technology
+) {
+  background: #FFFBEB;
+}
+
+html[data-portfolio-theme="light"] .portfolio-page button,
+html[data-portfolio-theme="light"] .portfolio-page :is(
+  .topbar-nav-link,
+  .topbar-contact-link,
+  .edit-link,
+  .empty-action,
+  .credentials-edit-link,
+  .portfolio-menu > summary,
+  .portfolio-menu-items a,
+  .project-gallery-arrow,
+  .project-links a,
+  .project-detail-back,
+  .project-detail-links a,
+  .profile-social-links a,
+  .hero-primary-action,
+  .hero-secondary-action,
+  .quick-nav a
+) {
+  background: #FFFBEB;
+}
+
+html[data-portfolio-theme="light"] .portfolio-page :is(
+  .profile,
+  .summary-card,
+  .project-card,
+  .skill-card,
+  .credential-panel,
+  .certificate-card,
+  .experience-post-card,
+  .social-card,
+  .availability-card,
+  .contact-email-card,
+  .github-activity-graph-frame,
+  .about-panel,
+  .contact-section,
+  .project-detail-page,
+  .project-detail-dialog,
+  .portfolio-skeleton-profile,
+  .portfolio-skeleton-summary-card,
+  .portfolio-skeleton-project-card,
+  .portfolio-menu-items,
+  .password-dialog,
+  .empty-projects,
+  .section-empty,
+  .skill-chip,
+  .project-tags span,
+  .project-detail-tags span,
+  .project-detail-technology
+):hover,
+html[data-portfolio-theme="light"] .portfolio-page button:hover,
+html[data-portfolio-theme="light"] .portfolio-page :is(
+  .topbar-nav-link,
+  .topbar-contact-link,
+  .edit-link,
+  .empty-action,
+  .credentials-edit-link,
+  .portfolio-menu > summary,
+  .portfolio-menu-items a,
+  .project-gallery-arrow,
+  .project-links a,
+  .project-detail-back,
+  .project-detail-links a,
+  .profile-social-links a,
+  .hero-primary-action,
+  .hero-secondary-action,
+  .quick-nav a
+):hover {
+  background: #FFFBEB;
+}
