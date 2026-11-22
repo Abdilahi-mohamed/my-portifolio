@@ -3335,10 +3335,24 @@ html[data-portfolio-theme="light"] .portfolio-home > .quick-nav {
   background: #0D1117;
 }
 
+.github-activity-username {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 7px;
+  color: #D4AF37;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.github-activity-username:hover { text-decoration: underline; }
+.github-activity-username:focus-visible { outline: 2px solid #D4AF37; outline-offset: 3px; }
+
 .github-activity-total {
-  margin: 0 0 16px;
+  margin: 0 0 14px;
   color: #E6EDF3;
-  font-size: 16px;
+  font-size: 13px;
   font-weight: 600;
 }
 
@@ -3471,7 +3485,27 @@ html[data-portfolio-theme="light"] .portfolio-home > .quick-nav {
   }
   .github-activity-weekdays { flex-basis: 24px; font-size: 9px; }
   .github-activity-months { font-size: 9px; }
+  .github-activity-total { font-size: 12px; }
 }
+
+html[data-portfolio-theme="light"] .portfolio-home .github-activity-graph-frame {
+  border-color: #E5C76B;
+  background: #FFFFFF;
+}
+
+html[data-portfolio-theme="light"] .github-activity-username { color: #806400; }
+html[data-portfolio-theme="light"] .github-activity-total { color: #171717; }
+html[data-portfolio-theme="light"] .github-activity-weekdays,
+html[data-portfolio-theme="light"] .github-activity-months,
+html[data-portfolio-theme="light"] .github-activity-legend { color: #78716C; }
+html[data-portfolio-theme="light"] .github-activity-cell.level-0 { background: #EBEDF0; }
+html[data-portfolio-theme="light"] .github-activity-cell.level-1 { background: #9BE9A8; }
+html[data-portfolio-theme="light"] .github-activity-cell.level-2 { background: #40C463; }
+html[data-portfolio-theme="light"] .github-activity-cell.level-3 { background: #30A14E; }
+html[data-portfolio-theme="light"] .github-activity-cell.level-4 { background: #216E39; }
+html[data-portfolio-theme="light"] .github-activity-calendar-scroll { scrollbar-color: #D0D7DE #FFFFFF; }
+html[data-portfolio-theme="light"] .github-activity-loading { color: #806400; }
+html[data-portfolio-theme="light"] .github-activity-fallback { color: #171717; }
 
 .portfolio-home .contact-section .socials-grid {
   display: flex;

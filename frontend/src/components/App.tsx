@@ -206,6 +206,15 @@ function GitHubActivity() {
           </p>
         ) : activity ? (
           <>
+            <a
+              className="github-activity-username"
+              href="https://github.com/Abdilahi-mohamed"
+              rel="noopener noreferrer"
+              target="_blank"
+            >
+              <Github aria-hidden="true" size={14} />
+              <span>Abdilahi-mohamed</span>
+            </a>
             <p className="github-activity-total">
               {activity.total.toLocaleString("en-US")} contributions in the last year
             </p>
