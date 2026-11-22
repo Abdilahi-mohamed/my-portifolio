@@ -7,7 +7,6 @@ import {
   Briefcase,
   Check,
   Code2,
-  Copy,
   ExternalLink,
   Figma,
   Facebook,
@@ -98,7 +97,6 @@ const icons: Partial<Record<IconName, typeof ArrowUpRight>> = {
   X: XIcon,
   Zap,
 };
-const skillGroups = ["Frontend", "Backend", "Databases", "Tools"] as const;
 
 type GitHubContribution = { date: string; count: number; level: number };
 type GitHubContributionWeek = { days: (GitHubContribution | null)[]; monthLabel: string };
@@ -915,39 +913,28 @@ function App() {
       <section aria-labelledby="skills-title" className="skills-section" id="skills">
         <div className="section-heading">
           <div>
-            <p className="eyebrow">{portfolio.skillsSection.label}</p>
-            <h2 id="skills-title">{portfolio.skillsSection.title}</h2>
+            <p className="eyebrow">TECH STACK</p>
+            <h2 id="skills-title">Tech Stack</h2>
             {portfolio.skillsSection.description && <div className="section-description rich-section-description" dangerouslySetInnerHTML={{ __html: sanitizeRichTextHtml(portfolio.skillsSection.description) }} />}
           </div>
         </div>
         {skills.length > 0 ? (
-          <div className="skill-groups">
-            {skillGroups.map((group) => {
-              const groupedSkills = skills.filter((skill) => skill.category === group);
-              if (groupedSkills.length === 0) return null;
+          <div className="skills-chip-list">
+            {skills.map((skill) => {
+              const Icon = icons[skill.icon] ?? ExternalLink;
+              const iconColor = programmingIconColor(skill.icon, skill.color);
               return (
-                <section aria-label={`${group} skills`} className="skill-group" key={group}>
-                  <h3 className="skill-group-title">{group}</h3>
-                  <div className="skills-chip-list">
-                    {groupedSkills.map((skill) => {
-                      const Icon = icons[skill.icon] ?? ExternalLink;
-                      const iconColor = programmingIconColor(skill.icon, skill.color);
-                      return (
-                        <span className="skill-chip" key={skill.name}>
-                          <span aria-hidden="true" className="skill-chip-icon" style={{
-                            color: iconColor,
-                            backgroundColor: programmingIconBackground(skill.icon) ?? "#292524",
-                          }}>
-                              {isProgrammingLanguageIcon(skill.icon)
-                                ? <ProgrammingLanguageIcon name={skill.icon} size={16} color={iconColor} />
-                                : <Icon size={16} strokeWidth={1.8} />}
-                          </span>
-                          <span>{skill.name}</span>
-                        </span>
-                      );
-                    })}
-                  </div>
-                </section>
+                <span className="skill-chip" key={`${skill.category}-${skill.name}`}>
+                  <span aria-hidden="true" className="skill-chip-icon" style={{
+                    color: iconColor,
+                    backgroundColor: programmingIconBackground(skill.icon) ?? "#292524",
+                  }}>
+                    {isProgrammingLanguageIcon(skill.icon)
+                      ? <ProgrammingLanguageIcon name={skill.icon} size={16} color={iconColor} />
+                      : <Icon size={16} strokeWidth={1.8} />}
+                  </span>
+                  <span>{skill.name}</span>
+                </span>
               );
             })}
           </div>
@@ -977,38 +964,34 @@ function App() {
                 </div>
               </article>
             )}
-            {portfolio.contact.email && (
-              <a
-                aria-label={`Send email to ${portfolio.contact.email}`}
-                className="contact-email-card"
-                href={`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(portfolio.contact.email)}`}
-                rel="noopener noreferrer"
-                target="_blank"
-              >
-                <span className="contact-icon"><Mail size={18} /></span>
-                <span><small>{portfolio.contact.emailLabel || "Send email"}</small><strong>{portfolio.contact.email}</strong></span>
-                <Copy aria-hidden="true" size={16} />
-              </a>
-            )}
             {portfolio.contact.location && (
               <p className="contact-location"><MapPin size={16} /> {portfolio.contact.location}</p>
             )}
-            {socials.length > 0 && (
+            {(portfolio.contact.email || socials.length > 0) && (
               <div aria-label={portfolio.contact.socialTitle || "Social profiles"} className="socials-grid" id="socials">
+                {portfolio.contact.email && (
+                  <a
+                    aria-label={`Email ${portfolio.contact.email}`}
+                    className="social-card"
+                    href={`mailto:${portfolio.contact.email}`}
+                    key="contact-email"
+                    title="Email"
+                  >
+                    <span className="social-icon social-icon-email"><Mail aria-hidden="true" size={19} /></span>
+                  </a>
+                )}
                 {socials.map((social) => {
                   const url = social.url ?? "";
                   const icon = socialIconForUrl(url) ?? social.icon;
                   const Icon = icons[icon] ?? ExternalLink;
                   const isSocialBrand = socialIconOptions.some((option) => option.name === icon);
                   return (
-                    <a aria-label={`Open ${social.name} profile in a new tab`} className="social-card" href={url} key={`${social.name}-${url}`} rel="noopener noreferrer" target="_blank">
+                    <a aria-label={`Open ${social.name} profile in a new tab`} className="social-card" href={url} key={`${social.name}-${url}`} rel="noopener noreferrer" target="_blank" title={social.name}>
                       <span className={`social-icon social-icon-${icon.toLowerCase()}`}>
                         {isSocialBrand
                           ? <SocialBrandIcon name={icon} size={19} />
                           : <Icon size={19} strokeWidth={1.8} />}
                       </span>
-                      <span className="social-name">{social.name}</span>
-                      <ArrowUpRight className="social-arrow" size={16} />
                     </a>
                   );
                 })}

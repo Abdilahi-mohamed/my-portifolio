@@ -3472,3 +3472,21 @@ html[data-portfolio-theme="light"] .portfolio-home > .quick-nav {
   .github-activity-weekdays { flex-basis: 24px; font-size: 9px; }
   .github-activity-months { font-size: 9px; }
 }
+
+.portfolio-home .contact-section .socials-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+
+.portfolio-home .contact-section .social-card {
+  display: grid;
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  min-height: 44px;
+  flex: 0 0 44px;
+  place-items: center;
+  gap: 0;
+  padding: 0;
+}
