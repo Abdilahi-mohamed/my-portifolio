@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import {
   ArrowUpRight,
   Award,
@@ -99,6 +99,173 @@ const icons: Partial<Record<IconName, typeof ArrowUpRight>> = {
   Zap,
 };
 const skillGroups = ["Frontend", "Backend", "Databases", "Tools"] as const;
+
+type GitHubContribution = { date: string; count: number; level: number };
+type GitHubContributionWeek = { days: (GitHubContribution | null)[]; monthLabel: string };
+type GitHubActivityData = { total: number; weeks: GitHubContributionWeek[] };
+
+function isGitHubContribution(value: unknown): value is GitHubContribution {
+  if (!value || typeof value !== "object") return false;
+  const contribution = value as Record<string, unknown>;
+  return typeof contribution.date === "string"
+    && /^\d{4}-\d{2}-\d{2}$/.test(contribution.date)
+    && Number.isFinite(Date.parse(`${contribution.date}T00:00:00Z`))
+    && typeof contribution.count === "number"
+    && Number.isFinite(contribution.count)
+    && contribution.count >= 0
+    && typeof contribution.level === "number"
+    && Number.isInteger(contribution.level)
+    && contribution.level >= 0
+    && contribution.level <= 4;
+}
+
+function isGitHubContributionsResponse(value: unknown): value is {
+  total: { lastYear: number };
+  contributions: GitHubContribution[];
+} {
+  if (!value || typeof value !== "object") return false;
+  const response = value as Record<string, unknown>;
+  if (!response.total || typeof response.total !== "object") return false;
+  const total = response.total as Record<string, unknown>;
+  return typeof total.lastYear === "number"
+    && Number.isFinite(total.lastYear)
+    && Array.isArray(response.contributions)
+    && response.contributions.length > 0
+    && response.contributions.every(isGitHubContribution);
+}
+
+function groupGitHubContributionsByWeek(contributions: GitHubContribution[]): GitHubContributionWeek[] {
+  const weeks: GitHubContributionWeek[] = [];
+  let currentWeek: GitHubContributionWeek | undefined;
+  let currentMonth = "";
+
+  for (const contribution of contributions) {
+    const date = new Date(`${contribution.date}T00:00:00Z`);
+    const dayOfWeek = date.getUTCDay();
+    if (!currentWeek || dayOfWeek === 0) {
+      if (currentWeek) weeks.push(currentWeek);
+      currentWeek = { days: Array.from({ length: 7 }, () => null), monthLabel: "" };
+    }
+
+    const month = contribution.date.slice(0, 7);
+    if (month !== currentMonth) {
+      currentWeek.monthLabel = date.toLocaleString("en-US", { month: "short", timeZone: "UTC" });
+      currentMonth = month;
+    }
+    currentWeek.days[dayOfWeek] = contribution;
+  }
+
+  if (currentWeek) weeks.push(currentWeek);
+  return weeks;
+}
+
+function GitHubActivity() {
+  const [graphState, setGraphState] = useState<"loading" | "loaded" | "unavailable">("loading");
+  const [activity, setActivity] = useState<GitHubActivityData | null>(null);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch("https://github-contributions-api.jogruber.de/v4/Abdilahi-mohamed?y=last", { signal: controller.signal })
+      .then(async (response) => {
+        if (!response.ok) throw new Error(`GitHub contributions request failed (${response.status}).`);
+        const data: unknown = await response.json();
+        if (!isGitHubContributionsResponse(data)) {
+          throw new Error("GitHub contributions response was invalid.");
+        }
+        setActivity({
+          total: data.total.lastYear,
+          weeks: groupGitHubContributionsByWeek(data.contributions),
+        });
+        setGraphState("loaded");
+      })
+      .catch((cause: unknown) => {
+        if (controller.signal.aborted) return;
+        console.error("Could not load GitHub contribution activity.", cause);
+        setGraphState("unavailable");
+      });
+
+    return () => controller.abort();
+  }, []);
+
+  return (
+    <section aria-labelledby="github-activity-title" className="github-activity-section" id="github-activity">
+      <div className="section-heading">
+        <div>
+          <p className="eyebrow">CONTRIBUTIONS</p>
+          <h2 id="github-activity-title">GitHub Activity</h2>
+        </div>
+      </div>
+      <div className="github-activity-graph-frame">
+        {graphState === "loading" && (
+          <div className="github-activity-loading" role="status">
+            <span aria-hidden="true" />
+            <span>Loading GitHub contribution graph...</span>
+          </div>
+        )}
+        {graphState === "unavailable" ? (
+          <p className="github-activity-fallback" role="status">
+            The contribution graph is temporarily unavailable. Please visit my GitHub profile to view my activity.
+          </p>
+        ) : activity ? (
+          <>
+            <p className="github-activity-total">
+              {activity.total.toLocaleString("en-US")} contributions in the last year
+            </p>
+            <div aria-label="GitHub contribution calendar" className="github-activity-calendar-scroll" role="region" tabIndex={0}>
+              <div
+                className="github-activity-calendar"
+                style={{ "--github-week-count": activity.weeks.length } as CSSProperties}
+              >
+                <div className="github-activity-calendar-layout">
+                  <div aria-hidden="true" className="github-activity-weekdays">
+                    {["", "Mon", "", "Wed", "", "Fri", ""].map((label, index) => (
+                      <span key={index}>{label}</span>
+                    ))}
+                  </div>
+                  <div className="github-activity-calendar-main">
+                    <div aria-hidden="true" className="github-activity-months">
+                      {activity.weeks.map((week, index) => <span key={index}>{week.monthLabel}</span>)}
+                    </div>
+                    <div aria-label="Daily contributions" className="github-activity-days" role="grid" aria-rowcount={7} aria-colcount={activity.weeks.length}>
+                      {["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"].map((dayName, dayIndex) => (
+                        <div
+                          aria-label={`${dayName} contributions`}
+                          className="github-activity-day-row"
+                          key={dayName}
+                          role="row"
+                        >
+                          {activity.weeks.map((week, weekIndex) => {
+                            const contribution = week.days[dayIndex];
+                            return contribution ? (
+                              <span
+                                aria-label={`${contribution.count} contributions on ${contribution.date}`}
+                                className={`github-activity-cell level-${contribution.level}`}
+                                key={contribution.date}
+                                role="gridcell"
+                                title={`${contribution.count} contributions on ${contribution.date}`}
+                              />
+                            ) : (
+                              <span aria-hidden="true" className="github-activity-cell is-empty" key={`${weekIndex}-${dayIndex}`} />
+                            );
+                          })}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <div aria-label="Contribution intensity: less to more" className="github-activity-legend">
+                  <span>Less</span>
+                  {[0, 1, 2, 3, 4].map((level) => <i aria-hidden="true" className={`github-activity-cell level-${level}`} key={level} />)}
+                  <span>More</span>
+                </div>
+              </div>
+            </div>
+          </>
+        ) : null}
+      </div>
+    </section>
+  );
+}
 
 function ProjectDetailsPage({ project, profileName }: { project: Project; profileName: string }) {
   const media = projectMedia(project);
@@ -788,6 +955,8 @@ function App() {
           <p className="section-empty">Skills will appear here when added.</p>
         )}
       </section>
+
+      <GitHubActivity />
 
       <section aria-labelledby="contact-title" className="contact-section" id="contact">
         <div className="section-heading">
