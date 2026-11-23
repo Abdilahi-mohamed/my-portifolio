@@ -877,6 +877,8 @@ function App() {
         )}
       </section>
 
+      <GitHubActivity />
+
       <section aria-labelledby="certificates-title" className="projects-section" id="certificates">
         <div className="section-heading">
           <div>
@@ -977,8 +979,6 @@ function App() {
           <p className="section-empty">Skills will appear here when added.</p>
         )}
       </section>
-
-      <GitHubActivity />
 
       <section aria-labelledby="contact-title" className="contact-section" id="contact">
         <div className="section-heading">
