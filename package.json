@@ -8,8 +8,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "legacy:dev": "npm run dev --prefix backend",
-    "legacy:web": "npm run web --prefix frontend",
+    "legacy:backend": "npm run dev --prefix backend",
+    "legacy:vite": "npm run vite:web --prefix frontend",
     "legacy:build": "npm run build --prefix frontend && npm run build --prefix backend"
   },
   "dependencies": {

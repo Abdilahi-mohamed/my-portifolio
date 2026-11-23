@@ -60,7 +60,8 @@ This optional utility exports portfolio/account/session/contact data and support
 
 ## Run locally
 
-Run the full-stack app, including the admin UI and API routes, on one origin:
+Run the full-stack Next.js app, including the frontend, admin UI, and API routes,
+on one origin:
 
 ```sh
 npm run dev
@@ -69,6 +70,11 @@ npm run dev
 Open `http://localhost:3000` for the portfolio or `http://localhost:3000/admin`
 for the CMS. The CMS includes an **Edit all data** JSON editor for portfolio fields
 that are not covered by the individual section editors.
+
+The same Next.js development server can also be started from `frontend/` with
+`npm run dev`; it delegates to the project root. The Vite frontend and standalone
+Node backend are retained only for legacy use (`npm run legacy:vite` and
+`npm run legacy:backend`) and are not part of the Next.js application.
 
 ## Persistence, migration, and deployment
 

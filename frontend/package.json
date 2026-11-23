@@ -4,8 +4,10 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "web": "node scripts/start-web.mjs",
+    "dev": "node scripts/start-next.mjs",
+    "web": "node scripts/start-next.mjs",
+    "vite:dev": "vite",
+    "vite:web": "node scripts/start-web.mjs",
     "build": "tsc -b && vite build",
     "preview": "vite preview"
   },
