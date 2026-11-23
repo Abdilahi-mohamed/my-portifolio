@@ -3319,8 +3319,8 @@ html[data-portfolio-theme="light"] .portfolio-home > .quick-nav {
 }
 
 .portfolio-home .github-activity-section {
-  width: min(1020px, 84%);
-  margin-inline: auto;
+  width: 100%;
+  margin-inline: 0;
   padding: 0 0 75px;
 }
 
