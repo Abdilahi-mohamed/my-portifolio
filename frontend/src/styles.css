@@ -539,6 +539,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
 
 .project-links a:hover { color: #171717; }
 .project-links a svg:last-child { margin-left: 1px; }
+.project-live-favicon { flex: 0 0 auto; border-radius: 3px; object-fit: contain; }
 
 .empty-projects {
   display: flex;
