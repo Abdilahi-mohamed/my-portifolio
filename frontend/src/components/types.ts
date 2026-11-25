@@ -188,7 +188,7 @@ export type PortfolioContent = {
       technologies?: ProjectTechnology[];
       media?: { type: "image" | "video"; url: string }[];
       tags: string[];
-      liveUrl: string;
+      liveUrl?: string;
       githubUrl: string;
       linkedinUrl: string;
       featured: boolean;
