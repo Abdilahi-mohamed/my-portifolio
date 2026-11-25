@@ -144,7 +144,7 @@ export function isPortfolioContent(value: unknown): boolean {
   ) return false;
   const projectsValid = textArray(
     projects,
-    ["id", "category", "title", "description", "fullDescription", "image", "liveUrl", "githubUrl"],
+    ["id", "category", "title", "description", "fullDescription", "image", "githubUrl"],
     50,
   );
   const projectIds = projectsValid ? projects.map((project) => project.id) : [];
@@ -159,7 +159,7 @@ export function isPortfolioContent(value: unknown): boolean {
         ) &&
         (project.ownershipLabel === undefined || validText(project.ownershipLabel, 80)) &&
         (project.image === "" || isSafeImageReference(project.image)) &&
-        (project.liveUrl === "" || isSafeWebUrl(project.liveUrl)) &&
+        (project.liveUrl === undefined || project.liveUrl === "" || isSafeWebUrl(project.liveUrl)) &&
         (project.githubUrl === "" || isSafeWebUrl(project.githubUrl)) &&
         (project.linkedinUrl === undefined || project.linkedinUrl === "" || isSafeWebUrl(project.linkedinUrl)) &&
         typeof project.featured === "boolean" &&
