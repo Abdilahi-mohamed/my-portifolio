@@ -76,11 +76,11 @@ function projectMedia(project: Project): { type: "image" | "video"; url: string 
   return [...media, ...existingImages];
 }
 
-function ProjectLiveIcon({ url, size = 16 }: { url: string; size?: number }) {
+function ProjectLiveIcon({ project, size = 16 }: { project: Project; size?: number }) {
   const [failedUrl, setFailedUrl] = useState<string | null>(null);
   let faviconUrl: string | null = null;
   try {
-    const liveUrl = new URL(url);
+    const liveUrl = new URL(project.liveUrl ?? "");
     if (liveUrl.protocol === "https:" || liveUrl.protocol === "http:") {
       faviconUrl = `${liveUrl.origin}/favicon.ico`;
     }
@@ -88,7 +88,13 @@ function ProjectLiveIcon({ url, size = 16 }: { url: string; size?: number }) {
     faviconUrl = null;
   }
 
-  if (!faviconUrl || failedUrl === faviconUrl) {
+  const iconUrl = project.image && failedUrl !== project.image
+    ? project.image
+    : faviconUrl && failedUrl !== faviconUrl
+      ? faviconUrl
+      : null;
+
+  if (!iconUrl) {
     return <Globe2 aria-hidden="true" size={size} />;
   }
   return (
@@ -96,9 +102,9 @@ function ProjectLiveIcon({ url, size = 16 }: { url: string; size?: number }) {
       alt=""
       className="project-live-favicon"
       height={size}
-      onError={() => setFailedUrl(faviconUrl)}
+      onError={() => setFailedUrl(iconUrl)}
       referrerPolicy="no-referrer"
-      src={faviconUrl}
+      src={iconUrl}
       width={size}
     />
   );
@@ -402,7 +408,7 @@ function ProjectDetailsPage({ project, profileName }: { project: Project; profil
         {(project.liveUrl || project.githubUrl || project.linkedinUrl) && (
           <div aria-label="Project links" className="project-detail-links">
             <h2>Project Links</h2>
-            {project.liveUrl && <a href={project.liveUrl} rel="noopener noreferrer" target="_blank"><ProjectLiveIcon url={project.liveUrl} /> Live project <ArrowUpRight size={15} /></a>}
+            {project.liveUrl && <a href={project.liveUrl} rel="noopener noreferrer" target="_blank"><ProjectLiveIcon project={project} /> Live project <ArrowUpRight size={15} /></a>}
             {project.githubUrl && <a href={project.githubUrl} rel="noopener noreferrer" target="_blank"><Github size={16} /> GitHub <ArrowUpRight size={15} /></a>}
             {project.linkedinUrl && <a href={project.linkedinUrl} rel="noopener noreferrer" target="_blank"><Linkedin size={16} /> LinkedIn <ArrowUpRight size={15} /></a>}
           </div>
@@ -877,7 +883,7 @@ function App() {
                   <div className="project-links">
                   {project.liveUrl && (
                     <a href={project.liveUrl} rel="noopener noreferrer" target="_blank">
-                      <ProjectLiveIcon url={project.liveUrl} /> Live Demo <ArrowUpRight size={14} />
+                      <ProjectLiveIcon project={project} /> Live Demo <ArrowUpRight size={14} />
                     </a>
                   )}
                   {project.githubUrl && (
